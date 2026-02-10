@@ -1,5 +1,6 @@
+streamlit
 pandas
 openpyxl
 matplotlib
-streamlit
+altair==5.2.0
 fpdf
