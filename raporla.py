@@ -37,23 +37,19 @@ if st.session_state['ana_veri'] is not None:
         r_liste = sorted(list(set(df['RAPORTÖR 1'].dropna().unique()) | set(df['RAPORTÖR 2'].dropna().unique())))
         secilen_raportor = st.selectbox("👤 Raportör Özel Bakış:", ["Seçiniz..."] + r_liste)
 
-    with col2:
+   with col2:
         if secilen_raportor != "Seçiniz...":
             # Kişiye özel analiz
             kisi_verisi = df[(df['RAPORTÖR 1'] == secilen_raportor) | (df['RAPORTÖR 2'] == secilen_raportor)]
-            st.info(f"📌 {secilen_raportor}: Toplam {len(kisi_verisi)} dosyada görevli.")
+            
+            # BURASI YENİ: Toplam sayıyı daha belirgin yazıyoruz
+            st.info(f"👤 **Raportör:** {secilen_raportor} | 📂 **Toplam Görevli Olunan Dosya:** {len(kisi_verisi)}")
+            
             ozet = kisi_verisi['GÜNCEL DURUM'].value_counts()
             baslik = f"{secilen_raportor} - İş Durumu"
         else:
-            # Genel analizler
-            if kategori == "RAPORTÖRLER":
-                data = pd.concat([df['RAPORTÖR 1'], df['RAPORTÖR 2']]).dropna()
-            elif kategori == "BİRİM":
-                data = df['BİRİMİ'].dropna()
-            elif kategori == "SORUMLU":
-                data = df['SORUMLUSU'].dropna()
-            else:
-                data = df['GÜNCEL DURUM'].dropna()
+            # Genel analizler kısmında da en tepede toplamı görelim
+            st.success(f"📈 **Sistemdeki Toplam Başvuru Sayısı:** {len(df)}")
             
             ozet = data.value_counts().head(15)
             baslik = f"{kategori} Dağılımı"
@@ -69,3 +65,4 @@ if st.session_state['ana_veri'] is not None:
 
 else:
     st.warning("⚠️ Sistemde yüklü veri bulunmamaktadır. Lütfen sol taraftan Excel yükleyiniz.")
+
