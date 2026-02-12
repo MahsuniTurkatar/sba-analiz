@@ -1,21 +1,35 @@
 import streamlit as st
 import pandas as pd
-import plotly.graph_objects as go
 
-# Sayfa ayarlarını mobil ve web uyumlu yapalım
+# Mobil ve Web Uyumu
 st.set_page_config(page_title="SBA 2026 Rapor", layout="wide")
 
-# CSS ile grafik alanlarını ve mobil görünümü güzelleştirelim
+# Modern Stil Ayarları
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .main { background-color: #f0f2f6; }
+    .stMetric { 
+        background-color: #ffffff; 
+        padding: 20px; 
+        border-radius: 15px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        border-left: 5px solid #3498db;
+    }
+    .status-card {
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 5px;
+        color: white;
+        font-weight: bold;
+        display: flex;
+        justify-content: space-between;
+    }
     </style>
     """, unsafe_allow_label_with_html=True)
 
 st.title("📊 SBA 2026 Kurul Analiz Sistemi")
 
-# --- TÜM HOCALARIN VERİLERİ (Görselden Tek Tek İşlendi) ---
+# --- HOCA VERİLERİ (Gömülü Sistem) ---
 veriler = {
     "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
     "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
@@ -31,52 +45,39 @@ veriler = {
     "Prof. Dr. Ayşe KİN İŞLER": {"Atanan": 17, "ONAY": 12, "DÜZELTME": 3, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0}
 }
 
-# --- SEÇİM ALANI ---
-secilen_uye = st.selectbox("👤 Analiz İçin Raportör Seçiniz:", ["Genel Durum"] + sorted(veriler.keys()))
+# Seçim
+secilen_uye = st.selectbox("👤 Raportör Listesi:", ["Genel Bakış"] + sorted(veriler.keys()))
 
-if secilen_uye == "Genel Durum":
+if secilen_uye == "Genel Bakış":
     st.metric("📈 Kurul Toplam Başvuru", "145")
-    st.info("Raportör bazlı detayları görmek için yukarıdan isim seçebilirsiniz.")
+    st.info("Raportör bazlı detayları görmek için yukarıdan bir isim seçebilirsiniz.")
 else:
-    uye_data = veriler[secilen_uye]
+    u = veriler[secilen_uye]
     
-    # Şık Metrik Kartları
+    # Şık Özet Kartları
     c1, c2 = st.columns(2)
     with c1:
-        st.metric("Dosya Yükü", f"{uye_data['Atanan']} Adet")
+        st.metric("Dosya Yükü", f"{u['Atanan']} Dosya")
     with c2:
-        tamamlanan = sum([uye_data[k] for k in ["ONAY", "DÜZELTME", "KAEK", "GÖRÜŞ", "RET"]])
-        st.metric("Karar Alınan", f"{tamamlanan} Adet")
+        tamam = sum([u[k] for k in ["ONAY", "DÜZELTME", "KAEK", "GÖRÜŞ", "RET"]])
+        st.metric("Karar Alınan", f"{tamam} Dosya")
 
-    # --- ŞIK VE MOBİL UYUMLU GRAFİK (PLOTLY) ---
-    kategoriler = ["ONAY", "DÜZELTME", "KAEK", "GÖRÜŞ", "RET", "KAPSAM DIŞI", "GERİ ÇEKİLDİ"]
-    degerler = [uye_data[k] for k in kategoriler]
+    st.subheader("📋 Karar Detayları")
     
-    # Sadece 0'dan büyükleri filtreleyelim (Grafik temizliği)
-    temiz_kat = [k for k, v in zip(kategoriler, degerler) if v > 0]
-    temiz_deg = [v for v in degerler if v > 0]
+    # Mobil Uyumlu Özel Renkli Kartlar (Grafik yerine daha şık durur)
+    def status_box(label, value, color):
+        if value > 0:
+            st.markdown(f"""<div class="status-card" style="background-color: {color};">
+                <span>{label}</span><span>{value}</span>
+                </div>""", unsafe_allow_label_with_html=True)
 
-    fig = go.Figure(go.Bar(
-        x=temiz_deg,
-        y=temiz_kat,
-        orientation='h',
-        marker=dict(color='#3498db', line=dict(color='#2980b9', width=1.5)),
-        text=temiz_deg,
-        textposition='outside'
-    ))
-
-    fig.update_layout(
-        title=f"<b>{secilen_uye} - Karar Dağılımı</b>",
-        xaxis_title="Dosya Sayısı",
-        yaxis=dict(autorange="reversed"),
-        height=400,
-        margin=dict(l=20, r=20, t=50, b=20),
-        paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(0,0,0,0)',
-    )
-    
-    # Streamlit üzerinde interaktif grafik
-    st.plotly_chart(fig, use_container_width=True)
+    status_box("✅ ONAY", u['ONAY'], "#27ae60")
+    status_box("🔧 DÜZELTME", u['DÜZELTME'], "#2980b9")
+    status_box("🔬 KAEK", u['KAEK'], "#8e44ad")
+    status_box("💬 GÖRÜŞ", u['GÖRÜŞ'], "#f39c12")
+    status_box("🚫 RET", u['RET'], "#c0392b")
+    status_box("📁 KAPSAM DIŞI", u['KAPSAM DIŞI'], "#7f8c8d")
+    status_box("↩️ GERİ ÇEKİLDİ", u['GERİ ÇEKİLDİ'], "#34495e")
 
 st.divider()
-st.caption("📱 Bu panel mobil cihazlar için optimize edilmiştir.")
+st.caption("📱 Bu panel mobil görünüm için optimize edilmiştir.")
