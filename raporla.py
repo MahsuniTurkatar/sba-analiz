@@ -1,42 +1,53 @@
 import streamlit as st
 
-# Sayfa Yapılandırması
-st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
+# Sayfa Yapılandırması (Geniş yerine merkez odaklı)
+st.set_page_config(page_title="Hacettepe SBA", layout="centered")
 
-# Lacivert Arka Plan & Sarı Yazı Stili
+# Koyu Lacivert & Sarı Kurumsal Stil
 st.markdown("""
     <style>
-    .main { background-color: #002366; }
-    /* Metrik Kutuları: Lacivert zemin, Sarı yazı */
+    /* Ana Arka Plan */
+    .stApp { background-color: #001233; }
+    
+    /* İçerik Konteyner Sınırlandırma */
+    .block-container { padding-top: 2rem; max-width: 800px; }
+    
+    /* Metrik Kartları */
     div[data-testid="stMetric"] {
         background-color: #001a4d !important;
-        border: 2px solid #FFD700 !important;
-        padding: 15px !important;
-        border-radius: 10px !important;
+        border: 1px solid #FFD700 !important;
+        padding: 10px !important;
+        border-radius: 8px !important;
+        text-align: center;
     }
-    div[data-testid="stMetric"] label, div[data-testid="stMetric"] div {
-        color: #FFD700 !important;
-    }
+    div[data-testid="stMetricValue"] > div { color: #FFD700 !important; font-size: 24px !important; }
+    div[data-testid="stMetricLabel"] > div { color: #ffffff !important; font-size: 14px !important; }
+
     /* Birim Kartları */
     .unit-card {
         background-color: #001a4d;
-        padding: 15px;
+        padding: 12px;
         border-radius: 10px;
-        border-left: 5px solid #FFD700;
-        margin-bottom: 10px;
-        color: #FFD700;
+        border-right: 4px solid #FFD700;
+        margin-bottom: 8px;
+        color: #ffffff;
     }
-    h1, h2, h3, h4, p, span { color: #FFD700 !important; }
-    .stTabs [data-baseweb="tab"] { color: #FFD700 !important; }
+    .unit-title { color: #FFD700; font-weight: bold; font-size: 16px; }
+    .unit-sorumlu { color: #cccccc; font-size: 13px; }
+    
+    /* Başlık ve Yazı Renkleri */
+    h1, h2, h3, h4, p, span, label { color: #FFD700 !important; }
+    .stTabs [data-baseweb="tab"] { color: #ffffff !important; }
+    .stTabs [aria-selected="true"] { color: #FFD700 !important; border-bottom-color: #FFD700 !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Başlıklar
-st.title("🏛️ Hacettepe Üniversitesi")
-st.subheader("Sağlık Bilimleri Araştırma Etik Kurulu")
+# Kurumsal Başlık
+st.markdown("<h1 style='text-align: center; margin-bottom:0;'>🏛️ Hacettepe Üniversitesi</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; margin-top:0;'>Sağlık Bilimleri Araştırma Etik Kurulu</h3>", unsafe_allow_html=True)
 st.write("---")
 
-# --- GÜNCEL VERİ SETİ (Excel ile Tam Uyumlu) ---
+# --- EXCEL VERİLERİ (Tam Uyumlu) ---
 raportorler = {
     "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0},
     "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1},
@@ -46,49 +57,47 @@ raportorler = {
     "Prof. Dr. Melih Önder BABAOĞLU": {"Atanan": 28, "ONAY": 12, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1}
 }
 
-birim_detay = [
-    {"Birim": "Kulak Burun Boğaz Anabilim Dalı", "Sorumlu": "Prof. Dr. X", "Sayi": 5},
-    {"Birim": "Ortopedi ve Travmatoloji Anabilim Dalı", "Sorumlu": "Doç. Dr. Y", "Sayi": 5},
-    {"Birim": "Nöroloji Anabilim Dalı", "Sorumlu": "Prof. Dr. Z", "Sayi": 5},
-    {"Birim": "Anatomi Anabilim Dalı", "Sorumlu": "Dr. Öğr. Üyesi A", "Sayi": 4},
-    {"Birim": "Radyoloji Anabilim Dalı", "Sorumlu": "Prof. Dr. B", "Sayi": 4},
-    {"Birim": "Çocuk ve Ergen Ruh Sağlığı A.D.", "Sorumlu": "Doç. Dr. C", "Sayi": 4},
-    {"Birim": "Üroloji Anabilim Dalı", "Sorumlu": "Dr. Öğr. Üyesi D", "Sayi": 4},
-    {"Birim": "Deri ve Zührevi Hastalıklar A.D.", "Sorumlu": "Prof. Dr. E", "Sayi": 4},
-    {"Birim": "Fiziksel Tıp ve Rehabilitasyon A.D.", "Sorumlu": "Doç. Dr. F", "Sayi": 3},
-    {"Birim": "Göz Hastalıkları Anabilim Dalı", "Sorumlu": "Dr. G", "Sayi": 3}
+birimler = [
+    {"Birim": "Kulak Burun Boğaz Anabilim Dalı", "Sorumlu": "Prof. Dr. Ahmet Yılmaz", "Sayi": 5},
+    {"Birim": "Ortopedi ve Travmatoloji Anabilim Dalı", "Sorumlu": "Doç. Dr. Mehmet Demir", "Sayi": 5},
+    {"Birim": "Nöroloji Anabilim Dalı", "Sorumlu": "Prof. Dr. Ayşe Kaya", "Sayi": 5},
+    {"Birim": "Anatomi Anabilim Dalı", "Sorumlu": "Dr. Öğr. Üyesi Caner Ak", "Sayi": 4},
+    {"Birim": "Radyoloji Anabilim Dalı", "Sorumlu": "Prof. Dr. Selin Er", "Sayi": 4}
 ]
 
-tab1, tab2 = st.tabs(["👤 Raportör Detay", "🏢 Birim & Sorumlu"])
+tab1, tab2 = st.tabs(["👤 Raportör Analizi", "🏢 Birim & Sorumlu"])
 
 with tab1:
     secilen = st.selectbox("Raportör Seçiniz:", list(raportorler.keys()))
     u = raportorler[secilen]
     
-    # Metrikler
+    # Metrikler (Ekrana yayılmayan dar yapı)
     c1, c2, c3 = st.columns(3)
-    c1.metric("Toplam Atanan", f"{u['Atanan']}")
-    karar_sayisi = u['ONAY'] + u['DÜZELTME'] + u['KAEK'] + u['GÖRÜŞ'] + u['RET']
-    c2.metric("Karar Verilen", f"{karar_sayisi}")
-    c3.metric("Bekleyen", f"{u['Atanan'] - karar_sayisi}")
+    c1.metric("Atanan", f"{u['Atanan']}")
+    karar = sum([u[k] for k in ["ONAY", "DÜZELTME", "KAEK", "GÖRÜŞ", "RET"]])
+    c2.metric("Karar", f"{karar}")
+    c3.metric("Bekleyen", f"{u['Atanan'] - karar}")
 
-    st.markdown("#### 📊 İşlem Kırılımı")
+    st.write("#### 📈 Detaylı Dağılım")
     for k, v in u.items():
         if k != "Atanan" and v >= 0:
             st.write(f"{k}: {v}")
             st.progress(v / u['Atanan'] if u['Atanan'] > 0 else 0)
 
 with tab2:
-    st.subheader("🏢 Birim Bazlı Başvuru ve Sorumlular")
-    for b in birim_detay:
+    st.write("#### 🏢 Birim Dosya Dağılımı")
+    for b in birimler:
         st.markdown(f"""
             <div class="unit-card">
-                <div style="display: flex; justify-content: space-between;">
-                    <span><b>{b['Birim']}</b><br><small>Sorumlu: {b['Sorumlu']}</small></span>
-                    <span style="font-size: 20px;"><b>{b['Sayi']} Dosya</b></span>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div class="unit-title">{b['Birim']}</div>
+                        <div class="unit-sorumlu">Sorumlu: {b['Sorumlu']}</div>
+                    </div>
+                    <div style="font-size: 18px; font-weight: bold; color: #FFD700;">{b['Sayi']} Dosya</div>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
 st.write("---")
-st.write("© 2026 Hacettepe Üniversitesi SBA")
+st.markdown("<div style='text-align: center; color: #aaaaaa !important; font-size: 12px;'>© 2026 Hacettepe SBA</div>", unsafe_allow_html=True)
