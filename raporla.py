@@ -1,100 +1,86 @@
 import streamlit as st
 
-# Sayfa Yapılandırması
-st.set_page_config(page_title="SBA 2026 Kurumsal Panel", layout="wide")
+# Sayfa Ayarları
+st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# Kurumsal Stil ve Renkler
+# Kurumsal Stil
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
-    .stMetric { border-left: 5px solid #003366; background-color: white; padding: 15px; border-radius: 10px; }
-    .birim-kart {
-        background: white; padding: 12px; border-radius: 10px; border-right: 4px solid #3498db;
-        margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    .main { background-color: #ffffff; }
+    .stMetric { border-top: 4px solid #ff0000; background-color: #f8f9fa; padding: 15px; border-radius: 5px; }
+    .unit-card {
+        background-color: #f1f3f5; padding: 12px; border-radius: 8px;
+        margin-bottom: 8px; border-left: 6px solid #ff0000;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Kurumsal Başlık
-st.title("⚖️ SBA 2026 Karar Destek Sistemi")
-st.markdown("### **Sağlık Bilimleri Araştırma Etik Kurulu - 2026**")
+# --- TAM İSTEDİĞİN BAŞLIK ---
+st.title("🏛️ Hacettepe Üniversitesi")
+st.subheader("Sağlık Bilimleri Araştırma Etik Kurulu")
+st.markdown("#### 2026 Yılı Başvuru Analiz Paneli")
 st.write("---")
 
-# --- VERİ SETİ: RAPORTÖRLER (Tam Liste) ---
+# --- VERİ SETİ (Raportörler - Eksiksiz) ---
 raportorler = {
-    "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Doç. Dr. Burcu ERSÖZ ALAN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 6, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. Gözde GİRGİN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 5, "KAEK": 0, "GÖRÜŞ": 1, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY": {"Atanan": 28, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. Melih Önder BABAOĞLU": {"Atanan": 28, "ONAY": 12, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. M. Özgür UYANIK": {"Atanan": 27, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. Ayşe Nurten AKARSU": {"Atanan": 22, "ONAY": 11, "DÜZELTME": 4, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Doç. Dr. Ekim GÜMELER": {"Atanan": 17, "ONAY": 11, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 0, "RET": 1, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. Yavuz AYHAN": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Doç. Dr. Tolga ÇAKMAK": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 5, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0},
-    "Prof. Dr. Ayşe KİN İŞLER": {"Atanan": 17, "ONAY": 12, "DÜZELTME": 3, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0, "KAPSAM DIŞI": 0, "GERİ ÇEKİLDİ": 0}
+    "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0},
+    "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1},
+    "Doç. Dr. Burcu ERSÖZ ALAN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 6, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0},
+    "Prof. Dr. Gözde GİRGİN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 5, "KAEK": 0, "GÖRÜŞ": 1, "RET": 0},
+    "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY": {"Atanan": 28, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0},
+    "Prof. Dr. Melih Önder BABAOĞLU": {"Atanan": 28, "ONAY": 12, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 1, "RET": 1},
+    "Prof. Dr. M. Özgür UYANIK": {"Atanan": 27, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0},
+    "Prof. Dr. Ayşe Nurten AKARSU": {"Atanan": 22, "ONAY": 11, "DÜZELTME": 4, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0},
+    "Doç. Dr. Ekim GÜMELER": {"Atanan": 17, "ONAY": 11, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 0, "RET": 1},
+    "Prof. Dr. Yavuz AYHAN": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0},
+    "Doç. Dr. Tolga ÇAKMAK": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 5, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0},
+    "Prof. Dr. Ayşe KİN İŞLER": {"Atanan": 17, "ONAY": 12, "DÜZELTME": 3, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0}
 }
 
-# --- VERİ SETİ: İLK 10 BİRİM VE SORUMLULARI ---
-birim_listesi = [
-    {"Birim": "Kulak Burun Boğaz Anabilim Dalı", "Sorumlu": "Prof. Dr. Ahmet Yılmaz", "Sayi": 5},
-    {"Birim": "Ortopedi ve Travmatoloji Anabilim Dalı", "Sorumlu": "Doç. Dr. Mehmet Demir", "Sayi": 5},
-    {"Birim": "Nöroloji Anabilim Dalı", "Sorumlu": "Prof. Dr. Ayşe Kaya", "Sayi": 5},
-    {"Birim": "Anatomi Anabilim Dalı", "Sorumlu": "Dr. Öğr. Üyesi Caner Ak", "Sayi": 4},
-    {"Birim": "Radyoloji Anabilim Dalı", "Sorumlu": "Prof. Dr. Selin Er", "Sayi": 4},
-    {"Birim": "Çocuk ve Ergen Ruh Sağlığı A.D.", "Sorumlu": "Doç. Dr. Burak Can", "Sayi": 4},
-    {"Birim": "Üroloji Anabilim Dalı", "Sorumlu": "Prof. Dr. Deniz Şahin", "Sayi": 4},
-    {"Birim": "Deri ve Zührevi Hastalıklar A.D.", "Sorumlu": "Dr. Öğr. Üyesi Elif Gün", "Sayi": 4},
-    {"Birim": "Fiziksel Tıp ve Rehabilitasyon A.D.", "Sorumlu": "Doç. Dr. Murat Işık", "Sayi": 3},
-    {"Birim": "Göz Hastalıkları Anabilim Dalı", "Sorumlu": "Prof. Dr. Zeynep Türk", "Sayi": 3}
+# --- BİRİMLER (Rakamlar Eklendi) ---
+birim_verisi = [
+    ("Kulak Burun Boğaz Anabilim Dalı", 5),
+    ("Ortopedi ve Travmatoloji Anabilim Dalı", 5),
+    ("Nöroloji Anabilim Dalı", 5),
+    ("Anatomi Anabilim Dalı", 4),
+    ("Radyoloji Anabilim Dalı", 4),
+    ("Çocuk ve Ergen Ruh Sağlığı A.D.", 4),
+    ("Üroloji Anabilim Dalı", 4),
+    ("Deri ve Zührevi Hastalıklar A.D.", 4),
+    ("Fiziksel Tıp ve Rehabilitasyon A.D.", 3),
+    ("Göz Hastalıkları Anabilim Dalı", 3)
 ]
 
-# --- SEKME YAPISI (TABS) ---
-tab_raportor, tab_birim = st.tabs(["👤 Raportör Dosya Detayları", "🏢 Birim & Sorumlu Analizi"])
+tab_r, tab_b = st.tabs(["👥 Raportör Dosya Detayı", "🏢 Birim Başvuru Sayıları"])
 
-with tab_raportor:
-    secilen = st.selectbox("Analiz Edilecek Raportörü Seçiniz:", ["Genel Durum"] + list(raportorler.keys()))
+with tab_r:
+    secilen = st.selectbox("Raportör Seçiniz:", list(raportorler.keys()))
+    u = raportorler[secilen]
     
-    if secilen == "Genel Durum":
-        st.metric("📈 Kurul Toplam Başvuru", "145")
-        st.info("Detaylı iş durumu analizi için yukarıdan bir raportör seçiniz.")
-    else:
-        u = raportorler[secilen]
-        karar_toplam = u['ONAY'] + u['DÜZELTME'] + u['KAEK'] + u['GÖRÜŞ'] + u['RET']
-        bekleyen = u['Atanan'] - karar_toplam
-        
-        # Metrik Kartları
-        m1, m2, m3 = st.columns(3)
-        m1.metric("📌 Toplam Atanan", f"{u['Atanan']} Dosya")
-        m2.metric("✅ Karar Alınan", f"{karar_toplam}")
-        m3.metric("⏳ İşlem Bekleyen", f"{bekleyen}", delta_color="inverse")
+    # Rakamlar Netleşti
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Toplam Atanan Dosya", f"{u['Atanan']}")
+    karar = sum([u[k] for k in ["ONAY", "DÜZELTME", "KAEK", "GÖRÜŞ", "RET"]])
+    c2.metric("Karar Verilen", f"{karar}")
+    c3.metric("Bekleyen", f"{u['Atanan'] - karar}")
 
-        st.write("### 📊 Detaylı Karar Dağılımı")
-        # İlerleme Çubukları ile Ayrıntılı Görünüm
-        for k, v in u.items():
-            if k != "Atanan" and v >= 0:
-                yuzde = (v / u['Atanan']) if u['Atanan'] > 0 else 0
-                st.write(f"**{k}**: {v} dosya")
-                st.progress(yuzde)
+    st.write("#### 📉 İşlem Dağılımı")
+    for k, v in u.items():
+        if k != "Atanan" and v >= 0:
+            st.write(f"**{k}**: {v}")
+            st.progress(v / u['Atanan'] if u['Atanan'] > 0 else 0)
 
-with tab_birim:
-    st.subheader("🏢 En Çok Başvuru Yapan İlk 10 Birim")
-    st.write("Kurula gelen dosyaların birimlere ve sorumlularına göre dağılımı:")
-    
-    # Birim Kartları
-    for b in birim_listesi:
+with tab_b:
+    st.subheader("🏢 İlk 10 Birim ve Dosya Sayıları")
+    for isim, sayi in birim_verisi:
         st.markdown(f"""
-            <div class="birim-kart">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong>{b['Birim']}</strong><br>
-                        <small>Sorumlu: {b['Sorumlu']}</small>
-                    </div>
-                    <div style="font-size: 20px; font-weight: bold; color: #003366;">{b['Sayi']}</div>
+            <div class="unit-card">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>{isim}</span>
+                    <b style="color: #ff0000; font-size: 1.2em;">{sayi} Dosya</b>
                 </div>
             </div>
         """, unsafe_allow_html=True)
 
 st.write("---")
-st.markdown("<center>© 2026 Sağlık Bilimleri Araştırma Etik Kurulu</center>", unsafe_allow_html=True)
+st.write("Hacettepe Üniversitesi SBA - 2026")
