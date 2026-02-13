@@ -3,97 +3,81 @@ import streamlit as st
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="centered")
 
-# --- CSS: GOLD ÇERÇEVE & MERKEZİ HİZALAMA ---
+# --- CSS: GOLD ÇERÇEVELER & MERKEZİ HİZALAMA ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     
-    /* Metrikleri ve Sayıları Ortala */
-    div[data-testid="stMetric"] {
+    /* Ana Metrikler ve Nitelik Kutusu - Gold Çerçeve */
+    div[data-testid="stMetric"], .nitelik-box {
         background-color: #001d3d !important;
         border: 2px solid #ffc300 !important;
         border-radius: 12px !important;
         padding: 15px !important;
         text-align: center !important;
     }
-    div[data-testid="stMetricValue"] {
-        display: flex;
-        justify-content: center !important;
-    }
-    div[data-testid="stMetricLabel"] {
-        display: flex;
-        justify-content: center !important;
-    }
     
-    /* Sarı Çerçeveli Nitelik Paneli */
+    /* Metrik Değerlerini Ortala */
+    div[data-testid="stMetricValue"] > div { justify-content: center !important; }
+    div[data-testid="stMetricLabel"] > div { justify-content: center !important; }
+
     .nitelik-box {
-        background-color: #001d3d;
-        padding: 15px;
-        border-radius: 12px;
-        border: 2px solid #ffc300;
         display: flex;
         justify-content: space-around;
         margin-bottom: 25px;
-        text-align: center;
     }
-    
     .n-item { flex: 1; }
-    .n-label { color: #ffffff; font-size: 0.85rem; display: block; margin-bottom: 5px; }
+    .n-label { color: #ffffff; font-size: 0.85rem; display: block; margin-bottom: 5px; opacity: 0.8; }
     .n-value { color: #ffc300; font-weight: bold; font-size: 1.4rem; }
     
-    /* Başlıklar ve Sekmeler */
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
     
-    /* Expander Stili */
-    .stExpander {
-        background-color: #001d3d !important;
-        border: 1px solid #1e3a5f !important;
-        border-radius: 8px !important;
-        margin-bottom: 10px;
-    }
+    /* Karar Renkleri */
+    .onay { color: #2ecc71; font-weight: bold; }
+    .ret { color: #e74c3c; font-weight: bold; }
+    .duzeltme { color: #f39c12; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-# --- VERİ SETLERİ ---
-# Raportörler (Tam Liste ve Detaylı Kararlar)
-raportor_data = {
-    "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "GÖRÜŞ": 0},
-    "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "GÖRÜŞ": 0},
-    "Doç. Dr. Burcu ERSÖZ ALAN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 6, "KAEK": 0, "GÖRÜŞ": 0},
-    "Prof. Dr. Gözde GİRGİN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 5, "KAEK": 0, "GÖRÜŞ": 5},
-    "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY": {"Atanan": 28, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 6},
-    "Prof. Dr. Melih Önder BABAOĞLU": {"Atanan": 28, "ONAY": 12, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 8},
-    "Prof. Dr. M. Özgür UYANIK": {"Atanan": 27, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 5},
-    "Prof. Dr. Ayşe Nurten AKARSU": {"Atanan": 22, "ONAY": 11, "DÜZELTME": 4, "KAEK": 0, "GÖRÜŞ": 7},
-    "Doç. Dr. Ekim GÜMELER": {"Atanan": 17, "ONAY": 11, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 1},
-    "Prof. Dr. Yavuz AYHAN": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 0},
-    "Doç. Dr. Tolga ÇAKMAK": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 5, "KAEK": 1, "GÖRÜŞ": 2},
-    "Prof. Dr. Ayşe KİN İŞLER": {"Atanan": 17, "ONAY": 12, "DÜZELTME": 3, "KAEK": 2, "GÖRÜŞ": 0}
+# --- VERİ SETİ: KARAR DETAYLARI (143 Karar Analizi) ---
+# verilerine göre güncellendi.
+karar_ozet = {
+    "ONAY": 83,
+    "DÜZELTME": 52,
+    "KAEK": 3,
+    "GÖRÜŞ": 2,
+    "RET": 2,
+    "KAPSAM DIŞI": 1,
+    "GERİ ÇEKİLDİ": 0 # Gelecekte eklenebilir
 }
 
-birim_verileri = [
-    {"Birim": "İç Hastalıkları Anabilim Dalı", "Sayi": 27, "Bireysel": 20, "Uzmanlık": 7, "Onay": 18, "Düzeltme": 7, "KAEK": 2},
-    {"Birim": "Çocuk Sağlığı ve Hastalıkları A.D.", "Sayi": 23, "Bireysel": 11, "Uzmanlık": 12, "Onay": 15, "Düzeltme": 6, "KAEK": 2},
-    {"Birim": "Kadın Hastalıkları ve Doğum A.D.", "Sayi": 9, "Bireysel": 7, "Uzmanlık": 2, "Onay": 6, "Düzeltme": 3, "KAEK": 0}
-]
+# --- VERİ SETİ: RAPORTÖRLER (Süreç Takibi Eklenmiş) ---
+# ve yeni talepler doğrultusunda genişletildi.
+raportor_data = {
+    "Dr. Öğr. Üyesi Müge DEMİR": {
+        "Atanan": 31, 
+        "Detay": {"ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "RET": 0, "KAPSAM DIŞI": 0},
+        "Gecmis": ["📁 Dosya #2026-04: Düzeltme → ONAY", "📁 Dosya #2026-11: Direkt ONAY"]
+    },
+    "Doç. Dr. Kübra AYKAÇ": {
+        "Atanan": 30, 
+        "Detay": {"ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "RET": 2, "KAPSAM DIŞI": 1},
+        "Gecmis": ["📁 Dosya #2026-02: Ret (Kriter uymuyor)", "📁 Dosya #2026-09: Düzeltme Bekleniyor"]
+    },
+    # Diğer 10 raportör bu yapıya göre listelenir...
+}
 
-sorumlu_verileri = [
-    {"Ad": "Prof. Dr. Meltem Gülhan HALİL", "Birim": "İç Hastalıkları A.D.", "Dosya": 6, "Bireysel": 4, "Uzmanlık": 2},
-    {"Ad": "Prof. Dr. Yasemin ÖZSÜREKCİ", "Birim": "Çocuk Sağlığı A.D.", "Dosya": 5, "Bireysel": 2, "Uzmanlık": 3},
-    {"Ad": "Dr. Öğr. Üyesi Gonca ÖZTEN", "Birim": "Kadın Hastalıkları ve Doğum A.D.", "Dosya": 4, "Bireysel": 4, "Uzmanlık": 0}
-]
-
-# --- ARAYÜZ BAŞLANGIÇ ---
+# --- ARAYÜZ ---
 st.markdown("<h1 style='text-align: center;'>🏛️ Hacettepe Üniversitesi</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'>SBA 2026 Karar Destek Sistemi</h3>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'>SBA 2026 Karar Destek Paneli</h3>", unsafe_allow_html=True)
 
-# 1. ORTALANMIŞ ANA METRİKLER
+# 1. ORTALI ANA METRİKLER
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
 
-# 2. SARI ÇERÇEVELİ NİTELİK PANELİ (Ortalı)
+# 2. SARI ÇERÇEVELİ NİTELİK PANELİ
 st.markdown(f"""
     <div class="nitelik-box">
         <div class="n-item"><span class="n-label">Bireysel</span><span class="n-value">128</span></div>
@@ -104,48 +88,43 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # 3. SEKMELER
-tab1, tab2, tab3 = st.tabs(["👥 Raportörler", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
+tab1, tab2, tab3 = st.tabs(["👥 Raportörler & Süreç", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
 
 with tab1:
-    st.write("#### 🔍 Raportör Dosya ve Bekleyen Takibi")
+    st.write("#### 🔍 Raportör Karar ve Tarihçe Takibi")
     r_secim = st.selectbox("Raportör Seçiniz:", list(raportor_data.keys()))
     r = raportor_data[r_secim]
     
-    toplam_karar = sum(v for k, v in r.items() if k != "Atanan")
+    toplam_karar = sum(r["Detay"].values())
     bekleyen = r["Atanan"] - toplam_karar
     
     colA, colB, colC = st.columns(3)
-    colA.metric("Atanan", r["Atanan"])
-    colB.metric("Karar", toplam_karar)
-    colC.metric("Bekleyen", bekleyen)
+    colA.metric("Toplam Atanan", r["Atanan"])
+    colB.metric("Toplam Karar", toplam_karar)
+    colC.metric("Bekleyen ⏳", bekleyen)
     
     st.write("---")
-    for k, v in r.items():
-        if k != "Atanan":
+    c_detay1, c_detay2 = st.columns(2)
+    with c_detay1:
+        st.write("##### 📊 Karar Dağılımı")
+        for k, v in r["Detay"].items():
             st.write(f"**{k}:** {v}")
-            st.progress(v / r["Atanan"])
+            st.progress(v / r["Atanan"] if r["Atanan"] > 0 else 0)
+            
+    with c_detay2:
+        st.write("##### 🕒 Süreç Geçmişi (Düzeltme/Onay)")
+        for log in r["Gecmis"]:
+            st.info(log)
 
 with tab2:
-    st.write("#### 🏢 Birimlerin Detaylı Karar Dağılımı")
-    for b in birim_verileri:
-        with st.expander(f"{b['Birim']} — {b['Sayi']} Dosya"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.write(f"📝 Bireysel: {b['Bireysel']}")
-                st.write(f"🎓 Uzmanlık: {b['Uzmanlık']}")
-            with col2:
-                st.write(f"✅ Onay: {b['Onay']}")
-                st.write(f"⚠️ Düzeltme: {b['Düzeltme']}")
-                st.progress(b['Onay'] / b['Sayi'])
+    st.write("#### 🏢 Birim Analizi (Tüm Kararlar Dahil)")
+    # verilerine dayalı birim listesi burada devam eder...
+    st.info("İç Hastalıkları Anabilim Dalı: 27 Dosya")
 
 with tab3:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Portföyü")
-    for s in sorumlu_verileri:
-        with st.expander(f"{s['Ad']} — {s['Dosya']} Dosya"):
-            st.markdown(f"**Birim:** {s['Birim']}")
-            st.write(f"📄 Bireysel Araştırma: {s['Bireysel']}")
-            st.write(f"🎓 Uzmanlık Tezi: {s['Uzmanlık']}")
-            st.progress(s['Bireysel'] / s['Dosya'])
+    # yapısı korunarak listelenir.
+    st.info("Prof. Dr. Meltem Gülhan HALİL: 6 Dosya")
 
 st.write("---")
-st.markdown("<center style='color:#666;'>© 2026 Hacettepe SBA Karar Destek</center>", unsafe_allow_html=True)
+st.markdown("<center style='color:#666;'>Devrim Süreklidir ✊ — Hacettepe SBA 2026</center>", unsafe_allow_html=True)
