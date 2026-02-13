@@ -1,9 +1,9 @@
 import streamlit as st
 
-# Sayfa Yapılandırması - Yayılmayı önleyen 'centered' yapı
+# Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="centered")
 
-# Dark Navy Blue (Gece Mavisi) & Hacettepe Gold Teması
+# Dark Navy Blue & Hacettepe Gold Teması
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -17,16 +17,15 @@ st.markdown("""
         padding: 15px !important;
     }
     
-    /* Detaylı Bilgi Kartları */
+    /* Nitelik ve Veri Kartları */
     .data-card {
         background-color: #001d3d;
         padding: 15px;
         border-radius: 10px;
         border-left: 5px solid #ffc300;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
     }
     
-    /* Yazı Renkleri */
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
     .rank-num { color: #ffc300; font-weight: bold; font-size: 20px; margin-right: 12px; }
@@ -34,15 +33,10 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Kurumsal Başlık
-st.markdown("<h1 style='text-align: center; margin-bottom:0;'>🏛️ Hacettepe Üniversitesi</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; margin-top:0;'>SBA Analiz Sistemi</h3>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🏛️ Hacettepe Üniversitesi</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'>SBA 2026 Karar Destek Sistemi</h3>", unsafe_allow_html=True)
 
-# --- VERİ MERKEZİ (Excel'den Birebir) ---
-#
-toplam_basvuru = 190
-kurul_sayisi = 4
-
-# Raportör Verileri
+# --- VERİ SETİ: RAPORTÖRLER (Eksiksiz) ---
 raportorler = {
     "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2},
     "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0},
@@ -58,76 +52,61 @@ raportorler = {
     "Prof. Dr. Ayşe KİN İŞLER": {"Atanan": 17, "ONAY": 12, "DÜZELTME": 3, "KAEK": 2}
 }
 
-# Birim İlk 5
+# --- VERİ SETİ: SORUMLU NİTELİKLERİ ---
+sorumlu_detay = {
+    "Prof. Dr. Meltem Gülhan HALİL": {"Birim": "İç Hastalıkları A.D.", "Toplam": 6, "Uzmanlık Tezi": 2, "Bireysel Araştırma": 4},
+    "Prof. Dr. Yasemin ÖZSÜREKCİ": {"Birim": "Çocuk Sağlığı ve Hastalıkları A.D.", "Toplam": 5, "Uzmanlık Tezi": 3, "Bireysel Araştırma": 2},
+    "Dr. Öğr. Üyesi Gonca ÖZTEN": {"Birim": "Klinik Eczacılık A.D.", "Toplam": 4, "Uzmanlık Tezi": 0, "Bireysel Araştırma": 4}
+}
+
+# --- VERİ SETİ: BİRİM İLK 5 ---
 ilk_5_birim = [
-    {"Birim": "İç Hastalıkları Anabilim Dalı", "Sayi": 27},
-    {"Birim": "Çocuk Sağlığı ve Hastalıkları A.D.", "Sayi": 23},
-    {"Birim": "Kadın Hastalıkları ve Doğum A.D.", "Sayi": 9},
-    {"Birim": "Klinik Eczacılık Anabilim Dalı", "Sayi": 9},
-    {"Birim": "Göğüs Hastalıkları Anabilim Dalı", "Sayi": 9}
+    {"Birim": "İç Hastalıkları Anabilim Dalı", "Sayi": 27, "Bireysel": 20, "Uzmanlık": 7},
+    {"Birim": "Çocuk Sağlığı ve Hastalıkları A.D.", "Sayi": 23, "Bireysel": 11, "Uzmanlık": 12},
+    {"Birim": "Kadın Hastalıkları ve Doğum A.D.", "Sayi": 9, "Bireysel": 7, "Uzmanlık": 2},
+    {"Birim": "Klinik Eczacılık Anabilim Dalı", "Sayi": 9, "Bireysel": 6, "Uzmanlık": 3},
+    {"Birim": "Göğüs Hastalıkları Anabilim Dalı", "Sayi": 9, "Bireysel": 8, "Uzmanlık": 1}
 ]
-
-# Sorumlu İlk 5
-ilk_5_sorumlu = [
-    {"Sorumlu": "Prof. Dr. Meltem Gülhan HALİL", "Birim": "İç Hastalıkları A.D.", "Sayi": 6},
-    {"Sorumlu": "Prof. Dr. Yasemin ÖZSÜREKCİ", "Birim": "Çocuk Sağlığı ve Hastalıkları A.D.", "Sayi": 5},
-    {"Sorumlu": "Dr. Öğr. Üyesi Gonca ÖZTEN", "Birim": "Klinik Eczacılık A.D.", "Sayi": 4},
-    {"Sorumlu": "Doç. Dr. Süleyman Nahit ŞENDUR", "Birim": "İç Hastalıkları A.D.", "Sayi": 4},
-    {"Sorumlu": "Prof. Dr. Ali Fuat KALYONCU", "Birim": "Göğüs Hastalıkları A.D.", "Sayi": 4}
-]
-
-# Ana Özet Paneli
-c1, c2 = st.columns(2)
-c1.metric("📌 Toplam Başvuru", f"{toplam_basvuru}")
-c2.metric("🗓️ Kurul Sayısı", f"{kurul_sayisi}")
 
 st.write("---")
 
-# --- 3 AYRI ANALİZ SEKMESİ ---
-tab1, tab2, tab3 = st.tabs(["👤 Raportörler", "🏛️ Top 5 Birim", "🎓 Top 5 Sorumlu"])
+# 4 ANA SEKME (Raportörleri başa aldım!)
+tab1, tab2, tab3 = st.tabs(["👥 Raportör Analizi", "🏢 Birim & Nitelik", "👨‍🏫 Sorumlu & Nitelik"])
 
 with tab1:
-    secilen_r = st.selectbox("Bir raportör seçiniz:", list(raportorler.keys()))
+    secilen_r = st.selectbox("Analiz İçin Raportör Seçiniz:", list(raportorler.keys()))
     u = raportorler[secilen_r]
+    c1, c2, c3 = st.columns(3)
+    karar = u['ONAY'] + u['DÜZELTME'] + u['KAEK']
+    c1.metric("Toplam Atanan", f"{u['Atanan']}")
+    c2.metric("Karar Verilen", f"{karar}")
+    c3.metric("Bekleyen", f"{u['Atanan'] - karar}")
     
-    m1, m2, m3 = st.columns(3)
-    karar_sayisi = u['ONAY'] + u['DÜZELTME'] + u['KAEK']
-    m1.metric("Atanan", f"{u['Atanan']}")
-    m2.metric("Karar", f"{karar_sayisi}")
-    m3.metric("Bekleyen", f"{u['Atanan'] - karar_sayisi}")
-    
-    st.write("#### 📊 Durum Dağılımı")
-    for key, val in u.items():
-        if key != "Atanan":
-            st.write(f"{key}: {val}")
-            st.progress(val / u['Atanan'] if u['Atanan'] > 0 else 0)
+    st.write("#### 📊 Süreç Kırılımı")
+    for k, v in u.items():
+        if k != "Atanan":
+            st.write(f"{k}: {v}")
+            st.progress(v / u['Atanan'] if u['Atanan'] > 0 else 0)
 
 with tab2:
-    st.write("#### 🏢 Başvuru Sayısı En Yüksek Birimler")
+    st.write("#### 🏢 Birimlerin Nitelik Dağılımı")
     for i, b in enumerate(ilk_5_birim, 1):
-        st.markdown(f"""
-            <div class="data-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><span class="rank-num">#{i}</span><b>{b['Birim']}</b></div>
-                    <div style="color:#ffc300; font-size:18px; font-weight:bold;">{b['Sayi']} Dosya</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+        with st.expander(f"#{i} {b['Birim']} ({b['Sayi']} Dosya)"):
+            st.write(f"✅ Bireysel Araştırma: {b['Bireysel']}")
+            st.write(f"🎓 Uzmanlık Tezi: {b['Uzmanlık']}")
+            st.progress(b['Bireysel'] / b['Sayi'])
 
 with tab3:
-    st.write("#### 👨‍🏫 En Çok Başvuru Yapan Sorumlular")
-    for i, s in enumerate(ilk_5_sorumlu, 1):
-        st.markdown(f"""
-            <div class="data-card">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <span class="rank-num">#{i}</span><b>{s['Sorumlu']}</b><br>
-                        <small style="margin-left:38px; color:#aaaaaa;">{s['Birim']}</small>
-                    </div>
-                    <div style="color:#ffc300; font-size:18px; font-weight:bold;">{s['Sayi']} Dosya</div>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+    secilen_s = st.selectbox("Sorumlu Hocayı Seçiniz:", list(sorumlu_detay.keys()))
+    s = sorumlu_detay[secilen_s]
+    st.metric(f"{secilen_s}", f"{s['Toplam']} Dosya")
+    st.markdown(f"""
+        <div class="data-card">
+            <b>Birim:</b> {s['Birim']}<br>
+            <b>Bireysel Araştırma:</b> {s['Bireysel Araştırma']}<br>
+            <b>Uzmanlık Tezi:</b> {s['Uzmanlık Tezi']}
+        </div>
+    """, unsafe_allow_html=True)
 
 st.write("---")
-st.markdown("<center style='color:#555;'>Hacettepe SBA Karar Destek Sistemi © 2026</center>", unsafe_allow_html=True)
+st.markdown("<center style='color:#444;'>Hacettepe SBA Karar Destek Sistemi © 2026</center>", unsafe_allow_html=True)
