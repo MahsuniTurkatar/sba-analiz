@@ -25,26 +25,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. VERİ SETLERİ (TAM LİSTE - 12 RAPORTÖR) ---
-raportor_verileri = {
-    "Raportör Adı": [
-        "Dr. Öğr. Üyesi Müge DEMİR", "Doç. Dr. Kübra AYKAÇ", "Doç. Dr. Burcu ERSÖZ ALAN",
-        "Prof. Dr. Gözde GİRGİN", "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY", "Prof. Dr. Melih Önder BABAOĞLU",
-        "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Ayşe Nurten AKARSU", "Doç. Dr. Ekim GÜMELER",
-        "Prof. Dr. Yavuz AYHAN", "Doç. Dr. Tolga ÇAKMAK", "Prof. Dr. Ayşe KİN İŞLER"
-    ],
-    "Atanan": [31, 30, 28, 28, 28, 28, 27, 22, 17, 17, 17, 17],
-    "ONAY": [18, 14, 18, 18, 17, 12, 17, 11, 11, 9, 9, 12],
-    "DÜZELTME": [11, 9, 6, 5, 4, 8, 4, 4, 4, 8, 5, 3],
-    "KAEK": [2, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 2],
-    "GÖRÜŞ": [0, 0, 0, 5, 6, 8, 5, 7, 1, 0, 2, 0],
-    "RET": [0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    "K.DIŞI": [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    "G.ÇEKİLDİ": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-}
-df_uye1 = pd.DataFrame(raportor_verileri)
+# --- 1. VERİ SETLERİ (TAM LİSTE) ---
 
-# Birimler (İlk 5 - Nitelikli)
+#
+raportor_listesi = {
+    "Dr. Öğr. Üyesi Müge DEMİR": {"Atanan": 31, "ONAY": 18, "DÜZELTME": 11, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0, "K.DIŞI": 0},
+    "Doç. Dr. Kübra AYKAÇ": {"Atanan": 30, "ONAY": 14, "DÜZELTME": 9, "KAEK": 0, "GÖRÜŞ": 0, "RET": 2, "K.DIŞI": 1},
+    "Doç. Dr. Burcu ERSÖZ ALAN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 6, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. Gözde GİRGİN": {"Atanan": 28, "ONAY": 18, "DÜZELTME": 5, "KAEK": 0, "GÖRÜŞ": 5, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY": {"Atanan": 28, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 6, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. Melih Önder BABAOĞLU": {"Atanan": 28, "ONAY": 12, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 8, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. M. Özgür UYANIK": {"Atanan": 27, "ONAY": 17, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 5, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. Ayşe Nurten AKARSU": {"Atanan": 22, "ONAY": 11, "DÜZELTME": 4, "KAEK": 0, "GÖRÜŞ": 7, "RET": 0, "K.DIŞI": 0},
+    "Doç. Dr. Ekim GÜMELER": {"Atanan": 17, "ONAY": 11, "DÜZELTME": 4, "KAEK": 1, "GÖRÜŞ": 1, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. Yavuz AYHAN": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 8, "KAEK": 0, "GÖRÜŞ": 0, "RET": 0, "K.DIŞI": 0},
+    "Doç. Dr. Tolga ÇAKMAK": {"Atanan": 17, "ONAY": 9, "DÜZELTME": 5, "KAEK": 1, "GÖRÜŞ": 2, "RET": 0, "K.DIŞI": 0},
+    "Prof. Dr. Ayşe KİN İŞLER": {"Atanan": 17, "ONAY": 12, "DÜZELTME": 3, "KAEK": 2, "GÖRÜŞ": 0, "RET": 0, "K.DIŞI": 0}
+}
+
+# İlk 5 Birim
 birim_ilk5 = [
     {"Ad": "İç Hastalıkları Anabilim Dalı", "Dosya": 27, "Bireysel": 20, "Uzmanlık": 7},
     {"Ad": "Çocuk Sağlığı ve Hastalıkları A.D.", "Dosya": 23, "Bireysel": 11, "Uzmanlık": 12},
@@ -53,7 +52,7 @@ birim_ilk5 = [
     {"Ad": "Göğüs Hastalıkları Anabilim Dalı", "Dosya": 9, "Bireysel": 6, "Uzmanlık": 3}
 ]
 
-# Sorumlular (İlk 5 - Nitelikli)
+# İlk 5 Sorumlu
 sorumlu_ilk5 = [
     {"Ad": "Prof. Dr. Meltem Gülhan HALİL", "Dosya": 6, "Bireysel": 4, "Uzmanlık": 2},
     {"Ad": "Prof. Dr. Yasemin ÖZSÜREKCİ", "Dosya": 5, "Bireysel": 2, "Uzmanlık": 3},
@@ -66,13 +65,12 @@ sorumlu_ilk5 = [
 st.markdown("<h1 style='text-align: center;'>🏛️ Hacettepe Üniversitesi</h1>", unsafe_allow_html=True)
 st.markdown("<h3 style='text-align: center;'>SBA 2026 Karar Destek Paneli</h3>", unsafe_allow_html=True)
 
-# 1. ORTALI ANA METRİKLER
+# ÜST PANEL: ORTALI METRİKLER & SARI NİTELİK
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
 
-# 2. SARI ÇERÇEVELİ NİTELİK PANELİ
-st.markdown("""
+st.markdown(f"""
     <div class="nitelik-box">
         <div class="n-item"><span>Bireysel</span><br><span class="n-value">128</span></div>
         <div class="n-item"><span>Uzmanlık</span><br><span class="n-value">48</span></div>
@@ -81,35 +79,60 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# 3. SEKMELER
-tab_excel, tab_birim, tab_sorumlu = st.tabs(["📄 Üye_1 (Genel Tablo - Excel)", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
+# SEKMELER
+tab_ana, tab1, tab2, tab3 = st.tabs(["📄 Üye_1 (Genel Tablo)", "👥 Raportörler", "🏢 İlk 5 Birim", "👨‍🏫 İlk 5 Sorumlu"])
 
-with tab_excel:
-    st.write("#### 📋 Genel Veri İzleme Tablosu (Excel Görünümü)")
-    # Excel stili tablo
-    st.dataframe(df_uye1, use_container_width=True, hide_index=True)
+# --- ÜYE_1 SAYFASI (GENEL TABLO) ---
+with tab_ana:
+    st.write("### 📋 Genel Karar ve İşlem Tablosu")
+    df_genel = pd.DataFrame.from_dict(raportor_listesi, orient='index')
+    st.dataframe(df_genel, use_container_width=True)
     
-    # PDF/Excel Aktarma Butonu
-    st.download_button(
-        label="📥 Tabloyu PDF/Excel Olarak Kaydet",
-        data=df_uye1.to_csv().encode('utf-8-sig'),
-        file_name='Hacettepe_SBA_Genel_Tablo.csv',
-        mime='text/csv',
-    )
+    # PDF Aktarma (Simülasyon/CSV aktarma butonu - Streamlit standartı)
+    st.download_button(label="📥 Üye_1 Tablosunu PDF/CSV Olarak Aktar", 
+                       data=df_genel.to_csv(), 
+                       file_name='uye_1_genel_tablo.csv', mime='text/csv')
 
-with tab_birim:
-    st.write("#### 🏢 En Çok Dosya Gönderen İlk 5 Birim")
+# --- RAPORTÖRLER (12 KİŞİ) ---
+with tab1:
+    st.write("### 🔍 Raportör Karar ve Bekleyen Analizi")
+    r_secim = st.selectbox("Raportör Seçiniz:", list(raportor_listesi.keys()))
+    r = raportor_listesi[r_secim]
+    
+    # Ortalı Metrikler
+    m1, m2, m3 = st.columns(3)
+    karar_verilen = sum([v for k,v in r.items() if k != "Atanan"])
+    m1.metric("Atanan", r["Atanan"])
+    m2.metric("Karar Verilen", karar_verilen)
+    m3.metric("Bekleyen ⏳", r["Atanan"] - karar_verilen)
+    
+    # Detaylı Dağılım
+    st.write("---")
+    cols = st.columns(3)
+    cols[0].write(f"✅ ONAY: {r['ONAY']}")
+    cols[0].write(f"⚠️ DÜZELTME: {r['DÜZELTME']}")
+    cols[1].write(f"📊 KAEK: {r['KAEK']}")
+    cols[1].write(f"💬 GÖRÜŞ: {r['GÖRÜŞ']}")
+    cols[2].write(f"❌ RET: {r['RET']}")
+    cols[2].write(f"🚫 KAPSAM DIŞI: {r['K.DIŞI']}")
+
+# --- İLK 5 BİRİM ---
+with tab2:
+    st.write("### 🏢 En Çok Dosya Gönderen İlk 5 Birim (Nitelikli)")
     for b in birim_ilk5:
-        with st.expander(f"{b['Ad']} ({b['Dosya']} Dosya)"):
-            st.write(f"📝 Bireysel: {b['Bireysel']} | 🎓 Uzmanlık: {b['Uzmanlık']}")
+        with st.expander(f"{b['Ad']} — {b['Dosya']} Dosya"):
+            st.write(f"📝 Bireysel Araştırma: {b['Bireysel']}")
+            st.write(f"🎓 Uzmanlık Tezi: {b['Uzmanlık']}")
             st.progress(b['Bireysel'] / b['Dosya'])
 
-with tab_sorumlu:
-    st.write("#### 👨‍🏫 En Çok Dosyası Olan İlk 5 Sorumlu Araştırmacı")
+# --- İLK 5 SORUMLU ---
+with tab3:
+    st.write("### 👨‍🏫 En Çok Dosyası Olan İlk 5 Sorumlu Araştırmacı")
     for s in sorumlu_ilk5:
-        with st.expander(f"{s['Ad']} ({s['Dosya']} Dosya)"):
-            st.write(f"📄 Bireysel: {s['Bireysel']} | 🎓 Uzmanlık: {s['Uzmanlık']}")
+        with st.expander(f"{s['Ad']} — {s['Dosya']} Dosya"):
+            st.write(f"📄 Bireysel Araştırma: {s['Bireysel']}")
+            st.write(f"🎓 Uzmanlık Tezi: {s['Uzmanlık']}")
             st.progress(s['Bireysel'] / s['Dosya'])
 
 st.write("---")
-st.markdown("<center style='color:#666;'>Mahsuni Hoca Özel Versiyon - 2026 ✊</center>", unsafe_allow_html=True)
+st.markdown("<center style='color:#666;'>Görüşmek Üzere Hocam! ✊</center>", unsafe_allow_html=True)
