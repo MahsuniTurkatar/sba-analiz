@@ -4,10 +4,12 @@ import pandas as pd
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- CSS: GOLD DÜZEN & YAN YANA NİTELİKLER & SABİT FOOTER ---
+# --- CSS: KESİN VE BOZULMAZ DÜZEN ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
+    
+    /* Metrik ve Nitelik Kutuları */
     div[data-testid="stMetric"], .nitelik-box {
         background-color: #001d3d !important;
         border: 2px solid #ffc300 !important;
@@ -15,17 +17,31 @@ st.markdown("""
         padding: 15px !important;
         text-align: center !important;
     }
-    /* Nitelikleri yan yana getiren zorunlu CSS */
-    .nitelik-box { 
-        display: flex !important; 
-        flex-direction: row !important; 
-        justify-content: space-around !important; 
-        margin-bottom: 25px; 
+
+    /* Nitelikleri Yan Yana Sabitleyen Flex Yapısı */
+    .nitelik-konteyner {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 25px;
     }
-    .n-item { flex: 1; text-align: center; }
-    .n-value { color: #ffc300; font-weight: bold; font-size: 1.4rem; display: block; }
+    .n-item {
+        flex: 1;
+        background-color: #001d3d;
+        border: 2px solid #ffc300;
+        border-radius: 12px;
+        padding: 10px;
+        text-align: center;
+    }
+    .n-label { color: #ffffff; font-size: 0.9rem; display: block; }
+    .n-value { color: #ffc300; font-weight: bold; font-size: 1.5rem; }
+
+    /* Başlıklar ve Sekmeler */
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
+    
+    /* Sabit Alt Bilgi */
     .footer {
         position: fixed;
         left: 0;
@@ -34,14 +50,16 @@ st.markdown("""
         background-color: #000814;
         color: #ffc300;
         text-align: center;
-        padding: 10px;
+        padding: 8px;
         font-weight: bold;
+        border-top: 1px solid #ffc300;
+        z-index: 999;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- VERİ SETİ (BOZULMADI - TAM LİSTE) ---
-data = {
+# --- 1. VERİ SETİ: RAPORTÖRLER (12 KİŞİ - TAM LİSTE) ---
+raportor_data = {
     "Adı Soyadı": [
         "Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU",
         "Prof. Dr. Ayşe KİN İŞLER", "Prof. Dr. Yavuz AYHAN", "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY",
@@ -57,23 +75,40 @@ data = {
     "Kapsam Dışı": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
     "Geri Çekildi": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
-df = pd.DataFrame(data)
+df = pd.DataFrame(raportor_data)
+
+# --- 2. BİRİM VERİLERİ (İLK 5) ---
+birimler = [
+    {"Ad": "İç Hastalıkları Anabilim Dalı", "T": 27, "B": 20, "U": 7},
+    {"Ad": "Çocuk Sağlığı ve Hastalıkları A.D.", "T": 23, "B": 11, "U": 12},
+    {"Ad": "Kadın Hastalıkları ve Doğum A.D.", "T": 9, "B": 7, "U": 2},
+    {"Ad": "Klinik Eczacılık Anabilim Dalı", "T": 9, "B": 9, "U": 0},
+    {"Ad": "Göğüs Hastalıkları Anabilim Dalı", "T": 9, "B": 6, "U": 3}
+]
+
+# --- 3. SORUMLU VERİLERİ (İLK 5) ---
+sorumlular = [
+    {"Hoca": "Prof. Dr. Meltem Gülhan HALİL", "D": 6, "B": 4, "U": 2, "Birim": "İç Hastalıkları A.D."},
+    {"Hoca": "Prof. Dr. Yasemin ÖZSÜREKCİ", "D": 5, "B": 2, "U": 3, "Birim": "Çocuk Sağlığı A.D."},
+    {"Hoca": "Dr. Öğr. Üyesi Gonca ÖZTEN", "D": 4, "B": 4, "U": 0, "Birim": "Klinik Eczacılık A.D."},
+    {"Hoca": "Doç. Dr. Süleyman Nahit ŞENDUR", "D": 4, "B": 3, "U": 1, "Birim": "İç Hastalıkları A.D."},
+    {"Hoca": "Prof. Dr. Ali Fuat KALYONCU", "D": 4, "B": 4, "U": 0, "Birim": "Göğüs Hastalıkları A.D."}
+]
 
 # --- ÜST PANEL ---
-st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'>2026 Faaliyet Raporu</h3>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center; margin-bottom:0;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; margin-top:0;'>2026 Faaliyet Raporu</h3>", unsafe_allow_html=True)
 
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
 
-# Yan yana Nitelik Paneli
 st.markdown("""
-    <div class="nitelik-box">
-        <div class="n-item">Bireysel Araştırma<br><span class="n-value">128</span></div>
-        <div class="n-item">Uzmanlık Tezi<br><span class="n-value">48</span></div>
-        <div class="n-item">Y. Lisans Tezi<br><span class="n-value">10</span></div>
-        <div class="n-item">Doktora Tezi<br><span class="n-value">4</span></div>
+    <div class="nitelik-konteyner">
+        <div class="n-item"><span class="n-label">Bireysel Araştırma</span><span class="n-value">128</span></div>
+        <div class="n-item"><span class="n-label">Uzmanlık Tezi</span><span class="n-value">48</span></div>
+        <div class="n-item"><span class="n-label">Y. Lisans Tezi</span><span class="n-value">10</span></div>
+        <div class="n-item"><span class="n-label">Doktora Tezi</span><span class="n-value">4</span></div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -82,11 +117,10 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Genel Durum", "👥 Raportör Analizi", 
 
 with tab1:
     st.write("#### 📋 Kurul Üye_1 Genel Karar Çizelgesi")
-    # Verdiğin resim dosyasını buraya bağlıyoruz
     try:
         st.image("genel_tablo_ekran_goruntusu.png", use_column_width=True)
     except:
-        st.error("Resim dosyası (genel_tablo_ekran_goruntusu.png) bulunamadı!")
+        st.error("Görsel (genel_tablo_ekran_goruntusu.png) dizinde bulunamadı!")
 
 with tab2:
     st.write("#### 🔍 Raportör Detaylı Karar Takibi")
@@ -99,19 +133,21 @@ with tab2:
     m3.metric("Bekleyen", r["Dosya Sayısı"] - (r["Onay"] + r["Düzeltme"]))
     
     st.write("---")
-    st.write(f"✅ **ONAY:** {r['Onay']} | ⚠️ **DÜZELTME:** {r['Düzeltme']}")
-    st.write(f"📂 **KAEK:** {r['KAEK']} | 📝 **GÖRÜŞ:** {r['Görüş']} | ❌ **RET:** {r['Ret']}")
-    st.write(f"🚫 **KAPSAM DIŞI:** {r['Kapsam Dışı']} | 🔄 **GERİ ÇEKİLDİ:** {r['Geri Çekildi']}")
+    st.write(f"✅ **ONAY:** {r['Onay']} | ⚠️ **DÜZELTME:** {r['Düzeltme']} | 📂 **KAEK:** {r['KAEK']}")
+    st.write(f"📝 **GÖRÜŞ:** {r['Görüş']} | ❌ **RET:** {r['Ret']} | 🚫 **KAPSAM DIŞI:** {r['Kapsam Dışı']} | 🔄 **GERİ ÇEKİLDİ:** {r['Geri Çekildi']}")
 
 with tab3:
-    st.write("#### 🏢 Birim Analizi")
-    # Mevcut birim expander yapısı bozulmadan burada...
-    st.info("İç Hastalıkları (27), Çocuk Sağlığı (23)...")
+    st.write("#### 🏢 Birim Analizi (İlk 5)")
+    for b in birimler:
+        with st.expander(f"{b['Ad']} ({b['T']} Dosya)"):
+            st.write(f"✅ Bireysel: {b['B']} | 🎓 Uzmanlık: {b['U']}")
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Portföyü (İlk 5)")
-    # Mevcut sorumlu expander yapısı bozulmadan burada...
-    st.info("Prof. Dr. Meltem Gülhan HALİL ve diğer 4 hoca...")
+    for s in sorumlular:
+        with st.expander(f"{s['Hoca']} ({s['D']} Dosya)"):
+            st.write(f"**Birim:** {s['Birim']}")
+            st.write(f"📊 Bireysel: {s['B']} | 🎓 Uzmanlık: {s['U']}")
 
 # --- SABİT ALT BİLGİ ---
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
