@@ -4,7 +4,7 @@ import pandas as pd
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- CSS: GOLD DÜZEN & SABİT TASARIM ---
+# --- CSS: TASARIM SABİTLEME ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -18,10 +18,22 @@ st.markdown("""
     .n-value { color: #ffc300; font-weight: bold; font-size: 1.4rem; }
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
+    /* Sabit Alt Bilgi Stili */
+    .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #000814;
+        color: #666;
+        text-align: center;
+        padding: 10px;
+        font-size: 14px;
+    }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. VERİ SETİ: ÜYE_1 TABLOSU (EKSİKSİZ) ---
+# --- VERİ SETİ (KODLAR AYNI KALDI) ---
 data = {
     "Adı Soyadı": [
         "Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU",
@@ -42,21 +54,21 @@ data = {
 }
 df = pd.DataFrame(data)
 
-# --- ÜST PANEL ---
-st.markdown("<h1 style='text-align: center;'>🏛️ Hacettepe Üniversitesi</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h3>", unsafe_allow_html=True)
+# --- ÜST PANEL (YENİLENMİŞ BAŞLIKLAR) ---
+st.markdown("<h1 style='text-align: center; margin-bottom:0;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center; margin-top:0; color:#ffc300;'>2026 Faaliyet Raporu</h3>", unsafe_allow_html=True)
 
-# ANA ÖZET
+# ÖZET METRİKLER VE NİTELİK PANELİ
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
 
 st.markdown(f"""
-    <div style="display: flex; justify-content: space-around; background: #001d3d; border: 1px solid #ffc300; padding: 10px; border-radius: 10px; margin-bottom: 20px;">
-        <div style="text-align:center;">Bireysel Araştırma<br><span class="n-value">128</span></div>
-        <div style="text-align:center;">Uzmanlık Tezi<br><span class="n-value">48</span></div>
-        <div style="text-align:center;">Y. Lisans Tezi<br><span class="n-value">10</span></div>
-        <div style="text-align:center;">Doktora Tezi<br><span class="n-value">4</span></div>
+    <div class="nitelik-box">
+        <div class="n-item">Bireysel Araştırma<br><span class="n-value">128</span></div>
+        <div class="n-item">Uzmanlık Tezi<br><span class="n-value">48</span></div>
+        <div class="n-item">Y. Lisans Tezi<br><span class="n-value">10</span></div>
+        <div class="n-item">Doktora Tezi<br><span class="n-value">4</span></div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -64,27 +76,24 @@ st.markdown(f"""
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Genel Durum", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
 
 with tab1:
-    st.write("#### 📋 Kurul Üye_1 Genel Karar Çizelgesi")
-    # Resim yolu hatasını önlemek için base64 veya direkt tablo olarak basmak en güvenlisi ama resim istendi
+    st.write("#### 📋 Kurul Genel Karar Çizelgesi")
+    # EKLEYECEĞİN EKRAN GÖRÜNTÜSÜ BURAYA GELECEK
     try:
-        st.image("image_4b8c07.png", use_column_width=True)
+        st.image("genel_tablo_ekran_goruntusu.png", use_column_width=True)
     except:
-        st.warning("Görsel yüklenemedi. Veriler 'Raportör Analizi' sekmesinde mevcuttur.")
-    
-    st.download_button("📥 Tabloyu Dışa Aktar (CSV)", df.to_csv().encode('utf-8-sig'), "SBA_Genel_Durum.csv")
+        st.info("Lütfen ekran görüntüsü dosyasını 'genel_tablo_ekran_goruntusu.png' adıyla dizine ekleyin.")
 
 with tab2:
     st.write("#### 🔍 Raportör Detaylı Karar Takibi")
     r_secim = st.selectbox("Raportör Seçiniz:", df["Adı Soyadı"].tolist())
     r = df[df["Adı Soyadı"] == r_secim].iloc[0]
     
-    # Metrikler
     m1, m2, m3 = st.columns(3)
     m1.metric("Toplam Atanan", r["Dosya Sayısı"])
     m2.metric("Karar Verilen", r["Onay"] + r["Düzeltme"])
     m3.metric("Bekleyen", r["Dosya Sayısı"] - (r["Onay"] + r["Düzeltme"]))
     
-    # Eksiksiz Karar Tipleri
+    st.write("---")
     st.write(f"✅ **ONAY:** {r['Onay']} | ⚠️ **DÜZELTME:** {r['Düzeltme']}")
     st.write(f"📂 **KAEK:** {r['KAEK']} | 📝 **GÖRÜŞ:** {r['Görüş']} | ❌ **RET:** {r['Ret']}")
     st.write(f"🚫 **KAPSAM DIŞI:** {r['Kapsam Dışı']} | 🔄 **GERİ ÇEKİLDİ:** {r['Geri Çekildi']}")
@@ -114,8 +123,7 @@ with tab4:
     ]
     for s in sorumlular:
         with st.expander(f"{s['Hoca']} ({s['D']} Dosya)"):
-            st.write(f"**Birim:** {s['Birim']}")
-            st.write(f"📊 Bireysel: {s['B']} | Uzmanlık: {s['U']}")
+            st.write(f"**Birim:** {s['Birim']} | Bireysel: {s['B']} | Uzmanlık: {s['U']}")
 
-st.write("---")
-st.markdown("<center style='color:#666;'>Hacettepe SBA © 2026 ✊</center>", unsafe_allow_html=True)
+# --- SABİT ALT BİLGİ ---
+st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
