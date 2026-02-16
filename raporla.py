@@ -5,40 +5,51 @@ import os
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- CSS: KURUMSAL TASARIM ---
+# --- CSS: FB SARISI VE TABLO BAŞLIK ORTALAMA ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
+    
+    /* Fenerbahçe Sarısı Tonu: #FEDD00 */
     div[data-testid="stMetric"] {
         background-color: #001d3d !important;
-        border: 2px solid #ffc300 !important;
+        border: 2px solid #FEDD00 !important;
         border-radius: 12px !important;
         padding: 15px !important;
         text-align: center !important;
     }
+    
     /* Nitelik Kutuları */
     .nitelik-container { display: flex; justify-content: space-between; gap: 10px; margin: 20px 0; }
     .nitelik-card {
-        flex: 1; background-color: #001d3d; border: 1px solid #ffc300;
+        flex: 1; background-color: #001d3d; border: 1px solid #FEDD00;
         border-radius: 8px; padding: 15px; text-align: center;
     }
-    .n-val { color: #ffc300; font-size: 1.5rem; font-weight: bold; display: block; }
+    .n-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
     .n-lab { color: #ffffff; font-size: 0.9rem; }
     
-    /* Tablo Tasarımı */
+    /* Tablo Tasarımı: Başlıklar ve Hücreler Ortalandı */
     .table-container { display: flex; justify-content: center; margin: 20px 0; }
     .styled-table { width: 80% !important; border-collapse: collapse; color: white; }
-    .styled-table th { background-color: #001d3d; color: #ffc300; border: 1px solid #ffc300; padding: 10px; }
-    .styled-table td { border: 1px solid #ffc300; padding: 8px; text-align: center !important; }
+    .styled-table th { 
+        background-color: #001d3d; 
+        color: #FEDD00; 
+        border: 1px solid #FEDD00; 
+        padding: 10px;
+        text-align: center !important; /* BAŞLIKLAR BURADA ORTALANDI */
+    }
+    .styled-table td { 
+        border: 1px solid #FEDD00; 
+        padding: 8px; 
+        text-align: center !important; 
+    }
     
-    h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
-    .footer { text-align: center; color: #ffc300; padding: 20px; border-top: 1px solid #ffc300; margin-top: 30px; font-weight: bold; }
+    h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
+    .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- VERİ SETLERİ ---
-
-# 1. Gündem Verisi
 df_gundem = pd.DataFrame({
     "S.NO": ["1.", "2.", "3.", "4.", "TOPLAM"],
     "Gündem Tarihleri": ["06.01.2026", "20.01.2026", "04.02.2026", "17.02.2026", "-"],
@@ -48,7 +59,6 @@ df_gundem = pd.DataFrame({
     "Toplam": [80, 69, 72, 69, 290]
 })
 
-# 2. Raportör Analizi (7 Karar Kalemi)
 raportor_data = {
     "Adı Soyadı": ["Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU", "Prof. Dr. Ayşe KİN İŞLER", "Prof. Dr. Yavuz AYHAN", "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY", "Prof. Dr. Gözde GİRGİN", "Doç. Dr. Kübra AYKAÇ", "Doç. Dr. Tolga ÇAKMAK", "Doç. Dr. Burcu ERSÖZ ALAN", "Doç. Dr. Ekim GÜMELER", "Dr. Öğr. Üyesi Müge DEMİR"],
     "Dosya": [31, 35, 28, 25, 25, 36, 36, 38, 25, 36, 26, 39],
@@ -62,14 +72,14 @@ raportor_data = {
 }
 df_r = pd.DataFrame(raportor_data)
 
-# --- ÜST PANEL ---
+# --- PANEL ---
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-m_a, m_b = st.columns(2)
-m_a.metric("📌 Toplam Başvuru", "190")
-m_b.metric("🗓️ Kurul Sayısı", "4")
+m1, m2 = st.columns(2)
+m1.metric("📌 Toplam Başvuru", "190")
+m2.metric("🗓️ Kurul Sayısı", "4")
 
-# Nitelikler (Geri Geldi)
+# Nitelikler
 st.markdown("""
     <div class="nitelik-container">
         <div class="nitelik-card"><span class="n-val">128</span><span class="n-lab">Bireysel Araştırma</span></div>
@@ -89,38 +99,31 @@ t1, t2, t3, t4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "�
 
 with t1:
     st.write("#### 📋 Kurul Üye_1 Genel Karar Çizelgesi")
-    # PNG Dosyası (Geri Geldi)
     img_path = "genel_tablo_ekran_goruntusu.png"
     if os.path.exists(img_path):
         st.image(img_path, use_container_width=True)
     else:
-        st.info("Kurul Karar Çizelgesi (PNG) sisteme yükleniyor...")
+        st.info("Kurul Karar Çizelgesi (PNG) bekleniyor...")
 
 with t2:
     st.write("#### 👥 Raportör Detaylı Karar Dağılımı")
     sec_r = st.selectbox("Raportör Seçiniz:", df_r["Adı Soyadı"].tolist())
     r = df_r[df_r["Adı Soyadı"] == sec_r].iloc[0]
     
-    # Görsel detay tasarımı
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Toplam Dosya", r["Dosya"])
-    c2.metric("Karar Verilen", int(r["Onay"] + r["Düzeltme"] + r["Ret"]))
-    c3.metric("Fark (İşlemde)", int(r["Dosya"] - (r["Onay"] + r["Düzeltme"] + r["Ret"])))
-    
     st.markdown(f"""
-    <div style="background-color:#001d3d; border:1px solid #ffc300; border-radius:10px; padding:20px; text-align:center;">
-        <span style="color:#ffc300; font-size:1.1rem;">✅ <b>ONAY:</b> {r['Onay']}</span> | 
-        <span style="color:#ffc300; font-size:1.1rem;">⚠️ <b>DÜZELTME:</b> {r['Düzeltme']}</span> | 
-        <span style="color:#ffc300; font-size:1.1rem;">📂 <b>KAEK:</b> {r['KAEK']}</span> | 
-        <span style="color:#ffc300; font-size:1.1rem;">📝 <b>GÖRÜŞ:</b> {r['Görüş']}</span> <br><br>
-        <span style="color:#ffc300; font-size:1.1rem;">❌ <b>RET:</b> {r['Ret']}</span> | 
-        <span style="color:#ffc300; font-size:1.1rem;">🚫 <b>KAPSAM DIŞI:</b> {r['Kapsam Dışı']}</span> | 
-        <span style="color:#ffc300; font-size:1.1rem;">🔄 <b>GERİ ÇEKİLDİ:</b> {r['Geri Çekildi']}</span>
+    <div style="background-color:#001d3d; border:1px solid #FEDD00; border-radius:10px; padding:20px; text-align:center;">
+        <span style="color:#FEDD00; font-size:1.1rem;">✅ <b>ONAY:</b> {r['Onay']}</span> | 
+        <span style="color:#FEDD00; font-size:1.1rem;">⚠️ <b>DÜZELTME:</b> {r['Düzeltme']}</span> | 
+        <span style="color:#FEDD00; font-size:1.1rem;">📂 <b>KAEK:</b> {r['KAEK']}</span> | 
+        <span style="color:#FEDD00; font-size:1.1rem;">📝 <b>GÖRÜŞ:</b> {r['Görüş']}</span> <br><br>
+        <span style="color:#FEDD00; font-size:1.1rem;">❌ <b>RET:</b> {r['Ret']}</span> | 
+        <span style="color:#FEDD00; font-size:1.1rem;">🚫 <b>KAPSAM DIŞI:</b> {r['Kapsam Dışı']}</span> | 
+        <span style="color:#FEDD00; font-size:1.1rem;">🔄 <b>GERİ ÇEKİLDİ:</b> {r['Geri Çekildi']}</span>
     </div>
     """, unsafe_allow_html=True)
 
 with t3:
-    st.write("#### 🏢 En Çok Başvuru Yapan İlk 5 Birim (Detaylı Dağılım)")
+    st.write("#### 🏢 Birim Analizi (Detaylı Dağılım)")
     birimler = [
         {"Ad": "İç Hastalıkları Anabilim Dalı", "S": 27, "B": 18, "U": 6, "Y": 3},
         {"Ad": "Çocuk Sağlığı ve Hastalıkları A.D.", "S": 23, "B": 12, "U": 9, "Y": 2},
@@ -134,10 +137,9 @@ with t3:
             ca.metric("Bireysel", b['B'])
             cb.metric("Uzmanlık", b['U'])
             cc.metric("Y. Lisans/Doktora", b['Y'])
-            st.write(f"📈 **Kurul Genelindeki Payı:** %{round((b['S']/190)*100, 1)}")
 
 with t4:
-    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Portföyü (İlk 5)")
+    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Portföyü")
     sorumlular = [
         {"H": "Prof. Dr. Meltem Gülhan HALİL", "Birim": "İç Hastalıkları A.D.", "B": 4, "U": 2, "T": 6},
         {"H": "Prof. Dr. Yasemin ÖZSÜREKCİ", "Birim": "Çocuk Sağlığı A.D.", "B": 2, "U": 3, "T": 5},
@@ -148,8 +150,8 @@ with t4:
     for s in sorumlular:
         with st.expander(f"👤 {s['H']} ({s['T']} Dosya)"):
             st.markdown(f"**🏢 Birim:** {s['Birim']}")
-            colx, coly = st.columns(2)
-            colx.metric("Bireysel Araştırma", s['B'])
-            coly.metric("Uzmanlık Tezi", s['U'])
+            cx, cy = st.columns(2)
+            cx.metric("Bireysel", s['B'])
+            cy.metric("Uzmanlık", s['U'])
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
