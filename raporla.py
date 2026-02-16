@@ -5,7 +5,7 @@ import os
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- CSS: FB SARISI VE TABLO BAŞLIK ORTALAMA ---
+# --- CSS: FB SARISI VE TABLO DÜZENİ ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -19,7 +19,6 @@ st.markdown("""
         text-align: center !important;
     }
     
-    /* Nitelik Kutuları */
     .nitelik-container { display: flex; justify-content: space-between; gap: 10px; margin: 20px 0; }
     .nitelik-card {
         flex: 1; background-color: #001d3d; border: 1px solid #FEDD00;
@@ -28,21 +27,13 @@ st.markdown("""
     .n-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
     .n-lab { color: #ffffff; font-size: 0.9rem; }
     
-    /* Tablo Tasarımı: Başlıklar ve Hücreler Ortalandı */
     .table-container { display: flex; justify-content: center; margin: 20px 0; }
     .styled-table { width: 80% !important; border-collapse: collapse; color: white; }
     .styled-table th { 
-        background-color: #001d3d; 
-        color: #FEDD00; 
-        border: 1px solid #FEDD00; 
-        padding: 10px;
-        text-align: center !important; /* BAŞLIKLAR BURADA ORTALANDI */
+        background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; 
+        padding: 10px; text-align: center !important; 
     }
-    .styled-table td { 
-        border: 1px solid #FEDD00; 
-        padding: 8px; 
-        text-align: center !important; 
-    }
+    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center !important; }
     
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
     .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
@@ -75,10 +66,6 @@ df_r = pd.DataFrame(raportor_data)
 # --- PANEL ---
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-m1, m2 = st.columns(2)
-m1.metric("📌 Toplam Başvuru", "190")
-m2.metric("🗓️ Kurul Sayısı", "4")
-
 # Nitelikler
 st.markdown("""
     <div class="nitelik-container">
@@ -109,6 +96,17 @@ with t2:
     st.write("#### 👥 Raportör Detaylı Karar Dağılımı")
     sec_r = st.selectbox("Raportör Seçiniz:", df_r["Adı Soyadı"].tolist())
     r = df_r[df_r["Adı Soyadı"] == sec_r].iloc[0]
+    
+    # HOCAM BURAYI DÜZELTTİM: ATANAN, KARAR VERİLEN, BEKLEYEN
+    c1, c2, c3 = st.columns(3)
+    atanan = r["Dosya"]
+    # Karar verilenler: Onay + Düzeltme + Ret + KAEK + Kapsam Dışı + Geri Çekildi
+    karar_verilen = int(r["Onay"] + r["Düzeltme"] + r["Ret"] + r["KAEK"] + r["Kapsam Dışı"] + r["Geri Çekildi"])
+    bekleyen = int(atanan - karar_verilen)
+    
+    c1.metric("📌 Atanan Dosya", atanan)
+    c2.metric("✅ Karar Verilen", karar_verilen)
+    c3.metric("⏳ Bekleyen", bekleyen)
     
     st.markdown(f"""
     <div style="background-color:#001d3d; border:1px solid #FEDD00; border-radius:10px; padding:20px; text-align:center;">
