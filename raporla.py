@@ -4,7 +4,7 @@ import pandas as pd
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- CSS: KESİN VE BOZULMAZ DÜZEN ---
+# --- CSS: TİTREMEYİ ÖNLEYEN DÜZEN ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -41,24 +41,21 @@ st.markdown("""
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
     
-    /* Sabit Alt Bilgi */
+    /* Alt Bilgi - Titremeyi önlemek için static yapıldı */
     .footer {
-        position: fixed;
-        left: 0;
-        bottom: 0;
         width: 100%;
         background-color: #000814;
         color: #ffc300;
         text-align: center;
-        padding: 8px;
+        padding: 20px 0;
         font-weight: bold;
         border-top: 1px solid #ffc300;
-        z-index: 999;
+        margin-top: 50px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. VERİ SETİ: RAPORTÖRLER (12 KİŞİ - TAM LİSTE) ---
+# --- 1. VERİ SETİ: RAPORTÖRLER (TAM LİSTE) ---
 raportor_data = {
     "Adı Soyadı": [
         "Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU",
@@ -86,7 +83,7 @@ birimler = [
     {"Ad": "Göğüs Hastalıkları Anabilim Dalı", "T": 9, "B": 6, "U": 3}
 ]
 
-# --- 3. SORUMLU VERİLERİ (İLK 5) ---
+# --- 3. SORUMLU VERİLERİ (GONCA HOCA DÜZELTİLDİ) ---
 sorumlular = [
     {"Hoca": "Prof. Dr. Meltem Gülhan HALİL", "D": 6, "B": 4, "U": 2, "Birim": "İç Hastalıkları A.D."},
     {"Hoca": "Prof. Dr. Yasemin ÖZSÜREKCİ", "D": 5, "B": 2, "U": 3, "Birim": "Çocuk Sağlığı A.D."},
@@ -149,6 +146,5 @@ with tab4:
             st.write(f"**Birim:** {s['Birim']}")
             st.write(f"📊 Bireysel: {s['B']} | 🎓 Uzmanlık: {s['U']}")
 
-# --- SABİT ALT BİLGİ ---
+# --- ALT BİLGİ ---
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
-
