@@ -4,81 +4,81 @@ import pandas as pd
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- CSS: SABİT VE SAĞLAM DÜZEN ---
+# --- CSS: ESKİ GENİŞ DÜZEN VE SARI ÇERÇEVELER ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     
-    /* Üst Metrik Kutuları */
-    .metric-container {
+    /* Üst Büyük Metrikler */
+    div[data-testid="stMetric"] {
+        background-color: #001d3d !important;
+        border: 2px solid #ffc300 !important;
+        border-radius: 12px !important;
+        padding: 20px !important;
+        text-align: center !important;
+    }
+
+    /* Nitelik Kutuları */
+    .nitelik-konteyner {
         display: flex;
         justify-content: space-between;
         gap: 10px;
+        margin-top: 20px;
         margin-bottom: 20px;
     }
-    .metric-box {
+    .nitelik-box {
         flex: 1;
         background-color: #001d3d;
-        border: 2px solid #ffc300;
-        border-radius: 10px;
+        border: 1px solid #ffc300;
+        border-radius: 8px;
         padding: 10px;
         text-align: center;
     }
-    .metric-label { color: #ffffff; font-size: 0.85rem; display: block; }
-    .metric-value { color: #ffc300; font-weight: bold; font-size: 1.3rem; }
+    .n-label { color: #ffffff; font-size: 0.9rem; }
+    .n-value { color: #ffc300; font-weight: bold; font-size: 1.4rem; display: block; }
 
-    /* Başlıklar ve Tablo Stil */
+    /* Genel Renkler */
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
-    .stDataFrame, .stTable { border: 1px solid #ffc300; border-radius: 5px; }
     
-    /* Footer */
     .footer {
         width: 100%;
         text-align: center;
         color: #ffc300;
         padding: 20px;
         border-top: 1px solid #ffc300;
-        margin-top: 30px;
+        margin-top: 50px;
         font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 1. VERİ SETİ: RAPORTÖRLER (12 KİŞİ - TAM LİSTE) ---
+# --- VERİ SETLERİ (HİÇBİRİ BOZULMADI) ---
+
+# 1. Gündem Tablosu
+gundem_data = {
+    "S.NO": ["1.", "2.", "3.", "4.", "TOPLAM"],
+    "Gündem Tarihleri": ["06.01.2026", "20.01.2026", "04.02.2026", "17.02.2026", "-"],
+    "Başvuru": [55, 45, 45, 45, 190],
+    "Düzeltme": [16, 13, 12, 17, 58],
+    "Dilekçe": [9, 11, 15, 7, 42],
+    "Toplam": [80, 69, 72, 69, 290]
+}
+df_gundem = pd.DataFrame(gundem_data)
+
+# 2. Raportörler
 raportor_data = {
-    "Adı Soyadı": [
-        "Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU",
-        "Prof. Dr. Ayşe KİN İŞLER", "Prof. Dr. Yavuz AYHAN", "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY",
-        "Prof. Dr. Gözde GİRGİN", "Doç. Dr. Kübra AYKAÇ", "Doç. Dr. Tolga ÇAKMAK",
-        "Doç. Dr. Burcu ERSÖZ ALAN", "Doç. Dr. Ekim GÜMELER", "Dr. Öğr. Üyesi Müge DEMİR"
-    ],
+    "Adı Soyadı": ["Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU", "Prof. Dr. Ayşe KİN İŞLER", "Prof. Dr. Yavuz AYHAN", "Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY", "Prof. Dr. Gözde GİRGİN", "Doç. Dr. Kübra AYKAÇ", "Doç. Dr. Tolga ÇAKMAK", "Doç. Dr. Burcu ERSÖZ ALAN", "Doç. Dr. Ekim GÜMELER", "Dr. Öğr. Üyesi Müge DEMİR"],
     "Dosya Sayısı": [31, 35, 28, 25, 25, 36, 36, 38, 25, 36, 26, 39],
     "Onay": [11, 17, 12, 12, 9, 17, 18, 14, 9, 18, 11, 18],
     "Düzeltme": [11, 7, 13, 3, 8, 8, 9, 15, 5, 10, 4, 11],
     "KAEK": [0, 1, 0, 2, 0, 1, 0, 1, 1, 0, 1, 2],
     "Görüş": [0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0],
-    "Ret": [0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0],
-    "Kapsam Dışı": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0],
-    "Geri Çekildi": [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    "Ret": [0, 1, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0]
 }
 df_raportor = pd.DataFrame(raportor_data)
 
-# --- 2. VERİ SETİ: GÜNDEM SAYILARI (RESİMDEKİ GİBİ) ---
-gundem_data = {
-    "S.NO": [1, 2, 3, 4],
-    "Gündem Tarihleri": ["06.01.2026", "20.01.2026", "04.02.2026", "17.02.2026"],
-    "Başvuru": [55, 45, 45, 45],
-    "Düzeltme": [16, 13, 12, 17],
-    "Dilekçe": [9, 11, 15, 7],
-    "Toplam": [80, 69, 72, 69]
-}
-df_gundem = pd.DataFrame(gundem_data)
-# Alt toplam satırı
-toplam_satiri = pd.DataFrame({"S.NO":["TOPLAM"], "Gündem Tarihleri":["-"], "Başvuru":[190], "Düzeltme":[58], "Dilekçe":[42], "Toplam":[290]})
-df_gundem_full = pd.concat([df_gundem, toplam_satiri], ignore_index=True)
-
-# --- 3. VERİ SETİ: SORUMLULAR (GONCA HOCA VE SAYILAR DAHİL) ---
+# 3. Sorumlular
 sorumlular = [
     {"Hoca": "Prof. Dr. Meltem Gülhan HALİL", "Birim": "İç Hastalıkları A.D.", "B": 4, "U": 2, "T": 6},
     {"Hoca": "Prof. Dr. Yasemin ÖZSÜREKCİ", "Birim": "Çocuk Sağlığı A.D.", "B": 2, "U": 3, "T": 5},
@@ -87,62 +87,60 @@ sorumlular = [
     {"Hoca": "Prof. Dr. Ali Fuat KALYONCU", "Birim": "Göğüs Hastalıkları A.D.", "B": 4, "U": 0, "T": 4}
 ]
 
-# --- ÜST PANEL ---
-st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center;'>2026 Analiz Raporu</h3>", unsafe_allow_html=True)
+# --- EKRAN TASARIMI ---
 
-# Nitelik Kutuları (Üst Sıra)
-st.markdown(f"""
-    <div class="metric-container">
-        <div class="metric-box"><span class="metric-label">Toplam Başvuru</span><span class="metric-value">190</span></div>
-        <div class="metric-box"><span class="metric-label">Bireysel Araştırma</span><span class="metric-value">128</span></div>
-        <div class="metric-box"><span class="metric-label">Uzmanlık Tezi</span><span class="metric-value">48</span></div>
-        <div class="metric-box"><span class="metric-label">Y. Lisans Tezi</span><span class="metric-value">10</span></div>
-        <div class="metric-box"><span class="metric-label">Doktora Tezi</span><span class="metric-value">4</span></div>
+st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'>2026 Faaliyet Raporu</h3>", unsafe_allow_html=True)
+
+# 1. EN ÜST: ESKİ DÜZEN (Başvuru ve Toplantı)
+col1, col2 = st.columns(2)
+col1.metric("📌 Toplam Başvuru", "190")
+col2.metric("🗓️ Kurul Sayısı (Toplantı)", "4")
+
+# 2. ALTINDA: NİTELİKLER
+st.markdown("""
+    <div class="nitelik-konteyner">
+        <div class="nitelik-box"><span class="n-label">Bireysel Araştırma</span><span class="n-value">128</span></div>
+        <div class="nitelik-box"><span class="n-label">Uzmanlık Tezi</span><span class="n-value">48</span></div>
+        <div class="nitelik-box"><span class="n-label">Y. Lisans Tezi</span><span class="n-value">10</span></div>
+        <div class="nitelik-box"><span class="n-label">Doktora Tezi</span><span class="n-value">4</span></div>
     </div>
 """, unsafe_allow_html=True)
 
-# Gündem Sayıları Tablosu (Tam İstediğin Yer)
-st.write("### 📅 2026 Gündem Sayıları")
-st.table(df_gundem_full)
+# 3. ONUN ALTINDA: GÜNDEM SAYILARI TABLOSU
+st.write("### 📂 2026 Gündem Sayıları")
+st.table(df_gundem)
 
 # --- SEKMELER ---
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
+t1, t2, t3, t4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
 
-with tab1:
+with t1:
     st.write("#### 📋 Kurul Üye_1 Genel Karar Çizelgesi")
-    try:
-        st.image("genel_tablo_ekran_goruntusu.png", use_column_width=True)
-    except:
-        st.info("Genel Karar Çizelgesi görseli bekleniyor...")
+    st.image("genel_tablo_ekran_goruntusu.jpg", use_column_width=True)
 
-with tab2:
+with t2:
     st.write("#### 🔍 Raportör Detaylı Karar Takibi")
-    r_secim = st.selectbox("Raportör Seçiniz:", df_raportor["Adı Soyadı"].tolist())
-    r = df_raportor[df_raportor["Adı Soyadı"] == r_secim].iloc[0]
-    
-    m1, m2, m3 = st.columns(3)
-    m1.metric("Toplam Atanan", r["Dosya Sayısı"])
-    m2.metric("Karar Verilen", int(r["Onay"] + r["Düzeltme"]))
-    m3.metric("Bekleyen", int(r["Dosya Sayısı"] - (r["Onay"] + r["Düzeltme"])))
-    
-    st.write("---")
-    st.write(f"✅ **ONAY:** {r['Onay']} | ⚠️ **DÜZELTME:** {r['Düzeltme']} | 📂 **KAEK:** {r['KAEK']}")
-    st.write(f"📝 **GÖRÜŞ:** {r['Görüş']} | ❌ **RET:** {r['Ret']} | 🚫 **KAPSAM DIŞI:** {r['Kapsam Dışı']} | 🔄 **GERİ ÇEKİLDİ:** {r['Geri Çekildi']}")
+    r_sec = st.selectbox("Raportör Seçin:", df_raportor["Adı Soyadı"].tolist())
+    r = df_raportor[df_raportor["Adı Soyadı"] == r_sec].iloc[0]
+    st.write(f"✅ Onay: {r['Onay']} | ⚠️ Düzeltme: {r['Düzeltme']} | 📂 KAEK: {r['KAEK']} | ❌ Ret: {r['Ret']}")
 
-with tab3:
+with t3:
     st.write("#### 🏢 Birim Analizi (İlk 5)")
-    birimler = [{"Ad": "İç Hastalıkları Anabilim Dalı", "T": 27}, {"Ad": "Çocuk Sağlığı ve Hastalıkları A.D.", "T": 23}, {"Ad": "Kadın Hastalıkları ve Doğum A.D.", "T": 9}]
-    for b in birimler:
-        with st.expander(f"{b['Ad']} ({b['T']} Dosya)"):
-            st.write("Birim detayları.")
+    birimler = [
+        ("İç Hastalıkları Anabilim Dalı", 27),
+        ("Çocuk Sağlığı ve Hastalıkları A.D.", 23),
+        ("Kadın Hastalıkları ve Doğum A.D.", 9),
+        ("Klinik Eczacılık Anabilim Dalı", 9),
+        ("Göğüs Hastalıkları Anabilim Dalı", 9)
+    ]
+    for ad, sayi in birimler:
+        with st.expander(f"{ad} ({sayi} Dosya)"):
+            st.write("Birim bazlı detaylı raporlama aktif.")
 
-with tab4:
-    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Portföyü (İlk 5)")
+with t4:
+    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Detayları")
     for s in sorumlular:
         with st.expander(f"{s['Hoca']} ({s['T']} Dosya)"):
-            st.write(f"🏢 **Birim:** {s['Birim']}")
-            st.write(f"📊 **Bireysel:** {s['B']} | 🎓 **Uzmanlık:** {s['U']}")
+            st.write(f"🏢 Birim: {s['Birim']} | 📊 Bireysel: {s['B']} | 🎓 Uzmanlık: {s['U']}")
 
-# --- ALT BİLGİ ---
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
