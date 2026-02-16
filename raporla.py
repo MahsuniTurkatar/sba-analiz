@@ -9,55 +9,43 @@ st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     
-    /* Metrik ve Nitelik Kutuları */
-    div[data-testid="stMetric"], .nitelik-box {
-        background-color: #001d3d !important;
-        border: 2px solid #ffc300 !important;
-        border-radius: 12px !important;
-        padding: 15px !important;
-        text-align: center !important;
-    }
-
-    /* Kutuları Yan Yana Tutan Konteyner */
-    .ozet-konteyner {
+    /* Üst Metrik Kutuları */
+    .metric-container {
         display: flex;
-        flex-wrap: nowrap;
         justify-content: space-between;
         gap: 10px;
-        margin-bottom: 10px;
+        margin-bottom: 20px;
     }
-    .kutu-item {
+    .metric-box {
         flex: 1;
         background-color: #001d3d;
         border: 2px solid #ffc300;
-        border-radius: 12px;
-        padding: 12px;
+        border-radius: 10px;
+        padding: 10px;
         text-align: center;
     }
-    .kutu-label { color: #ffffff; font-size: 0.9rem; display: block; margin-bottom: 3px; }
-    .kutu-value { color: #ffc300; font-weight: bold; font-size: 1.5rem; }
+    .metric-label { color: #ffffff; font-size: 0.85rem; display: block; }
+    .metric-value { color: #ffc300; font-weight: bold; font-size: 1.3rem; }
 
-    /* Başlıklar ve Sekmeler */
+    /* Başlıklar ve Tablo Stil */
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #ffc300 !important; }
     p, span, div { color: #ffffff; }
+    .stDataFrame, .stTable { border: 1px solid #ffc300; border-radius: 5px; }
     
-    /* Alt Bilgi */
+    /* Footer */
     .footer {
         width: 100%;
-        background-color: #000814;
-        color: #ffc300;
         text-align: center;
-        padding: 20px 0;
-        font-weight: bold;
+        color: #ffc300;
+        padding: 20px;
         border-top: 1px solid #ffc300;
-        margin-top: 50px;
+        margin-top: 30px;
+        font-weight: bold;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- VERİ SETLERİ (TAM KADRO - HİÇBİRİ KIRPILMADI) ---
-
-# 1. Raportörler (12 Kişi ve Tüm Kararlar)
+# --- 1. VERİ SETİ: RAPORTÖRLER (12 KİŞİ - TAM LİSTE) ---
 raportor_data = {
     "Adı Soyadı": [
         "Prof. Dr. Ayşe Nurten AKARSU", "Prof. Dr. M. Özgür UYANIK", "Prof. Dr. Melih Önder BABAOĞLU",
@@ -76,45 +64,50 @@ raportor_data = {
 }
 df_raportor = pd.DataFrame(raportor_data)
 
-# 2. Sorumlu Araştırmacılar (Tüm Sayılar Dahil)
+# --- 2. VERİ SETİ: GÜNDEM SAYILARI (RESİMDEKİ GİBİ) ---
+gundem_data = {
+    "S.NO": [1, 2, 3, 4],
+    "Gündem Tarihleri": ["06.01.2026", "20.01.2026", "04.02.2026", "17.02.2026"],
+    "Başvuru": [55, 45, 45, 45],
+    "Düzeltme": [16, 13, 12, 17],
+    "Dilekçe": [9, 11, 15, 7],
+    "Toplam": [80, 69, 72, 69]
+}
+df_gundem = pd.DataFrame(gundem_data)
+# Alt toplam satırı
+toplam_satiri = pd.DataFrame({"S.NO":["TOPLAM"], "Gündem Tarihleri":["-"], "Başvuru":[190], "Düzeltme":[58], "Dilekçe":[42], "Toplam":[290]})
+df_gundem_full = pd.concat([df_gundem, toplam_satiri], ignore_index=True)
+
+# --- 3. VERİ SETİ: SORUMLULAR (GONCA HOCA VE SAYILAR DAHİL) ---
 sorumlular = [
-    {"Hoca": "Prof. Dr. Meltem Gülhan HALİL", "D": 6, "B": 4, "U": 2, "Birim": "İç Hastalıkları A.D."},
-    {"Hoca": "Prof. Dr. Yasemin ÖZSÜREKCİ", "D": 5, "B": 2, "U": 3, "Birim": "Çocuk Sağlığı A.D."},
-    {"Hoca": "Dr. Öğr. Üyesi Gonca ÖZTEN", "D": 4, "B": 4, "U": 0, "Birim": "Kadın Hastalıkları ve Doğum A.D."},
-    {"Hoca": "Doç. Dr. Süleyman Nahit ŞENDUR", "D": 4, "B": 3, "U": 1, "Birim": "İç Hastalıkları A.D."},
-    {"Hoca": "Prof. Dr. Ali Fuat KALYONCU", "D": 4, "B": 4, "U": 0, "Birim": "Göğüs Hastalıkları A.D."}
+    {"Hoca": "Prof. Dr. Meltem Gülhan HALİL", "Birim": "İç Hastalıkları A.D.", "B": 4, "U": 2, "T": 6},
+    {"Hoca": "Prof. Dr. Yasemin ÖZSÜREKCİ", "Birim": "Çocuk Sağlığı A.D.", "B": 2, "U": 3, "T": 5},
+    {"Hoca": "Dr. Öğr. Üyesi Gonca ÖZTEN", "Birim": "Kadın Hastalıkları ve Doğum A.D.", "B": 4, "U": 0, "T": 4},
+    {"Hoca": "Doç. Dr. Süleyman Nahit ŞENDUR", "Birim": "İç Hastalıkları A.D.", "B": 3, "U": 1, "T": 4},
+    {"Hoca": "Prof. Dr. Ali Fuat KALYONCU", "Birim": "Göğüs Hastalıkları A.D.", "B": 4, "U": 0, "T": 4}
 ]
 
 # --- ÜST PANEL ---
-st.markdown("<h1 style='text-align: center; margin-bottom:0;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
-st.markdown("<h3 style='text-align: center; margin-top:0;'>2026 Analiz Raporu</h3>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu</h1>", unsafe_allow_html=True)
+st.markdown("<h3 style='text-align: center;'>2026 Analiz Raporu</h3>", unsafe_allow_html=True)
 
-# Üst Metrikler
-c1, c2 = st.columns(2)
-c1.metric("📌 Toplam Başvuru", "190")
-c2.metric("🗓️ Kurul Sayısı", "4")
-
-# Nitelikler (1. Sıra)
-st.markdown("""
-    <div class="ozet-konteyner">
-        <div class="kutu-item"><span class="kutu-label">Bireysel Araştırma</span><span class="kutu-value">128</span></div>
-        <div class="kutu-item"><span class="kutu-label">Uzmanlık Tezi</span><span class="kutu-value">48</span></div>
-        <div class="kutu-item"><span class="kutu-label">Y. Lisans Tezi</span><span class="kutu-value">10</span></div>
-        <div class="kutu-item"><span class="kutu-label">Doktora Tezi</span><span class="kutu-value">4</span></div>
+# Nitelik Kutuları (Üst Sıra)
+st.markdown(f"""
+    <div class="metric-container">
+        <div class="metric-box"><span class="metric-label">Toplam Başvuru</span><span class="metric-value">190</span></div>
+        <div class="metric-box"><span class="metric-label">Bireysel Araştırma</span><span class="metric-value">128</span></div>
+        <div class="metric-box"><span class="metric-label">Uzmanlık Tezi</span><span class="metric-value">48</span></div>
+        <div class="metric-box"><span class="metric-label">Y. Lisans Tezi</span><span class="metric-value">10</span></div>
+        <div class="metric-box"><span class="metric-label">Doktora Tezi</span><span class="metric-value">4</span></div>
     </div>
 """, unsafe_allow_html=True)
 
-# Gündem Sayıları (2. Sıra - İstediğin Sayılar)
-st.markdown("""
-    <div class="ozet-konteyner">
-        <div class="kutu-item"><span class="kutu-label">Yeni Başvuru</span><span class="kutu-value">190</span></div>
-        <div class="kutu-item"><span class="kutu-label">Gelen Düzeltme</span><span class="kutu-value">58</span></div>
-        <div class="kutu-item"><span class="kutu-label">Gelen Dilekçe</span><span class="kutu-value">42</span></div>
-    </div>
-""", unsafe_allow_html=True)
+# Gündem Sayıları Tablosu (Tam İstediğin Yer)
+st.write("### 📅 2026 Gündem Sayıları")
+st.table(df_gundem_full)
 
 # --- SEKMELER ---
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Genel Durum", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Analizi"])
 
 with tab1:
     st.write("#### 📋 Kurul Üye_1 Genel Karar Çizelgesi")
@@ -139,17 +132,17 @@ with tab2:
 
 with tab3:
     st.write("#### 🏢 Birim Analizi (İlk 5)")
-    birimler = [{"Ad": "İç Hastalıkları Anabilim Dalı", "T": 27}, {"Ad": "Çocuk Sağlığı ve Hastalıkları A.D.", "T": 23}, {"Ad": "Kadın Hastalıkları ve Doğum A.D.", "T": 9}, {"Ad": "Klinik Eczacılık Anabilim Dalı", "T": 9}, {"Ad": "Göğüs Hastalıkları Anabilim Dalı", "T": 9}]
+    birimler = [{"Ad": "İç Hastalıkları Anabilim Dalı", "T": 27}, {"Ad": "Çocuk Sağlığı ve Hastalıkları A.D.", "T": 23}, {"Ad": "Kadın Hastalıkları ve Doğum A.D.", "T": 9}]
     for b in birimler:
         with st.expander(f"{b['Ad']} ({b['T']} Dosya)"):
-            st.write("Birim bazlı detaylı raporlama aktif.")
+            st.write("Birim detayları.")
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Portföyü (İlk 5)")
     for s in sorumlular:
-        with st.expander(f"{s['Hoca']} ({s['D']} Dosya) | Birim: {s['Birim']}"):
-            st.write(f"📊 **Bireysel Araştırma:** {s['B']}")
-            st.write(f"🎓 **Uzmanlık Tezi:** {s['U']}")
+        with st.expander(f"{s['Hoca']} ({s['T']} Dosya)"):
+            st.write(f"🏢 **Birim:** {s['Birim']}")
+            st.write(f"📊 **Bireysel:** {s['B']} | 🎓 **Uzmanlık:** {s['U']}")
 
 # --- ALT BİLGİ ---
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
