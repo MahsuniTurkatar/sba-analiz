@@ -46,7 +46,7 @@ df_gundem = pd.DataFrame({
     "Gündem Tarihleri": ["06.01.2026", "20.01.2026", "04.02.2026", "17.02.2026", "-"],
     "Başvuru": [55, 45, 45, 45, 190],
     "Düzeltme": [16, 13, 12, 17, 58],
-    "Dilekçe": [9, 11, 15, 6, 42],
+    "Dilekçe": [9, 11, 15, 6, 41],
     "Toplam": [80, 69, 72, 68, 289]
 })
 
@@ -153,4 +153,5 @@ with t4:
             cy.metric("Uzmanlık", s['U'])
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
+
 
