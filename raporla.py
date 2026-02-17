@@ -20,7 +20,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI (SABİT) ---
+# --- CSS: FB TASARIMI (ASLA BOZULMAZ) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -36,7 +36,7 @@ st.markdown("""
     .n-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
     .n-lab { color: #ffffff; font-size: 0.9rem; }
     .table-container { display: flex; justify-content: center; margin: 20px 0; }
-    .styled-table { width: 95% !important; border-collapse: collapse; color: white; margin: auto; }
+    .styled-table { width: 100% !important; border-collapse: collapse; color: white; }
     .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px; text-align: center; }
     .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center; }
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
@@ -46,12 +46,12 @@ st.markdown("""
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- GERİ GETİRİLEN ÜST METRİKLER ---
+# --- 1. İSKELET: ÜST METRİKLER (GERİ GELDİ) ---
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
 
-# --- GERİ GETİRİLEN NİTELİK KARTLARI ---
+# --- 2. İSKELET: NİTELİK KARTLARI (GERİ GELDİ) ---
 st.markdown("""
     <div class="nitelik-container">
         <div class="nitelik-card"><span class="n-val">128</span><span class="n-lab">Bireysel Araştırma</span></div>
@@ -61,20 +61,23 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- GÜNDEM SAYILARI ---
+# --- 3. GÜNDEM SAYILARI (45.0 DÜZELTİLDİ) ---
 if df_gundem is not None:
     for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
         if col in df_gundem.columns:
             df_gundem[col] = pd.to_numeric(df_gundem[col], errors='coerce').fillna(0).astype(int)
     
-    df_g_final = df_gundem[(df_gundem['S.NO'].notna()) & (df_gundem['Toplam'] > 0 | (df_gundem['S.NO'] == 'TOPLAM'))].copy()
+    # Sadece S.NO dolu olanları ve TOPLAM satırını göster
+    df_g_filtered = df_gundem[df_gundem['S.NO'].notna()].copy()
+    # 0 olan boş satırları (5-23 arası) temizle ama TOPLAM'ı tut
+    df_g_final = df_g_filtered[(df_g_filtered['Toplam'] > 0) | (df_g_filtered['S.NO'] == 'TOPLAM')]
     
     st.write("### 📅 2026 Gündem Sayıları")
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
     st.markdown(df_g_final.to_html(index=False, classes='styled-table'), unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
-# --- SEKMELER ---
+# --- 4. SEKMELER VE ANALİZLER ---
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Araştırmacı Analizi"])
 
 with tab1:
@@ -83,7 +86,7 @@ with tab1:
     if os.path.exists(img_path):
         st.image(img_path, use_container_width=True)
     else:
-        st.info("ℹ️ Karar Çizelgesi görseli yüklendiğinde burada görünecektir.")
+        st.info("ℹ️ Karar Çizelgesi görseli bekleniyor...")
 
 with tab2:
     st.write("#### 👥 Raportör Detaylı Analizi")
@@ -100,6 +103,7 @@ with tab2:
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
+        # Pivot sayfasındaki Birim Sütunları (A ve B)
         birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
         birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].astype(int)
@@ -108,6 +112,7 @@ with tab3:
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
+        # Pivot sayfasındaki Sorumlu Sütunları (D ve E)
         sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
         sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
         sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].astype(int)
