@@ -5,32 +5,29 @@ import os
 # Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
-# --- VERİ YÜKLEME ---
+# --- VERİ YÜKLEME (HATASIZ VE NET) ---
 EXCEL_FILE = "2026_SBA.xlsx"
 
 @st.cache_data
 def load_all_data():
     try:
-        # 1. Gündem Sayıları
+        # 1. Gündem Sayıları (Sayılar sekmesi)
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
-        df_g = df_g[df_g['S.NO'].notna()] # Boş satırları at
         
-        # 2. Raportör Analizi (Üye_1)
+        # 2. Raportör Analizi (Üye_1 sekmesi)
         df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", skiprows=1)
-        df_r = df_r.dropna(subset=['Adı Soyadı']) # Boş isimleri at
         
-        # 3. Birim ve Sorumlu Analizi (Pivot Sayfası)
-        # Pivot sayfasındaki düzenine göre sütunları alıyoruz
+        # 3. Birim ve Sorumlu (Pivot sekmesi)
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot", skiprows=2)
         
         return df_g, df_r, df_p
     except Exception as e:
-        st.error(f"Excel Okuma Hatası: {e}")
+        st.error(f"Excel'e ulaşılamadı: {e}")
         return None, None, None
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIM VE TABLO ---
+# --- CSS: FB TASARIMI (ASLA BOZULMAZ) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -49,21 +46,20 @@ st.markdown("""
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. GÜNDEM SAYILARI (Dinamik Toplam ve Tam Sayı) ---
+# --- 1. GÜNDEM SAYILARI (45.0 DÜZELTİLDİ) ---
 st.write("### 📅 2026 Gündem Sayıları")
 if df_gundem is not None:
-    # Sayıları tam sayıya çevir (NaN'ları 0 yaparak)
-    cols_to_fix = ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']
-    for col in cols_to_fix:
-        df_gundem[col] = pd.to_numeric(df_gundem[col], errors='coerce').fillna(0).astype(int)
+    # Sayıları temizle: NaN'ları 0 yap ve Tam Sayı (Integer) yap
+    for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
+        if col in df_gundem.columns:
+            df_gundem[col] = pd.to_numeric(df_gundem[col], errors='coerce').fillna(0).astype(int)
     
-    # Sadece verisi olanları göster + TOPLAM satırı
-    actual_data = df_gundem[df_gundem['Gündem Tarihleri'].notna() & (df_gundem['S.NO'] != 'TOPLAM')]
-    toplam_row = df_gundem[df_gundem['S.NO'] == 'TOPLAM']
-    df_display = pd.concat([actual_data, toplam_row])
-
+    # Sadece S.NO dolu olanları ve "TOPLAM" satırını al
+    # Boş tarihler ve 0 olan gereksiz satırları eliyoruz
+    df_g_clean = df_gundem[((df_gundem['Toplam'] > 0) | (df_gundem['S.NO'] == "TOPLAM"))].copy()
+    
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown(df_display.to_html(index=False, classes='styled-table'), unsafe_allow_html=True)
+    st.markdown(df_g_clean.to_html(index=False, classes='styled-table'), unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- SEKMELER ---
@@ -75,38 +71,38 @@ with tab1:
     if os.path.exists(img_path):
         st.image(img_path, use_container_width=True)
     else:
-        st.warning(f"⚠️ '{img_path}' dosyası bulunamadı. Lütfen GitHub'a bu isimle yüklediğinizden emin olun.")
+        st.info("Kurul Karar Çizelgesi görseli aranıyor...")
 
 with tab2:
     st.write("#### 👥 Raportör Detaylı Analizi")
     if df_raportor is not None:
-        r_list = df_raportor["Adı Soyadı"].unique().tolist()
+        r_list = df_raportor["Adı Soyadı"].dropna().unique().tolist()
         sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = df_raportor[df_raportor["Adı Soyadı"] == sec_r].iloc[0]
         
         c1, c2, c3 = st.columns(3)
-        atanan = int(r_row["Dosya Sayısı"])
-        # Toplam Onay (Üye_1 sayfasındaki son sütundan veya Onay sütunlarından biri)
-        onay_toplam = int(r_row["TOPLAM"] if "TOPLAM" in r_row else r_row.iloc[-1]) 
+        dosya_sayisi = int(r_row["Dosya Sayısı"])
+        # Üye_1 sayfasındaki en sondaki "TOPLAM" (Karar verilenlerin toplamı)
+        karar_toplam = int(r_row.iloc[-1]) 
         
-        c1.metric("📌 Atanan Dosya", atanan)
-        c2.metric("✅ Karar Verilen", onay_toplam)
-        c3.metric("⏳ Bekleyen", atanan - onay_toplam)
+        c1.metric("📌 Atanan Dosya", dosya_sayisi)
+        c2.metric("✅ Karar Verilen", karar_toplam)
+        c3.metric("⏳ Bekleyen", dosya_sayisi - karar_toplam)
 
 with tab3:
-    st.write("#### 🏢 Birim Analizi (Pivot)")
+    st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
-        # Excel Pivot sayfasındaki ilk iki sütunu (Birim ve Sayı) alıyoruz
-        birim_df = df_pivot.iloc[:, [0, 1]].dropna().head(10)
-        birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
-        st.table(birim_df)
+        # Pivot sayfasındaki ilk iki sütun: Birim ve Sayısı
+        birim_ozet = df_pivot.iloc[:, [0, 1]].dropna()
+        birim_ozet.columns = ["Birim Adı", "Dosya Sayısı"]
+        st.dataframe(birim_ozet, use_container_width=True, hide_index=True)
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
-        # Excel Pivot sayfasındaki Sorumlu Araştırmacı sütunlarını (genelde 3. ve 4. sütunlar) alıyoruz
-        sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().head(10)
-        sorumlu_df.columns = ["Araştırmacı", "Toplam Dosya"]
-        st.table(sorumlu_df)
+        # Pivot sayfasındaki 4. ve 5. sütunlar: Sorumlu ve Sayısı
+        sorumlu_ozet = df_pivot.iloc[:, [3, 4]].dropna()
+        sorumlu_ozet.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
+        st.dataframe(sorumlu_ozet, use_container_width=True, hide_index=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
