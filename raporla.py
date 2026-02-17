@@ -11,11 +11,11 @@ EXCEL_FILE = "2026_SBA.xlsx"
 @st.cache_data
 def load_all_data():
     try:
-        # Gündem: Boşlukları temizleyerek oku
+        # Gündem Sayıları
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
-        # Raportör: Üye_1
+        # Raportör Analizi (Üye_1)
         df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", skiprows=1)
-        # PİVOT: Veri tam olarak 2. satırdan (index 1) başlar
+        # PİVOT: Başlıklar 1. satırda, veriler 2. satırda (skiprows yok, iloc ile yöneteceğiz)
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot") 
         return df_g, df_r, df_p
     except:
@@ -23,7 +23,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI (ASLA DOKUNULMADI) ---
+# --- CSS: FB TASARIMI (ASLA DOKUNULMAZ) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -64,19 +64,13 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 1. GÜNDEM SAYILARI (COŞMA ENGELLENDİ) ---
+# --- 1. GÜNDEM SAYILARI ---
 if df_gundem is not None:
-    # Gerçekten veri olan satırları bul (Tarih sütunu boş olmayacak)
     df_g_final = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
-    
-    # Tarih Formatı
     df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
-    
-    # Sayıları temizle
     for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
         if col in df_g_final.columns:
             df_g_final[col] = pd.to_numeric(df_g_final[col], errors='coerce').fillna(0).astype(int)
-    
     st.write("### 📅 2026 Gündem Sayıları")
     st.markdown('<div class="table-container">' + df_g_final.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
@@ -95,12 +89,20 @@ with tab2:
         sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = r_clean[r_clean.iloc[:, 1] == sec_r].iloc[0]
         
-        # Karar başlıkları ve sayıları
+        dosya_sayisi = int(pd.to_numeric(r_row.iloc[2], errors='coerce') or 0)
+        karar_verilen = int(pd.to_numeric(r_row.iloc[-1], errors='coerce') or 0)
+        bekleyen = dosya_sayisi - karar_verilen
+
         detay_data = {
-            "Karar Türü": ["📌 Dosya Sayısı", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📥 Geri Çekildi", "📊 TOPLAM"],
+            "Karar Türü": [
+                "📌 Toplam Dosya Sayısı", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", 
+                "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📥 Geri Çekildi", 
+                "📊 KARAR VERİLEN TOPLAM", "⏳ BEKLEYEN DOSYA SAYISI"
+            ],
             "Sayı": [
-                int(r_row.iloc[2]), int(r_row.iloc[3]), int(r_row.iloc[4]), int(r_row.iloc[5]), 
-                int(r_row.iloc[6]), int(r_row.iloc[7]), int(r_row.iloc[8]), int(r_row.iloc[9]), int(r_row.iloc[-1])
+                dosya_sayisi, int(r_row.iloc[3]), int(r_row.iloc[4]), int(r_row.iloc[5]), 
+                int(r_row.iloc[6]), int(r_row.iloc[7]), int(r_row.iloc[8]), int(r_row.iloc[9]), 
+                karar_verilen, bekleyen
             ]
         }
         st.markdown('<div class="table-container">' + pd.DataFrame(detay_data).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
@@ -108,8 +110,8 @@ with tab2:
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
-        # Pivot sayfasında veri 2. satırdan başlar (A ve B sütunu)
-        birim_df = df_pivot.iloc[1:, [0, 1]].dropna().copy() 
+        # Pivot sayfasında 1. satır başlık (skiprows yok), o yüzden veriler 0. satırdan başlar
+        birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
         birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].astype(int)
         birim_df.index = range(1, len(birim_df) + 1)
@@ -118,8 +120,7 @@ with tab3:
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
-        # Pivot sayfasında veri 2. satırdan başlar (D ve E sütunu)
-        sorumlu_df = df_pivot.iloc[1:, [3, 4]].dropna().copy()
+        sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
         sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
         sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].astype(int)
         sorumlu_df.index = range(1, len(sorumlu_df) + 1)
