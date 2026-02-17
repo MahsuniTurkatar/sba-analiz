@@ -23,7 +23,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI (ASLA DOKUNULMAZ) ---
+# --- CSS: FB TASARIMI (SABİTLENDİ) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -42,18 +42,18 @@ st.markdown("""
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. GÜNDEM SAYILARI (DÜZENLENDİ) ---
+# --- 1. GÜNDEM SAYILARI (TAM SAYI VE DİNAMİK) ---
 st.write("### 📅 2026 Gündem Sayıları")
 if df_gundem is not None:
-    # Sayıları tam sayı yap
+    # Sayıları tam sayıya zorla (45.0 -> 45)
     for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
         df_gundem[col] = pd.to_numeric(df_gundem[col], errors='coerce').fillna(0).astype(int)
     
-    # Sadece verisi olanlar ve TOPLAM satırı (S.No 5, 6 gibi boşları atar)
-    df_g_filtered = df_gundem[(df_gundem['Toplam'] > 0) | (df_gundem['S.NO'] == 'TOPLAM')].copy()
+    # Boş satırları temizle, sadece veri olanları ve TOPLAM'ı göster
+    df_g_final = df_gundem[(df_gundem['Toplam'] > 0) | (df_gundem['S.NO'] == 'TOPLAM')].copy()
     
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
-    st.markdown(df_g_filtered.to_html(index=False, classes='styled-table'), unsafe_allow_html=True)
+    st.markdown(df_g_final.to_html(index=False, classes='styled-table'), unsafe_allow_html=True)
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- SEKMELER ---
@@ -65,7 +65,7 @@ with tab1:
     if os.path.exists(img_path):
         st.image(img_path, use_container_width=True)
     else:
-        st.info("ℹ️ Kurul Karar Çizelgesi görseli bekleniyor...")
+        st.info("ℹ️ Karar Çizelgesi görseli yüklendiğinde burada görünecektir.")
 
 with tab2:
     st.write("#### 👥 Raportör Detaylı Analizi")
@@ -76,7 +76,7 @@ with tab2:
         
         c1, c2, c3 = st.columns(3)
         dosya = int(r_row["Dosya Sayısı"])
-        karar = int(r_row.iloc[-1]) # Üye_1 sayfasındaki en son TOPLAM sütunu
+        karar = int(r_row.iloc[-1]) # Üye_1 sayfasındaki en son "TOPLAM" sütunu
         
         c1.metric("📌 Atanan Dosya", dosya)
         c2.metric("✅ Karar Verilen", karar)
@@ -85,17 +85,17 @@ with tab2:
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
-        # Pivot sayfasındaki Birim Sütunları (A ve B)
-        birim_data = df_pivot.iloc[:, [0, 1]].dropna()
-        birim_data.columns = ["Birim Adı", "Dosya Sayısı"]
-        st.dataframe(birim_data, use_container_width=True, hide_index=True)
+        # Pivot sayfasındaki Birim Sütunları
+        birim_df = df_pivot.iloc[:, [0, 1]].dropna()
+        birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
+        st.table(birim_df)
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
-        # Pivot sayfasındaki Sorumlu Sütunları (D ve E - genelde 3. ve 4. index)
-        sorumlu_data = df_pivot.iloc[:, [3, 4]].dropna()
-        sorumlu_data.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
-        st.dataframe(sorumlu_data, use_container_width=True, hide_index=True)
+        # Pivot sayfasındaki Sorumlu Araştırmacı Sütunları (D ve E)
+        sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna()
+        sorumlu_df.columns = ["Araştırmacı", "Dosya Sayısı"]
+        st.table(sorumlu_df)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
