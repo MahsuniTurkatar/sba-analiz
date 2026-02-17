@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Sayfa Yapılandırması (SABİT)
+# Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
 # --- VERİ YÜKLEME ---
@@ -13,9 +13,9 @@ def load_all_data():
     try:
         # Gündem Sayıları
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
-        # Raportör Analizi (Üye_1) - Sütunları net alabilmek için skiprows=1
+        # Raportör Analizi (Üye_1) - Başlıklar 2. satırda
         df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", skiprows=1)
-        # Pivot Analizleri - 2. satırdan itibaren (skiprows=1)
+        # Pivot Analizleri - Tam 2. satırdan başla (Sütun isimleri orada)
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot", skiprows=1)
         return df_g, df_r, df_p
     except:
@@ -23,7 +23,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI (ASLA BOZULMAZ) ---
+# --- CSS: FB TASARIMI (SABİT) ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -49,12 +49,11 @@ st.markdown("""
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- ÜST METRİKLER (SABİT) ---
+# --- ÜST METRİKLER VE KARTLAR (SABİT) ---
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
 
-# --- NİTELİK KARTLARI (SABİT) ---
 st.markdown("""
     <div class="nitelik-container">
         <div class="nitelik-card"><span class="n-val">128</span><span class="n-lab">Bireysel Araştırma</span></div>
@@ -66,16 +65,60 @@ st.markdown("""
 
 # --- 1. GÜNDEM SAYILARI ---
 if df_gundem is not None:
-    df_g_work = df_gundem.copy()
+    df_g_final = df_gundem[df_gundem['S.NO'].notna()].copy()
+    df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y').fillna("-")
     for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
-        if col in df_g_work.columns:
-            df_g_work[col] = pd.to_numeric(df_g_work[col], errors='coerce').fillna(0).astype(int)
+        if col in df_g_final.columns:
+            df_g_final[col] = pd.to_numeric(df_g_final[col], errors='coerce').fillna(0).astype(int)
     
-    df_g_work['Gündem Tarihleri'] = pd.to_datetime(df_g_work['Gündem Tarihleri'], errors='coerce')
-    df_g_final = df_g_work[(df_g_work['Gündem Tarihleri'].notna()) | (df_g_work['S.NO'].astype(str).str.contains("TOPLAM", case=False, na=False))].copy()
-    df_g_final['Gündem Tarihleri'] = df_g_final['Gündem Tarihleri'].dt.strftime('%d.%m.%Y').fillna("-")
     st.write("### 📅 2026 Gündem Sayıları")
     st.markdown('<div class="table-container">' + df_g_final.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 # --- SEKMELER ---
-tab1, tab2, tab
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Araştırmacı Analizi"])
+
+with tab1:
+    img_path = "genel_tablo_ekran_goruntusu.png"
+    if os.path.exists(img_path): st.image(img_path, use_container_width=True)
+
+with tab2:
+    st.write("#### 👥 Raportör Karar Ayrıntıları")
+    if df_raportor is not None:
+        # Boş satırları ve başlık tekrarını temizle
+        r_clean = df_raportor[df_raportor.iloc[:, 1].notna() & (df_raportor.iloc[:, 1] != "Adı Soyadı")].copy()
+        r_list = [x for x in r_clean.iloc[:, 1].unique().tolist() if "TOPLAM" not in str(x)]
+        sec_r = st.selectbox("Raportör Seçin:", r_list)
+        r_row = r_clean[r_clean.iloc[:, 1] == sec_r].iloc[0]
+        
+        # Sütunları isimle veya net yerle yakala
+        # Not: Excel'deki sıraya göre indexleri manuel kontrol et (2=Dosya, 3=Onay, 4=Düzeltme...)
+        detay_data = {
+            "Karar Türü": ["📌 Dosya Sayısı", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📥 Geri Çekildi", "📊 TOPLAM"],
+            "Sayı": [
+                int(r_row[2]), int(r_row[3]), int(r_row[4]), int(r_row[5]), 
+                int(r_row[6]), int(r_row[7]), int(r_row[8]), int(r_row[9]), int(r_row.iloc[-1])
+            ]
+        }
+        st.markdown('<div class="table-container">' + pd.DataFrame(detay_data).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+
+with tab3:
+    st.write("#### 🏢 Birim Analizi")
+    if df_pivot is not None:
+        # Pivot sayfasında 2. satırdan başla (Sütun 0 ve 1)
+        birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
+        birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
+        birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].astype(int)
+        birim_df.index = range(1, len(birim_df) + 1)
+        st.table(birim_df)
+
+with tab4:
+    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
+    if df_pivot is not None:
+        # Pivot sayfasında 2. satırdan başla (Sütun 3 ve 4)
+        sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
+        sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
+        sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].astype(int)
+        sorumlu_df.index = range(1, len(sorumlu_df) + 1)
+        st.table(sorumlu_df)
+
+st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
