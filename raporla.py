@@ -11,11 +11,11 @@ EXCEL_FILE = "2026_SBA.xlsx"
 @st.cache_data
 def load_all_data():
     try:
-        # 1. Gündem Sayıları
+        # Sayılar sekmesi (Gündem için)
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
-        # 2. Raportör Analizi (Üye_1)
+        # Üye_1 sekmesi (Raportör için)
         df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", skiprows=1)
-        # 3. Pivot Analizleri
+        # Pivot sekmesi (Birim ve Sorumlu için)
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot", skiprows=2)
         return df_g, df_r, df_p
     except Exception as e:
@@ -32,24 +32,25 @@ st.markdown("""
         border-radius: 12px !important; text-align: center !important;
     }
     .table-container { display: flex; justify-content: center; margin: 20px 0; }
-    .styled-table { width: 90% !important; border-collapse: collapse; color: white; }
-    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px; text-align: center; }
-    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center; }
+    .styled-table { width: 90% !important; border-collapse: collapse; color: white; margin: auto; }
+    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 12px; text-align: center; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 10px; text-align: center; }
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
-    .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; font-weight: bold; }
+    .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. GÜNDEM SAYILARI (TAM SAYI VE DİNAMİK) ---
+# --- 1. GÜNDEM SAYILARI (45.0 HATASI GİDERİLDİ) ---
 st.write("### 📅 2026 Gündem Sayıları")
 if df_gundem is not None:
-    # Sayıları tam sayıya zorla (45.0 -> 45)
+    # Sayıları tam sayıya çevir ve NaN'ları temizle
     for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
-        df_gundem[col] = pd.to_numeric(df_gundem[col], errors='coerce').fillna(0).astype(int)
+        if col in df_gundem.columns:
+            df_gundem[col] = pd.to_numeric(df_gundem[col], errors='coerce').fillna(0).astype(int)
     
-    # Boş satırları temizle, sadece veri olanları ve TOPLAM'ı göster
+    # Sadece verisi olanları ve TOPLAM satırını göster
     df_g_final = df_gundem[(df_gundem['Toplam'] > 0) | (df_gundem['S.NO'] == 'TOPLAM')].copy()
     
     st.markdown('<div class="table-container">', unsafe_allow_html=True)
@@ -65,18 +66,18 @@ with tab1:
     if os.path.exists(img_path):
         st.image(img_path, use_container_width=True)
     else:
-        st.info("ℹ️ Karar Çizelgesi görseli yüklendiğinde burada görünecektir.")
+        st.info("ℹ️ Kurul Karar Çizelgesi görseli yüklendiğinde burada görünecektir.")
 
 with tab2:
     st.write("#### 👥 Raportör Detaylı Analizi")
     if df_raportor is not None:
         r_list = df_raportor["Adı Soyadı"].dropna().unique().tolist()
-        sec_r = st.selectbox("Raportör Seçin:", r_list)
+        sec_r = st.selectbox("Analiz edilecek raportörü seçin:", r_list)
         r_row = df_raportor[df_raportor["Adı Soyadı"] == sec_r].iloc[0]
         
         c1, c2, c3 = st.columns(3)
         dosya = int(r_row["Dosya Sayısı"])
-        karar = int(r_row.iloc[-1]) # Üye_1 sayfasındaki en son "TOPLAM" sütunu
+        karar = int(r_row.iloc[-1]) # Üye_1 sayfasındaki en sondaki TOPLAM sütunu
         
         c1.metric("📌 Atanan Dosya", dosya)
         c2.metric("✅ Karar Verilen", karar)
@@ -85,7 +86,7 @@ with tab2:
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
-        # Pivot sayfasındaki Birim Sütunları
+        # Pivot sayfasındaki Birim Verileri (Sütun A ve B)
         birim_df = df_pivot.iloc[:, [0, 1]].dropna()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
         st.table(birim_df)
@@ -93,7 +94,7 @@ with tab3:
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
-        # Pivot sayfasındaki Sorumlu Araştırmacı Sütunları (D ve E)
+        # Pivot sayfasındaki Sorumlu Verileri (Sütun D ve E)
         sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna()
         sorumlu_df.columns = ["Araştırmacı", "Dosya Sayısı"]
         st.table(sorumlu_df)
