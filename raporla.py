@@ -10,6 +10,7 @@ EXCEL_FILE = "2026_SBA.xlsx"
 @st.cache_data
 def load_top_data():
     try:
+        # Sayılar sayfası, S.NO satırı (skiprows=2)
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
         return df_g
     except:
@@ -17,13 +18,23 @@ def load_top_data():
 
 df_gundem = load_top_data()
 
-# --- CSS: TÜM KUTULARI YAN YANA VE SAYI ÜSTTE YAPAR ---
+# --- CSS: TÜM DÜZENLEMELER ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     
     /* BAŞLIKLAR */
-    h1, h3 { color: #ffffff !important; text-align: center !important; font-weight: bold !important; }
+    h1 { color: #ffffff !important; text-align: center !important; font-weight: bold !important; margin-bottom: 30px !important; }
+    
+    /* Gündem Sayıları Başlığı - Tabloya yakınlaştırma */
+    .gundem-header { 
+        color: #ffffff !important; 
+        text-align: center !important; 
+        font-weight: bold !important; 
+        margin-top: 40px !important; 
+        margin-bottom: 10px !important; 
+        font-size: 1.5rem;
+    }
 
     /* ANA KONTEYNERLAR */
     .metric-row {
@@ -31,7 +42,7 @@ st.markdown("""
         justify-content: center;
         gap: 25px;
         margin-bottom: 20px;
-        flex-wrap: nowrap; /* Yan yana kalmaya zorlar */
+        flex-wrap: nowrap;
     }
 
     /* BÜYÜK ÜST KUTULAR (5 ve 206) */
@@ -59,7 +70,7 @@ st.markdown("""
     .sub-lab { color: #ffffff; font-size: 0.9rem; display: block; }
 
     /* TABLO AYARLARI */
-    .table-container { display: flex; justify-content: center; margin-top: 30px; }
+    .table-container { display: flex; justify-content: center; width: 100%; }
     .styled-table { width: auto !important; margin: auto; border-collapse: collapse; color: white; }
     .styled-table th { background-color: #001d3d; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 12px 20px; }
     .styled-table td { border: 1px solid #FEDD00; padding: 10px 18px; text-align: center !important; }
@@ -67,9 +78,21 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Sayı Temizleme Fonksiyonu (.0'lardan kurtulmak için)
+def clean_numbers(df):
+    def format_val(x):
+        if pd.isna(x) or x == "": return ""
+        try:
+            val = float(x)
+            if val == 0: return ""
+            return str(int(val)) # Tam sayıya çevir
+        except:
+            return str(x)
+    return df.applymap(format_val)
+
 st.markdown("<h1>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. ÜST KUTULAR: KURUL VE TOPLAM (YAN YANA) ---
+# --- 1. ÜST KUTULAR: KURUL VE TOPLAM ---
 st.markdown("""
     <div class="metric-row">
         <div class="main-box"><span class="main-val">5</span><span class="main-lab">Kurul Sayısı</span></div>
@@ -77,7 +100,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 2. ALT KUTULAR: NİTELİKLER (YAN YANA) ---
+# --- 2. ALT KUTULAR: NİTELİKLER ---
 st.markdown("""
     <div class="metric-row">
         <div class="sub-box"><span class="sub-val">135</span><span class="sub-lab">Bireysel Araştırma</span></div>
@@ -89,15 +112,19 @@ st.markdown("""
 
 # --- 3. GÜNDEM TABLOSU ---
 if df_gundem is not None:
-    st.markdown("<h3>📅 2026 Gündem Sayıları</h3>", unsafe_allow_html=True)
+    st.markdown('<div class="gundem-header">📅 2026 Gündem Sayıları</div>', unsafe_allow_html=True)
+    
+    # Veri işleme
     dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
     dg = dg[dg['Toplam'] > 0]
     dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri']).dt.strftime('%d.%m.%Y')
     
+    # Toplam satırı
     t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319}])
     dg_final = pd.concat([dg, t_row], ignore_index=True)
     
-    html_g = dg_final.to_html(index=False, classes='styled-table')
+    # .0 Temizliği ve HTML'e çevirme
+    html_g = clean_numbers(dg_final).to_html(index=False, classes='styled-table')
     html_g = html_g.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
     st.markdown(f'<div class="table-container">{html_g}</div>', unsafe_allow_html=True)
 
