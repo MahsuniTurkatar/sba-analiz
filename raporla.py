@@ -10,6 +10,7 @@ EXCEL_FILE = "2026_SBA.xlsx"
 @st.cache_data
 def load_top_data():
     try:
+        # Sayılar sayfası, S.NO satırı (skiprows=2)
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
         return df_g
     except:
@@ -17,7 +18,7 @@ def load_top_data():
 
 df_gundem = load_top_data()
 
-# --- CSS: KUTU DÜZENİ VE BEYAZ BAŞLIKLAR ---
+# --- CSS: SAYILAR ÜSTTE, YAZILAR ALTTA VE ARALIKLI KUTULAR ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -27,55 +28,61 @@ st.markdown("""
         color: #ffffff !important; 
         text-align: center !important; 
         font-weight: bold !important;
-        margin-bottom: 20px !important;
     }
 
-    /* METRİK KUTULARI (GÜNCELLENMİŞ ARALIKLI DÜZEN) */
+    /* KUTULARI YAN YANA VE ARALIKLI YAPAR */
     [data-testid="stHorizontalBlock"] {
         justify-content: center !important;
-        gap: 50px !important; /* Kutular arası boşluk */
+        gap: 60px !important;
     }
+
+    /* KUTU İÇİ DÜZEN: SAYI ÜSTTE, ETİKET ALTTA */
     div[data-testid="stMetric"] {
         background-color: #001d3d !important; 
         border: 2px solid #FEDD00 !important;
         border-radius: 12px !important; 
-        padding: 15px 30px !important;
+        padding: 20px !important;
         text-align: center !important;
-    }
-    [data-testid="stMetricValue"] { 
-        color: #FEDD00 !important; 
-        font-size: 2.8rem !important; 
-        font-weight: bold !important;
-    }
-    [data-testid="stMetricLabel"] { 
-        color: #ffffff !important; 
-        font-size: 1.1rem !important;
+        display: flex !important;
+        flex-direction: column-reverse !important; /* Etiketi alta, sayıyı üste iter */
     }
 
-    /* NİTELİK KARTLARI (METRİKLERİN ALTINDA) */
+    /* SAYI (VALUE) STİLİ */
+    [data-testid="stMetricValue"] { 
+        color: #FEDD00 !important; 
+        font-size: 3rem !important; 
+        font-weight: bold !important;
+    }
+
+    /* YAZI (LABEL) STİLİ */
+    [data-testid="stMetricLabel"] { 
+        color: #ffffff !important; 
+        font-size: 1.2rem !important;
+        margin-top: 10px !important;
+    }
+
+    /* NİTELİK KARTLARI (KUTULARIN HEMEN ALTI) */
     .nitelik-row {
         display: flex;
         justify-content: center;
         gap: 15px;
-        margin-top: 20px;
-        margin-bottom: 40px;
+        margin: 30px 0;
     }
     .nitelik-card {
         background-color: #001d3d;
         border: 1px solid #FEDD00;
         border-radius: 8px;
-        padding: 12px;
+        padding: 15px;
         text-align: center;
-        min-width: 150px;
+        min-width: 160px;
     }
-    .n-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
-    .n-lab { color: #ffffff; font-size: 0.85rem; }
+    .n-val { color: #FEDD00; font-size: 1.6rem; font-weight: bold; display: block; }
+    .n-lab { color: #ffffff; font-size: 0.9rem; }
 
     /* TABLO TASARIMI */
-    .table-container { display: flex; justify-content: center; margin: 20px 0; }
+    .table-container { display: flex; justify-content: center; margin-top: 20px; }
     .styled-table { 
-        width: auto !important; margin: auto; border-collapse: collapse; color: white; 
-        table-layout: auto !important; 
+        width: auto !important; margin: auto; border-collapse: collapse; color: white;
     }
     .styled-table th { background-color: #001d3d; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 12px 20px; }
     .styled-table td { border: 1px solid #FEDD00; padding: 10px 18px; text-align: center !important; }
@@ -86,17 +93,16 @@ st.markdown("""
 def clean_df(df):
     return df.applymap(lambda x: "" if (pd.isna(x) or str(x).strip() in ["0", "0.0", "0.00"]) else (int(x) if isinstance(x, (int, float)) else x))
 
-# --- ANA BAŞLIK ---
 st.markdown("<h1>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. ÜST KISIM: KURUL VE BAŞVURU (KUTU İÇİNDE VE ARALIKLI) ---
-col_m1, col_m2 = st.columns(2)
-with col_m1:
+# --- 1. ÜST KUTULAR (5 ve 206) ---
+c1, c2 = st.columns(2)
+with c1:
     st.metric(label="Kurul Sayısı", value="5")
-with col_m2:
+with c2:
     st.metric(label="Toplam Başvuru", value="206")
 
-# --- 2. ALT KISIM: NİTELİK SAYILARI ---
+# --- 2. NİTELİK SAYILARI (KUTULARIN ALTINDA) ---
 st.markdown("""
     <div class="nitelik-row">
         <div class="nitelik-card"><span class="n-val">135</span><span class="n-lab">Bireysel Araştırma</span></div>
@@ -109,14 +115,11 @@ st.markdown("""
 # --- 3. GÜNDEM TABLOSU ---
 if df_gundem is not None:
     st.markdown("<h3>📅 2026 Gündem Sayıları</h3>", unsafe_allow_html=True)
-    
     dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
     dg = dg[dg['Toplam'] > 0]
     dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri']).dt.strftime('%d.%m.%Y')
     
-    t_row = pd.DataFrame([{
-        "S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319
-    }])
+    t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319}])
     dg_final = pd.concat([dg, t_row], ignore_index=True)
     
     html_g = clean_df(dg_final).to_html(index=False, classes='styled-table')
