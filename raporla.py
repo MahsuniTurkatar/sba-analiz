@@ -20,28 +20,30 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI VE DARALTMA AYARLARI ---
+# --- CSS: FB TASARIMI VE KESİN DARALTMA ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     
-    /* Metrik kutularını daraltma */
-    [data-testid="stMetric"] {
+    /* Metrik kutuları: İçerik kadar dar ve merkezde */
+    [data-testid="stMetricValue"] { font-size: 1.8rem !important; color: white !important; }
+    div[data-testid="stMetric"] {
         background-color: #001d3d !important; border: 2px solid #FEDD00 !important;
         border-radius: 12px !important; text-align: center !important;
-        width: fit-content !important; min-width: 150px !important; margin: auto !important;
+        width: fit-content !important; min-width: 200px !important; 
+        padding: 5px 20px !important; margin: auto !important;
     }
     
     .table-container { display: flex; justify-content: center; margin: 10px 0; overflow-x: auto; }
-    .styled-table { width: auto !important; border-collapse: collapse; color: white; margin-bottom: 10px; font-size: 0.85rem; }
-    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 8px 12px; text-align: center; }
-    .styled-table td { border: 1px solid #FEDD00; padding: 5px 10px; text-align: center; }
+    .styled-table { width: auto !important; border-collapse: collapse; color: white; margin-bottom: 10px; font-size: 0.9rem; }
+    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px 15px; text-align: center; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 6px 12px; text-align: center; white-space: nowrap; }
     
-    /* Raportör TOPLAM: Lacivert Arka Plan, Sarı Yazı */
+    /* BOZULMAYAN TOPLAM: Lacivert Arka Plan, Sarı Yazı */
     .total-row td { background-color: #001d3d !important; color: #FEDD00 !important; font-weight: bold !important; border: 2px solid #FEDD00 !important; }
     
     /* Birim/Sorumlu Alt Toplam Satırı */
-    .sub-total td { background-color: #001d3d !important; color: #FEDD00 !important; font-weight: bold !important; }
+    .sub-total td { background-color: #001d3d !important; color: #FEDD00 !important; font-weight: bold !important; border-top: 2px solid #FEDD00 !important; }
 
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
     .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
@@ -51,11 +53,11 @@ st.markdown("""
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
 # --- 1. METRİKLER (DARALTILMIŞ) ---
-col_m1, col_m2 = st.columns(2)
-with col_m1: st.metric("📌 Toplam Başvuru", "190")
-with col_m2: st.metric("🗓️ Kurul Sayısı", "4")
+cm1, cm2 = st.columns(2)
+with cm1: st.metric("📌 Toplam Başvuru", "190")
+with cm2: st.metric("🗓️ Kurul Sayısı", "4")
 
-# --- 2. GÜNDEM SAYILARI (HER SAYFADA ÜSTTE OLSUN DİYE SEKMELERİN DIŞINDA) ---
+# --- 2. SABİT GÜNDEM SAYILARI (SEKMELERİN ÜSTÜNDE) ---
 if df_gundem is not None:
     df_g_final = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
     df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
@@ -71,7 +73,89 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Anali
 with tab1:
     st.write("### 📊 Genel Karar Dağılım Çizelgesi")
     if df_raportor is not None:
-        # Excel'deki GENEL TOPLAM satırını (genellikle en altta) bulalım
-        genel_toplam_row = df_raportor[df_raportor.iloc[:, 1].astype(str).str.contains("GENEL TOPLAM|TOPLAM", na=False)].iloc[0]
+        # Excel'deki en alt TOPLAM satırını (380-286 verileri) çekiyoruz
+        total_data = df_raportor[df_raportor.iloc[:, 1].astype(str).str.contains("TOPLAM", na=False)].iloc[0]
+        def gv(idx): return int(pd.to_numeric(total_data.iloc[idx], errors='coerce') or 0)
+
+        cizelge_dict = {
+            "Başvuru Türü": ["📄 Bireysel Araştırma", "🎓 Yüksek Lisans Tezi", "🔬 Doktora Tezi", "🏥 Uzmanlık Tezi", "📊 GENEL TOPLAM"],
+            "Onay": [gv(3), gv(11), gv(19), gv(27), gv(166)], # Sütun indexleri Excel'ine göre ayarlı
+            "Düzeltme": [gv(4), gv(12), gv(20), gv(28), gv(104)],
+            "KAEK": [gv(5), gv(13), gv(21), gv(29), gv(6)],
+            "Görüş": [gv(6), gv(14), gv(22), gv(30), gv(4)],
+            "Ret": [gv(7), gv(15), gv(23), gv(31), gv(4)],
+            "Kapsam Dışı": [gv(8), gv(16), gv(24), gv(32), gv(2)],
+            "Geri Çekildi": [gv(9), gv(17), gv(25), gv(33), 0],
+            "TOPLAM": [gv(10), gv(18), gv(26), gv(34), gv(286)]
+        }
+        df_ciz = pd.DataFrame(cizelge_dict)
+        html_c = df_ciz.to_html(index=False, classes='styled-table')
+        html_c = html_c.replace('<tr>\n      <td>📊 GENEL TOPLAM</td>', '<tr class="total-row">\n      <td>📊 GENEL TOPLAM</td>')
+        st.markdown('<div class="table-container">' + html_c + '</div>', unsafe_allow_html=True)
+
+with tab2:
+    st.write("### 👥 Raportör Karar Ayrıntıları")
+    if df_raportor is not None:
+        r_list = df_raportor[df_raportor.iloc[:, 1].notna() & (~df_raportor.iloc[:, 1].astype(str).str.contains("Adı Soyadı|TOPLAM", na=False))]
+        sec_r = st.selectbox("Raportör Seçin:", r_list.iloc[:, 1].unique())
+        r_row = r_list[r_list.iloc[:, 1] == sec_r].iloc[0]
+
+        def get_v(idx): return int(pd.to_numeric(r_row.iloc[idx], errors='coerce') or 0)
+
+        brans_data = {
+            "Başvuru Türü": ["📄 Bireysel Araştırma", "🎓 Yüksek Lisans Tezi", "🔬 Doktora Tezi", "🏥 Uzmanlık Tezi"],
+            "Onay": [get_v(3), get_v(11), get_v(19), get_v(27)],
+            "Düzeltme": [get_v(4), get_v(12), get_v(20), get_v(28)],
+            "KAEK": [get_v(5), get_v(13), get_v(21), get_v(29)],
+            "Görüş": [get_v(6), get_v(14), get_v(22), get_v(30)],
+            "Ret": [get_v(7), get_v(15), get_v(23), get_v(31)],
+            "Kapsam Dışı": [get_v(8), get_v(16), get_v(24), get_v(32)],
+            "Geri Çekildi": [get_v(9), get_v(17), get_v(25), get_v(33)],
+            "TOPLAM": [get_v(10), get_v(18), get_v(26), get_v(34)]
+        }
+        df_br = pd.DataFrame(brans_data)
         
-        def
+        # TOPLAM SATIRI (Lacivert-Sarı olacak)
+        t_row = {"Başvuru Türü": "📊 TOPLAM"}
+        for col in df_br.columns[1:]: t_row[col] = df_br[col].sum()
+        df_br = pd.concat([df_br, pd.DataFrame([t_row])], ignore_index=True)
+
+        html_r = df_br.to_html(index=False, classes='styled-table')
+        html_r = html_r.replace('<tr>\n      <td>📊 TOPLAM</td>', '<tr class="total-row">\n      <td>📊 TOPLAM</td>')
+        st.markdown('<div class="table-container">' + html_r + '</div>', unsafe_allow_html=True)
+
+with tab3:
+    st.write("#### 🏢 Birim Analizi")
+    if df_pivot is not None:
+        b_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
+        b_df.columns = ["Birim Adı", "Dosya Sayısı"]
+        b_df = b_df[~b_df["Birim Adı"].astype(str).str.contains("Etiketleri|Toplam", na=False)]
+        b_df["Dosya Sayısı"] = b_df["Dosya Sayısı"].astype(int)
+        
+        # Toplam Geri Geldi
+        b_total = pd.DataFrame([{"Birim Adı": "GENEL TOPLAM", "Dosya Sayısı": b_df["Dosya Sayısı"].sum()}])
+        b_df = pd.concat([b_df, b_total], ignore_index=True)
+        b_df.insert(0, "S.NO", range(1, len(b_df) + 1))
+        
+        html_b = b_df.to_html(index=False, classes='styled-table')
+        html_b = html_b.replace('<td>GENEL TOPLAM</td>', '<td class="sub-total">GENEL TOPLAM</td>')
+        st.markdown('<div class="table-container">' + html_b + '</div>', unsafe_allow_html=True)
+
+with tab4:
+    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
+    if df_pivot is not None:
+        s_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
+        s_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
+        s_df = s_df[~s_df["Sorumlu Araştırmacı"].astype(str).str.contains("Etiketleri|Toplam", na=False)]
+        s_df["Dosya Sayısı"] = s_df["Dosya Sayısı"].astype(int)
+        
+        # Toplam Geri Geldi
+        s_total = pd.DataFrame([{"Sorumlu Araştırmacı": "GENEL TOPLAM", "Dosya Sayısı": s_df["Dosya Sayısı"].sum()}])
+        s_df = pd.concat([s_df, s_total], ignore_index=True)
+        s_df.insert(0, "S.NO", range(1, len(s_df) + 1))
+        
+        html_s = s_df.to_html(index=False, classes='styled-table')
+        html_s = html_s.replace('<td>GENEL TOPLAM</td>', '<td class="sub-total">GENEL TOPLAM</td>')
+        st.markdown('<div class="table-container">' + html_s + '</div>', unsafe_allow_html=True)
+
+st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
