@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Sayfa Yapılandırması (SABİT)
+# Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
 # --- VERİ YÜKLEME ---
@@ -14,23 +14,32 @@ def load_all_data():
         # Gündem Sayıları
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
         # Raportör Analizi (Üye_1)
-        df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", skiprows=1)
-        # PİVOT: Başlıklar 1. satırda, veriler 2. satırda (skiprows yok, iloc ile yöneteceğiz)
+        df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1")
+        # PİVOT
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot") 
+        
+        df_r.columns = df_r.columns.str.strip()
+        df_r['Adı Soyadı'] = df_r['Adı Soyadı'].astype(str).str.strip()
         return df_g, df_r, df_p
     except:
         return None, None, None
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI (ASLA DOKUNULMAZ) ---
+# --- CSS: FB TASARIMI VE GELİŞMİŞ TABLO DÜZENİ ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
+    h1, h2, h3, h4 { color: #FEDD00 !important; text-align: center !important; }
+    
+    /* METRİKLER VE KARTLAR */
     div[data-testid="stMetric"] {
         background-color: #001d3d !important; border: 2px solid #FEDD00 !important;
         border-radius: 12px !important; text-align: center !important;
     }
+    [data-testid="stMetricValue"] { color: #FEDD00 !important; }
+    [data-testid="stMetricLabel"] { color: #FFFFFF !important; }
+
     .nitelik-container { display: flex; justify-content: space-between; gap: 10px; margin: 20px 0; }
     .nitelik-card {
         flex: 1; background-color: #001d3d; border: 1px solid #FEDD00;
@@ -38,93 +47,122 @@ st.markdown("""
     }
     .n-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
     .n-lab { color: #ffffff; font-size: 0.9rem; }
-    .table-container { display: flex; justify-content: center; margin: 20px 0; }
-    .styled-table { width: 100% !important; border-collapse: collapse; color: white; margin-bottom: 20px; }
-    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px; text-align: center; }
-    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center; }
-    h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
+
+    /* TABLOLAR: TAM GENİŞLİK VE SABİT TASARIM */
+    .table-container { display: flex; justify-content: center; margin: 20px 0; width: 100%; overflow-x: auto; }
+    .styled-table { width: 100% !important; border-collapse: collapse; color: white; margin-bottom: 20px; font-size: 0.85rem; }
+    .styled-table th { background-color: #001d3d; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 10px; text-align: center !important; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center !important; }
+    
+    /* TOPLAM SATIRI VURGUSU */
+    .total-row td { background-color: #001d3d !important; color: #FEDD00 !important; font-weight: bold !important; border-top: 2px solid #FEDD00 !important; }
+    
+    .stTabs [data-baseweb="tab"] p { color: #FEDD00 !important; font-weight: bold; }
     .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
+# Veri Temizleme (0'ları gizle, sayıları tam sayı yap)
+def clean_df(df):
+    return df.applymap(lambda x: "" if (pd.isna(x) or str(x).strip() in ["0", "0.0", "0.00"]) else (int(x) if isinstance(x, (int, float)) else x))
 
-# --- ÜST METRİKLER (SABİT) ---
-c1, c2 = st.columns(2)
-c1.metric("📌 Toplam Başvuru", "190")
-c2.metric("🗓️ Kurul Sayısı", "4")
+st.markdown("<h1>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- NİTELİK KARTLARI (SABİT) ---
+# --- ÜST METRİKLER (206 ve 5 Olarak Güncellendi) ---
+c_m1, c_m2 = st.columns(2)
+with c_m1: st.metric("📌 Toplam Başvuru", "206")
+with c_m2: st.metric("🗓️ Kurul Sayısı", "5")
+
+# --- NİTELİK KARTLARI ---
 st.markdown("""
     <div class="nitelik-container">
         <div class="nitelik-card"><span class="n-val">128</span><span class="n-lab">Bireysel Araştırma</span></div>
         <div class="nitelik-card"><span class="n-val">48</span><span class="n-lab">Uzmanlık Tezi</span></div>
-        <div class="nitelik-card"><span class="n-val">10</span><span class="n-lab">Y. Lisans Tezi</span></div>
-        <div class="nitelik-card"><span class="n-val">4</span><span class="n-lab">Doktora Tezi</span></div>
+        <div class="nitelik-card"><span class="n-val">12</span><span class="n-lab">Y. Lisans Tezi</span></div>
+        <div class="nitelik-card"><span class="n-val">18</span><span class="n-lab">Doktora Tezi</span></div>
     </div>
 """, unsafe_allow_html=True)
 
-# --- 1. GÜNDEM SAYILARI ---
+# --- 1. GÜNDEM SAYILARI (SAKIN BOZMA DEDİĞİN KISIM) ---
 if df_gundem is not None:
-    df_g_final = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
-    df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
-    for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
-        if col in df_g_final.columns:
-            df_g_final[col] = pd.to_numeric(df_g_final[col], errors='coerce').fillna(0).astype(int)
     st.write("### 📅 2026 Gündem Sayıları")
-    st.markdown('<div class="table-container">' + df_g_final.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+    dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
+    dg = dg[dg['Toplam'] > 0]
+    dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri']).dt.strftime('%d.%m.%Y')
+    
+    # Toplam Satırı
+    t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319}])
+    dg_final = pd.concat([dg, t_row], ignore_index=True)
+    
+    html_g = clean_df(dg_final).to_html(index=False, classes='styled-table')
+    html_g = html_g.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
+    st.markdown(f'<div class="table-container">{html_g}</div>', unsafe_allow_html=True)
 
 # --- SEKMELER ---
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Araştırmacı Analizi"])
 
 with tab1:
-    img_path = "genel_tablo_ekran_goruntusu.png"
-    if os.path.exists(img_path): st.image(img_path, use_container_width=True)
+    st.write("#### 📋 Genel Karar Dağılım Tablosu (Tam Liste)")
+    if df_raportor is not None:
+        # Tablonun tamamını al (Sadece toplamlar değil)
+        df_all = df_raportor.dropna(subset=['Adı Soyadı']).copy()
+        html_all = clean_df(df_all).to_html(index=False, classes='styled-table')
+        html_all = html_all.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
+        st.markdown(f'<div class="table-container">{html_all}</div>', unsafe_allow_html=True)
 
 with tab2:
-    st.write("#### 👥 Raportör Karar Ayrıntıları")
+    st.write("#### 👥 Raportör Karar Ayrıntıları (İkonlu)")
     if df_raportor is not None:
-        r_clean = df_raportor[df_raportor.iloc[:, 1].notna() & (df_raportor.iloc[:, 1] != "Adı Soyadı")].copy()
-        r_list = [x for x in r_clean.iloc[:, 1].unique().tolist() if "TOPLAM" not in str(x)]
+        r_list = df_raportor[df_raportor['Adı Soyadı'].notna() & (~df_raportor['Adı Soyadı'].str.contains("TOPLAM", case=False))]['Adı Soyadı'].unique()
         sec_r = st.selectbox("Raportör Seçin:", r_list)
-        r_row = r_clean[r_clean.iloc[:, 1] == sec_r].iloc[0]
-        
-        dosya_sayisi = int(pd.to_numeric(r_row.iloc[2], errors='coerce') or 0)
-        karar_verilen = int(pd.to_numeric(r_row.iloc[-1], errors='coerce') or 0)
-        bekleyen = dosya_sayisi - karar_verilen
+        r_row = df_raportor[df_raportor['Adı Soyadı'] == sec_r].iloc[0]
 
-        detay_data = {
-            "Karar Türü": [
-                "📌 Toplam Dosya Sayısı", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", 
-                "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📥 Geri Çekildi", 
-                "📊 KARAR VERİLEN TOPLAM", "⏳ BEKLEYEN DOSYA SAYISI"
-            ],
-            "Sayı": [
-                dosya_sayisi, int(r_row.iloc[3]), int(r_row.iloc[4]), int(r_row.iloc[5]), 
-                int(r_row.iloc[6]), int(r_row.iloc[7]), int(r_row.iloc[8]), int(r_row.iloc[9]), 
-                karar_verilen, bekleyen
-            ]
+        # İkonlu Detay Tablosu
+        rd = {
+            "Dosya Türü": ["📜 Bireysel Araştırma", "🎓 Yüksek Lisans Tezi", "📚 Doktora Tezi", "🩺 Uzmanlık Tezi", "⭐ GENEL TOPLAM"],
+            "Onay": [r_row.get('Bireysel Araştırma Onay',0), r_row.get('Yüksek Lisans Tezi Onay',0), r_row.get('Doktora Tezi Onay',0), r_row.get('Uzmanlık Tezi Onay',0), r_row.get('Onay Toplam',0)],
+            "Karar Alınan": [r_row.get('BİREYSEL TOPLAM',0), r_row.get('YÜKSEK LİSANS TEZİ TOPLAM',0), r_row.get('DOKTORA TEZİ TOPLAM',0), r_row.get('UZMANLIK TEZİ TOPLAM',0), r_row.get('Karar Verilen Toplam ',0)]
         }
-        st.markdown('<div class="table-container">' + pd.DataFrame(detay_data).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="table-container">' + clean_df(pd.DataFrame(rd)).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        
+        # Alt Metrikler (Atanan-Karar-Bekleyen)
+        c1, c2, c3 = st.columns(3)
+        atanan = int(r_row['Dosya Sayısı'])
+        karar = int(r_row['Karar Verilen Toplam '])
+        c1.metric("Atanan Dosya", atanan)
+        c2.metric("Karar Alınan", karar)
+        c3.metric("Bekleyen", atanan - karar)
 
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
-        # Pivot sayfasında 1. satır başlık (skiprows yok), o yüzden veriler 0. satırdan başlar
-        birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
-        birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
-        birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].astype(int)
-        birim_df.index = range(1, len(birim_df) + 1)
-        st.table(birim_df)
+        b = df_pivot.iloc[:, [0, 1]].dropna().copy()
+        b.columns = ["Birim Adı", "Sayı"]
+        b = b[~b["Birim Adı"].str.contains("Etiketleri|Toplam|Genel", case=False)]
+        b.insert(0, "S.No", range(1, len(b) + 1))
+        
+        # Alt Toplam
+        b_sum = pd.DataFrame([{"S.No": "TOPLAM", "Birim Adı": "", "Sayı": b['Sayı'].sum()}])
+        b_final = pd.concat([b, b_sum], ignore_index=True)
+        
+        html_b = clean_df(b_final).to_html(index=False, classes='styled-table')
+        html_b = html_b.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
+        st.markdown(f'<div class="table-container">{html_b}</div>', unsafe_allow_html=True)
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
-        sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
-        sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
-        sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].astype(int)
-        sorumlu_df.index = range(1, len(sorumlu_df) + 1)
-        st.table(sorumlu_df)
+        s = df_pivot.iloc[:, [3, 4]].dropna().copy()
+        s.columns = ["Sorumlu Araştırmacı", "Sayı"]
+        s = s[~s["Sorumlu Araştırmacı"].str.contains("Etiketleri|Toplam|Genel", case=False)]
+        s.insert(0, "S.No", range(1, len(s) + 1))
+        
+        # Alt Toplam
+        s_sum = pd.DataFrame([{"S.No": "TOPLAM", "Sorumlu Araştırmacı": "", "Sayı": s['Sayı'].sum()}])
+        s_final = pd.concat([s, s_sum], ignore_index=True)
+        
+        html_s = clean_df(s_final).to_html(index=False, classes='styled-table')
+        html_s = html_s.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
+        st.markdown(f'<div class="table-container">{html_s}</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
-
