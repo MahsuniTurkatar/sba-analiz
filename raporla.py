@@ -20,7 +20,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI (KUTSAL EMANET) ---
+# --- CSS: FB TASARIMI ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -39,6 +39,7 @@ st.markdown("""
     .styled-table { width: 100% !important; border-collapse: collapse; color: white; margin-bottom: 20px; }
     .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px; text-align: center; }
     .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center; }
+    .total-row { font-weight: bold; background-color: #001d3d !important; color: #FEDD00 !important; }
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
     .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
     </style>
@@ -46,7 +47,7 @@ st.markdown("""
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- ÜST METRİKLER VE GÜNDEM (DEĞİŞMEDİ) ---
+# --- ÜST METRİKLER VE GÜNDEM (SABİT) ---
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
@@ -75,28 +76,44 @@ with tab2:
         sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = r_clean[r_clean.iloc[:, 1] == sec_r].iloc[0]
 
-        # Sayıları temiz çekme (Sütun indisleri 1. görseldeki Excel sırasına göredir)
-        # Bireysel (3-9), Y. Lisans (11-17), Doktora (19-25), Uzmanlık (27-33)
         def get_val(idx): return int(pd.to_numeric(r_row.iloc[idx], errors='coerce') or 0)
 
-        # Branş Bazlı Tablo (Senin istediğin detaylı görünüm)
+        # Branş Bazlı Veri
+        onaylar = [get_val(3), get_val(11), get_val(19), get_val(27)]
+        duzeltmeler = [get_val(4), get_val(12), get_val(20), get_val(28)]
+        kaekler = [get_val(5), get_val(13), get_val(21), get_val(29)]
+        gorusler = [get_val(6), get_val(14), get_val(22), get_val(30)]
+        retler = [get_val(7), get_val(15), get_val(23), get_val(31)]
+        kapsamlar = [get_val(8), get_val(16), get_val(24), get_val(32)]
+        cekilenler = [get_val(9), get_val(17), get_val(25), get_val(33)]
+        satir_toplamlar = [get_val(10), get_val(18), get_val(26), get_val(34)]
+
         brans_data = {
             "Başvuru Türü": ["📄 Bireysel Araştırma", "🎓 Yüksek Lisans Tezi", "🔬 Doktora Tezi", "🏥 Uzmanlık Tezi"],
-            "Onay": [get_val(3), get_val(11), get_val(19), get_val(27)],
-            "Düzeltme": [get_val(4), get_val(12), get_val(20), get_val(28)],
-            "KAEK": [get_val(5), get_val(13), get_val(21), get_val(29)],
-            "Görüş": [get_val(6), get_val(14), get_val(22), get_val(30)],
-            "Ret": [get_val(7), get_val(15), get_val(23), get_val(31)],
-            "Kapsam Dışı": [get_val(8), get_val(16), get_val(24), get_val(32)],
-            "Geri Çekildi": [get_val(9), get_val(17), get_val(25), get_val(33)],
-            "TOPLAM": [get_val(10), get_val(18), get_val(26), get_val(34)]
+            "Onay": onaylar, "Düzeltme": duzeltmeler, "KAEK": kaekler, "Görüş": gorusler,
+            "Ret": retler, "Kapsam Dışı": kapsamlar, "Geri Çekildi": cekilenler, "TOPLAM": satir_toplamlar
         }
         
-        st.markdown('<div class="table-container">' + pd.DataFrame(brans_data).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        df_brans = pd.DataFrame(brans_data)
+
+        # --- YENİ TOPLAM SATIRI EKLEME ---
+        total_row = {
+            "Başvuru Türü": "📊 TOPLAM",
+            "Onay": sum(onaylar), "Düzeltme": sum(duzeltmeler), "KAEK": sum(kaekler),
+            "Görüş": sum(gorusler), "Ret": sum(retler), "Kapsam Dışı": sum(kapsamlar),
+            "Geri Çekildi": sum(cekilenler), "TOPLAM": sum(satir_toplamlar)
+        }
+        df_brans = pd.concat([df_brans, pd.DataFrame([total_row])], ignore_index=True)
+
+        # Tabloyu HTML olarak basarken toplam satırına özel CSS sınıfı ekleme
+        html_table = df_brans.to_html(index=False, classes='styled-table')
+        html_table = html_table.replace('<td>📊 TOPLAM</td>', '<td class="total-row">📊 TOPLAM</td>')
+        
+        st.markdown('<div class="table-container">' + html_table + '</div>', unsafe_allow_html=True)
 
         # --- ALT ÖZET KARTLARI ---
         atanan = get_val(2)
-        karar_toplam = get_val(42) # GENEL TOPLAM sütunu
+        karar_toplam = get_val(42) 
         bekleyen = atanan - karar_toplam
 
         st.markdown(f"""
@@ -107,20 +124,19 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
 
-with tab3: # (SABİT)
+# --- DİĞER SEKMELER (SABİT) ---
+with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
         birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
-        birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].astype(int)
         st.table(birim_df)
 
-with tab4: # (SABİT)
+with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
         sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
         sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
-        sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].astype(int)
         st.table(sorumlu_df)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
