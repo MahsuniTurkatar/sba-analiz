@@ -18,58 +18,55 @@ def load_top_data():
 
 df_gundem = load_top_data()
 
-# --- CSS: TABLO DÜZENİNDE ÖZEL METRİKLER VE BEYAZ BAŞLIKLAR ---
+# --- CSS: ÖZEL TABLO TASARIMI VE BEYAZ BAŞLIKLAR ---
 st.markdown("""
     <style>
-    /* ARKA PLAN */
     .stApp { background-color: #000814; }
     
-    /* BEYAZ VE ORTALI BAŞLIKLAR */
+    /* BAŞLIKLAR: BEYAZ VE ORTALI */
     h1, h2, h3 { 
         color: #ffffff !important; 
         text-align: center !important; 
         font-weight: bold !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 25px !important;
     }
 
-    /* ÜST METRİK TABLOSU: KURUL SOLDA, BAŞVURU SAĞDA */
-    .top-metric-container {
+    /* ÜST ÖZET TABLO (METRİKLER) */
+    .metric-wrapper {
         display: flex;
         justify-content: center;
         margin-bottom: 40px;
     }
-    .top-metric-table {
+    .metric-table {
         border-collapse: collapse;
         width: auto;
         border: 2px solid #FEDD00;
         background-color: #001d3d;
     }
-    .top-metric-table td {
+    .metric-table td {
         border: 1px solid #FEDD00;
-        padding: 20px 60px; /* Genişlik ayarı */
+        padding: 15px 50px; /* Hücre genişliği */
         text-align: center;
     }
-    .val-text { 
+    .m-val { 
         color: #FEDD00; 
-        font-size: 3rem; /* Sayılar büyük */
+        font-size: 3rem; 
         font-weight: bold; 
         display: block; 
-        line-height: 1.1;
+        line-height: 1;
     }
-    .lab-text { 
+    .m-lab { 
         color: #ffffff; 
-        font-size: 1.2rem; 
-        font-weight: normal; 
-        margin-top: 5px;
+        font-size: 1.1rem; 
         display: block;
+        margin-top: 5px;
     }
 
-    /* GENEL TABLO AYARLARI: İĞNELENMİŞ GENİŞLİK */
+    /* GENEL TABLO AYARLARI (GÜNDEM İÇİN) */
     .table-container { 
         display: flex; 
         justify-content: center; 
         margin: 20px 0; 
-        width: 100%; 
     }
     .styled-table { 
         width: auto !important; 
@@ -92,7 +89,7 @@ st.markdown("""
         text-align: center !important; 
     }
     
-    /* TOPLAM SATIRI SARI VURGU */
+    /* TOPLAM SATIRI */
     .total-row td { 
         background-color: #001d3d !important; 
         color: #FEDD00 !important; 
@@ -105,48 +102,36 @@ st.markdown("""
 def clean_df(df):
     return df.applymap(lambda x: "" if (pd.isna(x) or str(x).strip() in ["0", "0.0", "0.00"]) else (int(x) if isinstance(x, (int, float)) else x))
 
-# --- SAYFA BAŞLIĞI ---
+# --- ANA BAŞLIK ---
 st.markdown("<h1>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. ADIM: ÜST METRİK TABLOSU (SOLDA 5, SAĞDA 206) ---
+# --- 1. ÜST ÖZET TABLO (EKRAN GÖRÜNTÜSÜNDEKİ GİBİ) ---
 st.markdown("""
-    <div class="top-metric-container">
-        <table class="top-metric-table">
+    <div class="metric-wrapper">
+        <table class="metric-table">
             <tr>
-                <td>
-                    <span class="val-text">5</span>
-                    <span class="lab-text">Kurul Sayısı</span>
-                </td>
-                <td>
-                    <span class="val-text">206</span>
-                    <span class="lab-text">Toplam Başvuru</span>
-                </td>
+                <td><span class="m-val">5</span><span class="m-lab">Kurul Sayısı</span></td>
+                <td><span class="m-val">206</span><span class="m-lab">Toplam Başvuru</span></td>
             </tr>
         </table>
     </div>
 """, unsafe_allow_html=True)
 
-# --- 2. ADIM: GÜNDEM SAYILARI TABLOSU ---
+# --- 2. GÜNDEM SAYILARI TABLOSU ---
 if df_gundem is not None:
     st.markdown("<h3>📅 2026 Gündem Sayıları</h3>", unsafe_allow_html=True)
     
-    # Veri Hazırlığı
     dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
     dg = dg[dg['Toplam'] > 0]
     dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri']).dt.strftime('%d.%m.%Y')
     
-    # Toplam Satırı Ekleme
+    # Alt Toplam Satırı
     t_row = pd.DataFrame([{
-        "S.NO": "TOPLAM", 
-        "Gündem Tarihleri": "", 
-        "Başvuru": 206, 
-        "Düzeltme": 68, 
-        "Dilekçe": 45, 
-        "Toplam": 319
+        "S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319
     }])
     dg_final = pd.concat([dg, t_row], ignore_index=True)
     
-    # HTML Tablo Çıktısı
+    # HTML Render
     html_g = clean_df(dg_final).to_html(index=False, classes='styled-table')
     html_g = html_g.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
     st.markdown(f'<div class="table-container">{html_g}</div>', unsafe_allow_html=True)
