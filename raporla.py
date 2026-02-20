@@ -10,7 +10,6 @@ EXCEL_FILE = "2026_SBA.xlsx"
 @st.cache_data
 def load_top_data():
     try:
-        # Sayılar sayfası, S.NO satırı (skiprows=2)
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
         return df_g
     except:
@@ -18,57 +17,37 @@ def load_top_data():
 
 df_gundem = load_top_data()
 
-# --- CSS: SAYILAR ÜSTTE, YAZILAR ALTTA VE ARALIKLI KUTULAR ---
+# --- CSS: TÜM KUTULARI YAN YANA VE SAYI ÜSTTE YAPAR ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     
-    /* BEYAZ VE ORTALI BAŞLIKLAR */
-    h1, h2, h3 { 
-        color: #ffffff !important; 
-        text-align: center !important; 
-        font-weight: bold !important;
-    }
+    /* BAŞLIKLAR */
+    h1, h3 { color: #ffffff !important; text-align: center !important; font-weight: bold !important; }
 
-    /* KUTULARI YAN YANA VE ARALIKLI YAPAR */
-    [data-testid="stHorizontalBlock"] {
-        justify-content: center !important;
-        gap: 60px !important;
-    }
-
-    /* KUTU İÇİ DÜZEN: SAYI ÜSTTE, ETİKET ALTTA */
-    div[data-testid="stMetric"] {
-        background-color: #001d3d !important; 
-        border: 2px solid #FEDD00 !important;
-        border-radius: 12px !important; 
-        padding: 20px !important;
-        text-align: center !important;
-        display: flex !important;
-        flex-direction: column-reverse !important; /* Etiketi alta, sayıyı üste iter */
-    }
-
-    /* SAYI (VALUE) STİLİ */
-    [data-testid="stMetricValue"] { 
-        color: #FEDD00 !important; 
-        font-size: 3rem !important; 
-        font-weight: bold !important;
-    }
-
-    /* YAZI (LABEL) STİLİ */
-    [data-testid="stMetricLabel"] { 
-        color: #ffffff !important; 
-        font-size: 1.2rem !important;
-        margin-top: 10px !important;
-    }
-
-    /* NİTELİK KARTLARI (KUTULARIN HEMEN ALTI) */
-    .nitelik-row {
+    /* ANA KONTEYNERLAR */
+    .metric-row {
         display: flex;
         justify-content: center;
-        gap: 15px;
-        margin: 30px 0;
+        gap: 25px;
+        margin-bottom: 20px;
+        flex-wrap: nowrap; /* Yan yana kalmaya zorlar */
     }
-    .nitelik-card {
+
+    /* BÜYÜK ÜST KUTULAR (5 ve 206) */
+    .main-box {
+        background-color: #001d3d;
+        border: 2px solid #FEDD00;
+        border-radius: 12px;
+        padding: 20px 50px;
+        text-align: center;
+        min-width: 220px;
+    }
+    .main-val { color: #FEDD00; font-size: 3.5rem; font-weight: bold; display: block; line-height: 1; }
+    .main-lab { color: #ffffff; font-size: 1.2rem; display: block; margin-top: 10px; }
+
+    /* ALT NİTELİK KUTULARI */
+    .sub-box {
         background-color: #001d3d;
         border: 1px solid #FEDD00;
         border-radius: 8px;
@@ -76,39 +55,35 @@ st.markdown("""
         text-align: center;
         min-width: 160px;
     }
-    .n-val { color: #FEDD00; font-size: 1.6rem; font-weight: bold; display: block; }
-    .n-lab { color: #ffffff; font-size: 0.9rem; }
+    .sub-val { color: #FEDD00; font-size: 1.8rem; font-weight: bold; display: block; }
+    .sub-lab { color: #ffffff; font-size: 0.9rem; display: block; }
 
-    /* TABLO TASARIMI */
-    .table-container { display: flex; justify-content: center; margin-top: 20px; }
-    .styled-table { 
-        width: auto !important; margin: auto; border-collapse: collapse; color: white;
-    }
+    /* TABLO AYARLARI */
+    .table-container { display: flex; justify-content: center; margin-top: 30px; }
+    .styled-table { width: auto !important; margin: auto; border-collapse: collapse; color: white; }
     .styled-table th { background-color: #001d3d; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 12px 20px; }
     .styled-table td { border: 1px solid #FEDD00; padding: 10px 18px; text-align: center !important; }
     .total-row td { background-color: #001d3d !important; color: #FEDD00 !important; font-weight: bold !important; }
     </style>
     """, unsafe_allow_html=True)
 
-def clean_df(df):
-    return df.applymap(lambda x: "" if (pd.isna(x) or str(x).strip() in ["0", "0.0", "0.00"]) else (int(x) if isinstance(x, (int, float)) else x))
-
 st.markdown("<h1>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- 1. ÜST KUTULAR (5 ve 206) ---
-c1, c2 = st.columns(2)
-with c1:
-    st.metric(label="Kurul Sayısı", value="5")
-with c2:
-    st.metric(label="Toplam Başvuru", value="206")
-
-# --- 2. NİTELİK SAYILARI (KUTULARIN ALTINDA) ---
+# --- 1. ÜST KUTULAR: KURUL VE TOPLAM (YAN YANA) ---
 st.markdown("""
-    <div class="nitelik-row">
-        <div class="nitelik-card"><span class="n-val">135</span><span class="n-lab">Bireysel Araştırma</span></div>
-        <div class="nitelik-card"><span class="n-val">41</span><span class="n-lab">Uzmanlık Tezi</span></div>
-        <div class="nitelik-card"><span class="n-val">12</span><span class="n-lab">Y. Lisans Tezi</span></div>
-        <div class="nitelik-card"><span class="n-val">18</span><span class="n-lab">Doktora Tezi</span></div>
+    <div class="metric-row">
+        <div class="main-box"><span class="main-val">5</span><span class="main-lab">Kurul Sayısı</span></div>
+        <div class="main-box"><span class="main-val">206</span><span class="main-lab">Toplam Başvuru</span></div>
+    </div>
+""", unsafe_allow_html=True)
+
+# --- 2. ALT KUTULAR: NİTELİKLER (YAN YANA) ---
+st.markdown("""
+    <div class="metric-row">
+        <div class="sub-box"><span class="sub-val">135</span><span class="sub-lab">Bireysel Araştırma</span></div>
+        <div class="sub-box"><span class="sub-val">41</span><span class="sub-lab">Uzmanlık Tezi</span></div>
+        <div class="sub-box"><span class="sub-val">12</span><span class="sub-lab">Y. Lisans Tezi</span></div>
+        <div class="sub-box"><span class="sub-val">18</span><span class="sub-lab">Doktora Tezi</span></div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -122,7 +97,7 @@ if df_gundem is not None:
     t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319}])
     dg_final = pd.concat([dg, t_row], ignore_index=True)
     
-    html_g = clean_df(dg_final).to_html(index=False, classes='styled-table')
+    html_g = dg_final.to_html(index=False, classes='styled-table')
     html_g = html_g.replace('<td>TOPLAM</td>', '<td class="total-row">TOPLAM</td>')
     st.markdown(f'<div class="table-container">{html_g}</div>', unsafe_allow_html=True)
 
