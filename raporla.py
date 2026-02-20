@@ -20,7 +20,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: FB TASARIMI ---
+# --- CSS: FB TASARIMI VE TABLO DARALTMA ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -35,11 +35,16 @@ st.markdown("""
     }
     .n-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
     .n-lab { color: #ffffff; font-size: 0.9rem; }
-    .table-container { display: flex; justify-content: center; margin: 20px 0; }
-    .styled-table { width: 100% !important; border-collapse: collapse; color: white; margin-bottom: 20px; }
-    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px; text-align: center; }
-    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center; }
-    .total-row { font-weight: bold; background-color: #001d3d !important; color: #FEDD00 !important; }
+    
+    /* Tabloyu merkezleme ve içeriğe göre daraltma */
+    .table-container { display: flex; justify-content: center; margin: 20px 0; overflow-x: auto; }
+    .styled-table { width: auto !important; min-width: 60%; border-collapse: collapse; color: white; margin-bottom: 20px; }
+    .styled-table th { background-color: #001d3d; color: #FEDD00; border: 1px solid #FEDD00; padding: 10px 20px; text-align: center; white-space: nowrap; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 8px 15px; text-align: center; white-space: nowrap; }
+    
+    /* TOPLAM SATIRI: Boydan boya Lacivert-Sarı */
+    .total-row td { background-color: #001d3d !important; color: #FEDD00 !important; font-weight: bold !important; border: 2px solid #FEDD00 !important; }
+    
     h1, h2, h3, h4, label, .stTabs [data-baseweb="tab"] { color: #FEDD00 !important; }
     .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 30px; font-weight: bold; }
     </style>
@@ -47,26 +52,23 @@ st.markdown("""
 
 st.markdown("<h1 style='text-align: center;'>Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</h1>", unsafe_allow_html=True)
 
-# --- ÜST METRİKLER VE GÜNDEM (SABİT) ---
+# --- ÜST METRİKLER (SABİT) ---
 c1, c2 = st.columns(2)
 c1.metric("📌 Toplam Başvuru", "190")
 c2.metric("🗓️ Kurul Sayısı", "4")
-
-if df_gundem is not None:
-    df_g_final = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
-    df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
-    for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
-        if col in df_g_final.columns:
-            df_g_final[col] = pd.to_numeric(df_g_final[col], errors='coerce').fillna(0).astype(int)
-    st.write("### 📅 2026 Gündem Sayıları")
-    st.markdown('<div class="table-container">' + df_g_final.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 # --- SEKMELER ---
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Araştırmacı Analizi"])
 
 with tab1:
-    img_path = "genel_tablo_ekran_goruntusu.png"
-    if os.path.exists(img_path): st.image(img_path, use_container_width=True)
+    if df_gundem is not None:
+        df_g_final = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
+        df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
+        for col in ['Başvuru', 'Düzeltme', 'Dilekçe', 'Toplam']:
+            if col in df_g_final.columns:
+                df_g_final[col] = pd.to_numeric(df_g_final[col], errors='coerce').fillna(0).astype(int)
+        st.write("### 📅 2026 Gündem Sayıları")
+        st.markdown('<div class="table-container">' + df_g_final.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab2:
     st.write("### 👥 Raportör Detaylı Karar Dağılımı")
@@ -78,7 +80,6 @@ with tab2:
 
         def get_val(idx): return int(pd.to_numeric(r_row.iloc[idx], errors='coerce') or 0)
 
-        # Branş Bazlı Veri
         onaylar = [get_val(3), get_val(11), get_val(19), get_val(27)]
         duzeltmeler = [get_val(4), get_val(12), get_val(20), get_val(28)]
         kaekler = [get_val(5), get_val(13), get_val(21), get_val(29)]
@@ -93,10 +94,9 @@ with tab2:
             "Onay": onaylar, "Düzeltme": duzeltmeler, "KAEK": kaekler, "Görüş": gorusler,
             "Ret": retler, "Kapsam Dışı": kapsamlar, "Geri Çekildi": cekilenler, "TOPLAM": satir_toplamlar
         }
-        
         df_brans = pd.DataFrame(brans_data)
 
-        # --- YENİ TOPLAM SATIRI EKLEME ---
+        # TOPLAM SATIRI
         total_row = {
             "Başvuru Türü": "📊 TOPLAM",
             "Onay": sum(onaylar), "Düzeltme": sum(duzeltmeler), "KAEK": sum(kaekler),
@@ -105,13 +105,11 @@ with tab2:
         }
         df_brans = pd.concat([df_brans, pd.DataFrame([total_row])], ignore_index=True)
 
-        # Tabloyu HTML olarak basarken toplam satırına özel CSS sınıfı ekleme
+        # Tablo Oluşturma
         html_table = df_brans.to_html(index=False, classes='styled-table')
-        html_table = html_table.replace('<td>📊 TOPLAM</td>', '<td class="total-row">📊 TOPLAM</td>')
-        
+        html_table = html_table.replace('<tr>', '<tr>', 1).replace('<tr>\n      <td>📊 TOPLAM</td>', '<tr class="total-row">\n      <td>📊 TOPLAM</td>')
         st.markdown('<div class="table-container">' + html_table + '</div>', unsafe_allow_html=True)
 
-        # --- ALT ÖZET KARTLARI ---
         atanan = get_val(2)
         karar_toplam = get_val(42) 
         bekleyen = atanan - karar_toplam
@@ -124,19 +122,22 @@ with tab2:
             </div>
         """, unsafe_allow_html=True)
 
-# --- DİĞER SEKMELER (SABİT) ---
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
         birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
-        st.table(birim_df)
+        birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].astype(int)
+        birim_df.insert(0, "S.NO", range(1, len(birim_df) + 1))
+        st.markdown('<div class="table-container">' + birim_df.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
         sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
         sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
-        st.table(sorumlu_df)
+        sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].astype(int)
+        sorumlu_df.insert(0, "S.NO", range(1, len(sorumlu_df) + 1))
+        st.markdown('<div class="table-container">' + sorumlu_df.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
