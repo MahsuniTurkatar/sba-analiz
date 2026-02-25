@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
-import os
 
-# Sayfa Yapılandırması (SABİT)
+# Sayfa Yapılandırması
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
 # --- VERİ YÜKLEME ---
@@ -21,13 +20,13 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: GELİŞMİŞ TASARIM ---
+# --- CSS: MÜHÜRLÜ VE SABİT TASARIM ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     .main-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 2.2rem; margin-bottom: 25px; }
     
-    /* İĞNELENMİŞ KUTULAR */
+    /* İĞNELENMİŞ KUTULAR (SAYI ÜSTTE) */
     .metric-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; }
     .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 15px 45px; text-align: center; min-width: 200px; }
     .main-val { color: #FEDD00; font-size: 3.2rem; font-weight: bold; display: block; line-height: 1; }
@@ -37,16 +36,14 @@ st.markdown("""
     .sub-val { color: #FEDD00; font-size: 1.7rem; font-weight: bold; display: block; }
     .sub-lab { color: #ffffff; font-size: 0.85rem; display: block; }
 
-    /* TABLOLAR: TASARIM VE RENKLER */
-    .table-container { display: flex; justify-content: center; margin: 20px 0; width: 100%; overflow-x: auto; }
-    .styled-table { width: 100% !important; border-collapse: collapse; color: #ffffff; font-size: 0.85rem; background-color: #000814; }
-    .styled-table th { background-color: #001d3d !important; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 10px; text-align: center !important; font-weight: bold; }
-    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center !important; background-color: #001d3d; color: white; }
+    /* TABLOLAR: LACİVERT ARKA PLAN, SARI ÇERÇEVE */
+    .table-container { display: flex; flex-direction: column; align-items: center; margin: 20px 0; width: 100%; overflow-x: auto; }
+    .section-head { color: #FEDD00 !important; font-size: 1.5rem; font-weight: bold; margin-bottom: 10px; width: 100%; text-align: left; padding-left: 10%; }
     
-    /* İLK RAPORTÖRÜN RENGİNİ DİĞERLERİYLE EŞİTLEME */
-    .styled-table tr:nth-child(even) td { background-color: #001d3d; }
-    .styled-table tr:hover td { background-color: #003566; }
-
+    .styled-table { width: 90% !important; border-collapse: collapse; color: #ffffff; font-size: 0.85rem; }
+    .styled-table th { background-color: #001d3d !important; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 10px; text-align: center !important; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 8px; text-align: center !important; background-color: #001d3d; color: white !important; }
+    
     .stTabs [data-baseweb="tab"] { color: #ffffff !important; font-weight: bold !important; }
     .stTabs [aria-selected="true"] { color: #FEDD00 !important; border-bottom-color: #FEDD00 !important; }
     
@@ -55,11 +52,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def clean_num(val):
-    if pd.isna(val) or val == "" or val == 0 or val == "0": return ""
+    if pd.isna(val) or val == "" or val == 0 or val == "0" or val == "0.0": return ""
     try: return str(int(float(val)))
     except: return str(val)
 
-# --- 1. ANA PANEL (MÜHÜRLÜ) ---
+# --- 1. ÜST PANEL (MÜHÜRLÜ) ---
 st.markdown('<div class="main-title">Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</div>', unsafe_allow_html=True)
 
 st.markdown("""
@@ -75,13 +72,14 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 2. GÜNDEM SAYILARI ---
+# --- 2. GÜNDEM SAYILARI (BAŞLIK VE TABLO GERİ GELDİ) ---
 if df_gundem is not None:
+    st.markdown('<div class="table-container"><div class="section-head">🗓️ 2026 Gündem Sayıları</div>', unsafe_allow_html=True)
     dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
     dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
     t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 222, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 335}])
     dg_render = pd.concat([dg, t_row], ignore_index=True).applymap(clean_num)
-    st.markdown('<div class="table-container">' + dg_render.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+    st.markdown(dg_render.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 # --- 3. ANALİZLER ---
 st.markdown("<h2 style='text-align: center; color: white; margin-top:30px;'>📊 ANALİZLER</h2>", unsafe_allow_html=True)
@@ -90,14 +88,13 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Anali
 with tab1:
     st.write("#### 📋 Genel Karar Çizelgesi (Üye_1 Verisi)")
     if df_raportor is not None:
-        # Veriyi temizle ve ilk raportörü (AKARSU) koru
-        df_cizelge = df_raportor[df_raportor.iloc[:, 1].notna() & (df_raportor.iloc[:, 1] != "Adı Soyadı")].copy()
+        # Filtre: Sadece rakam olan S.No'ları al (Böylece başlık satırı ve toplam satırı karışmaz, hocalar kalır)
+        df_cizelge = df_raportor[pd.to_numeric(df_raportor.iloc[:, 0], errors='coerce').notna()].copy()
         
-        # TABLO BAŞLIKLARINI DÜZENLEME
-        # Sütunları manuel isimlendirerek o kafa karışıklığını gideriyoruz
-        # Not: Excel yapınıza göre ilk 5 sütun: S.No, Adı Soyadı, Atanan, Onay, Düzeltme...
-        cols = list(df_cizelge.columns)
-        new_cols = ["S.No", "Raportör Adı Soyadı", "Atanan Dosya"] + cols[3:] # İlk 3'ü netleştirdik
+        # Sütun Başlıklarını Manuel Eşleme (Excel'deki dikey başlıkların Python karşılığı)
+        # S.No | Adı Soyadı | Dosya Sayısı | ... diğer kararlar ... | Toplam
+        # Not: Sütun sayısına göre dinamik isim veriyoruz
+        new_cols = ["S.No", "Raportör Adı Soyadı", "Atanan Dosya"] + [f"K-{i}" for i in range(1, len(df_cizelge.columns)-3)] + ["GENEL TOPLAM"]
         df_cizelge.columns = new_cols
         
         st.markdown('<div class="table-container">' + df_cizelge.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
@@ -105,8 +102,9 @@ with tab1:
 with tab2:
     st.write("#### 👥 Raportör Karar Ayrıntıları")
     if df_raportor is not None:
-        r_clean = df_raportor[df_raportor.iloc[:, 1].notna() & (df_raportor.iloc[:, 1] != "Adı Soyadı")].copy()
-        r_list = r_clean.iloc[:, 1].unique().tolist()
+        # 1. sıradaki hoca dahil tüm listeyi temizce çek
+        r_clean = df_raportor[pd.to_numeric(df_raportor.iloc[:, 0], errors='coerce').notna()].copy()
+        r_list = r_clean.iloc[:, 1].tolist()
         
         sec_r = st.selectbox("Analiz edilecek raportörü seçiniz:", r_list)
         r_row = r_clean[r_clean.iloc[:, 1] == sec_r].iloc[0]
@@ -120,16 +118,17 @@ with tab2:
         }
         st.markdown('<div class="table-container">' + pd.DataFrame(detay).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
+# Birim ve Sorumlu Analizleri (Sayılar 222'ye sabitlendi)
 with tab3:
-    st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
+        st.write("#### 🏢 Birim Analizi")
         birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
         st.markdown('<div class="table-container">' + birim_df.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab4:
-    st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
+        st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
         sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
         sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
         st.markdown('<div class="table-container">' + sorumlu_df.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
