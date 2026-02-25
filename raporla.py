@@ -73,4 +73,33 @@ st.markdown("""
 # --- GÜNDEM TABLOSU ---
 if df_gundem is not None:
     st.markdown('<div class="section-header">📅 2026 Gündem Sayıları</div>', unsafe_allow_html=True)
-    dg = df_gundem[df_gundem['
+    dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
+    dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri']).dt.strftime('%d.%m.%Y')
+    
+    # Toplam satırı ekleme
+    t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319}])
+    dg_f = pd.concat([dg, t_row], ignore_index=True).applymap(to_int)
+    
+    st.markdown(f'<div class="table-container">{dg_f.to_html(index=False, classes="styled-table")}</div>', unsafe_allow_html=True)
+
+# --- RAPORTÖR ANALİZİ (HATASIZ VERSİYON) ---
+if df_raportor is not None:
+    st.markdown('<div class="section-header">👤 Raportör Karar Dağılım Analizi</div>', unsafe_allow_html=True)
+    
+    raportorler = df_raportor['Adı Soyadı'].dropna().unique().tolist()
+    secilen = st.selectbox("Analiz edilecek raportörü seçiniz:", raportorler)
+    
+    # Veriyi çekerken get() kullanarak hata ihtimalini sıfırlıyoruz
+    rd = df_raportor[df_raportor['Adı Soyadı'] == secilen].iloc[0]
+    
+    # Kutu Analizi
+    st.markdown(f"""
+    <div class="metric-row">
+        <div class="sub-box"><span class="sub-val">{to_int(rd.get('Dosya Sayısı', 0))}</span><span class="sub-lab">Atanan Dosya</span></div>
+        <div class="sub-box"><span class="sub-val">{to_int(rd.get('Onay Toplam', 0))}</span><span class="sub-lab">Onaylanan</span></div>
+        <div class="sub-box"><span class="sub-val" style="color:#ff4b4b;">{to_int(rd.get('Düzeltme Toplam', 0))}</span><span class="sub-lab">Düzeltme</span></div>
+        <div class="sub-box"><span class="sub-val" style="color:#FEDD00;">{to_int(rd.get('GENEL TOPLAM', 0))}</span><span class="sub-lab">Genel Toplam</span></div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown('<div style="text-align:center; color:#FEDD00; padding:20px; font-weight:bold; border-top:1px solid #FEDD00; margin-top:40px;">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
