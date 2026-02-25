@@ -13,11 +13,11 @@ def load_all_data():
     try:
         # Gündem Sayıları
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
-        # Raportör Analizi (Üye_1)
+        # Raportör Analizi (Üye_1) - Canlı Tablo İçin
         df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", skiprows=1)
         # PİVOT
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot") 
-        # Sütun isimlerindeki boşlukları temizle
+        # Sütun temizliği
         df_r.columns = [str(c).strip() for c in df_r.columns]
         return df_g, df_r, df_p
     except:
@@ -25,16 +25,14 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: ÇİVİLENMİŞ TASARIM (SARI-LACİVERT VE SAYI ÜSTTE) ---
+# --- CSS: ÇİVİLENMİŞ TASARIM ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
-    
-    /* ANA BAŞLIKLAR */
     .main-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 2.2rem; margin-bottom: 25px; }
     h3, h4 { color: #FEDD00 !important; }
 
-    /* İĞNELENMİŞ KUTULAR (SAYI ÜSTTE, YAZI ALTTA) */
+    /* İĞNELENMİŞ KUTULAR */
     .metric-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; flex-wrap: nowrap; }
     .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 15px 45px; text-align: center; min-width: 200px; }
     .main-val { color: #FEDD00; font-size: 3.2rem; font-weight: bold; display: block; line-height: 1; }
@@ -44,11 +42,11 @@ st.markdown("""
     .sub-val { color: #FEDD00; font-size: 1.7rem; font-weight: bold; display: block; }
     .sub-lab { color: #ffffff; font-size: 0.85rem; display: block; }
 
-    /* TABLOLAR VE SEKMELER */
-    .table-container { display: flex; justify-content: center; margin: 20px 0; width: 100%; }
-    .styled-table { width: auto !important; margin: auto; border-collapse: collapse; color: white; font-size: 0.95rem; }
-    .styled-table th { background-color: #001d3d; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 12px 20px; text-align: center !important; }
-    .styled-table td { border: 1px solid #FEDD00; padding: 10px 18px; text-align: center !important; }
+    /* TABLOLAR */
+    .table-container { display: flex; justify-content: center; margin: 20px 0; width: 100%; overflow-x: auto; }
+    .styled-table { width: auto !important; margin: auto; border-collapse: collapse; color: white; font-size: 0.85rem; }
+    .styled-table th { background-color: #001d3d; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 8px 12px; text-align: center !important; white-space: nowrap; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 6px 10px; text-align: center !important; }
     
     .stTabs [data-baseweb="tab"] { color: #ffffff !important; font-weight: bold !important; }
     .stTabs [aria-selected="true"] { color: #FEDD00 !important; border-bottom-color: #FEDD00 !important; }
@@ -57,20 +55,18 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Sayı Temizleme (.0 lardan kurtulmak için)
 def clean_num(val):
     if pd.isna(val) or val == "" or val == 0: return ""
     try: return str(int(float(val)))
     except: return str(val)
 
-# --- 1. ANA PANEL (ÜST TARAF - DOKUNULMAZ) ---
+# --- 1. ANA PANEL (GÜNCELLENMİŞ SAYILAR) ---
 st.markdown('<div class="main-title">Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</div>', unsafe_allow_html=True)
 
-# Çivili Kutular
 st.markdown("""
     <div class="metric-row">
         <div class="main-box"><span class="main-val">5</span><span class="main-lab">Kurul Sayısı</span></div>
-        <div class="main-box"><span class="main-val">206</span><span class="main-lab">Toplam Başvuru</span></div>
+        <div class="main-box"><span class="main-val">222</span><span class="main-lab">Toplam Başvuru</span></div>
     </div>
     <div class="metric-row">
         <div class="sub-box"><span class="sub-val">135</span><span class="sub-lab">Bireysel Araştırma</span></div>
@@ -80,59 +76,57 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- 2. GÜNDEM SAYILARI (ANA PANELİN PARÇASI) ---
+# Gündem Tablosu
 if df_gundem is not None:
-    st.markdown("<h3 style='text-align: center;'>📅 2026 Gündem Sayıları</h3>", unsafe_allow_html=True)
-    df_g_final = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
-    df_g_final['Gündem Tarihleri'] = pd.to_datetime(df_g_final['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
-    
-    # Toplam Satırı
-    t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 206, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 319}])
-    df_g_render = pd.concat([df_g_final, t_row], ignore_index=True).applymap(clean_num)
-    
-    st.markdown('<div class="table-container">' + df_g_render.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+    dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
+    dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
+    t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 222, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 335}])
+    dg_render = pd.concat([dg, t_row], ignore_index=True).applymap(clean_num)
+    st.markdown('<div class="table-container">' + dg_render.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
-# --- 3. ANALİZ SEKMELERİ ---
-st.markdown("<h2 style='text-align: center; color: white;'>📊 ANALİZLER</h2>", unsafe_allow_html=True)
+# --- 2. ANALİZLER ---
+st.markdown("<h2 style='text-align: center; color: white; margin-top:30px;'>📊 ANALİZLER</h2>", unsafe_allow_html=True)
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Sorumlu Araştırmacı Analizi"])
 
 with tab1:
-    img_path = "genel_tablo_ekran_goruntusu.png"
-    if os.path.exists(img_path): st.image(img_path, use_container_width=True)
-    else: st.info("Karar çizelgesi görseli (genel_tablo_ekran_goruntusu.png) bulunamadı.")
+    st.write("#### 📋 Genel Karar Çizelgesi (Üye_1 Verisi)")
+    if df_raportor is not None:
+        # PNG yerine canlı tablo: Üye_1 sayfasının tamamını basıyoruz
+        # Sadece "Adı Soyadı" olan satırı ve boş satırları temizle, ama raportörleri koru
+        df_cizelge = df_raportor[df_raportor.iloc[:, 1].notna()].copy()
+        st.markdown('<div class="table-container">' + df_cizelge.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab2:
     st.write("#### 👥 Raportör Karar Ayrıntıları")
     if df_raportor is not None:
+        # 1. Raportörün gelmesi için filtreyi düzelttik: "Adı Soyadı" başlık satırını atla ama ilk veriyi al
         r_clean = df_raportor[df_raportor.iloc[:, 1].notna() & (df_raportor.iloc[:, 1] != "Adı Soyadı")].copy()
-        r_list = [x for x in r_clean.iloc[:, 1].unique().tolist() if "TOPLAM" not in str(x)]
-        sec_r = st.selectbox("Raportör Seçin:", r_list)
+        r_list = r_clean.iloc[:, 1].unique().tolist()
+        
+        sec_r = st.selectbox("Analiz edilecek raportörü seçiniz:", r_list)
         r_row = r_clean[r_clean.iloc[:, 1] == sec_r].iloc[0]
         
-        dosya_sayisi = int(pd.to_numeric(r_row.iloc[2], errors='coerce') or 0)
+        dosya = int(pd.to_numeric(r_row.iloc[2], errors='coerce') or 0)
         karar_verilen = int(pd.to_numeric(r_row.iloc[-1], errors='coerce') or 0)
-        bekleyen = dosya_sayisi - karar_verilen
-
-        detay_data = {
-            "Karar Türü": ["📌 Toplam Dosya", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📥 Geri Çekildi", "📊 KARAR VERİLEN", "⏳ BEKLEYEN"],
-            "Sayı": [dosya_sayisi, clean_num(r_row.iloc[3]), clean_num(r_row.iloc[4]), clean_num(r_row.iloc[5]), clean_num(r_row.iloc[6]), clean_num(r_row.iloc[7]), clean_num(r_row.iloc[8]), clean_num(r_row.iloc[9]), karar_verilen, bekleyen]
+        
+        detay = {
+            "Karar Türü": ["Atanan Dosya", "Onay", "Düzeltme", "KAEK", "Görüş", "Ret", "Kapsam Dışı", "Geri Çekildi", "KARAR VERİLEN", "BEKLEYEN"],
+            "Sayı": [dosya, clean_num(r_row.iloc[3]), clean_num(r_row.iloc[4]), clean_num(r_row.iloc[5]), clean_num(r_row.iloc[6]), clean_num(r_row.iloc[7]), clean_num(r_row.iloc[8]), clean_num(r_row.iloc[9]), karar_verilen, (dosya-karar_verilen)]
         }
-        st.markdown('<div class="table-container">' + pd.DataFrame(detay_data).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="table-container">' + pd.DataFrame(detay).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab3:
     st.write("#### 🏢 Birim Analizi")
     if df_pivot is not None:
         birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
         birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
-        birim_df["Dosya Sayısı"] = birim_df["Dosya Sayısı"].apply(clean_num)
-        st.markdown('<div class="table-container">' + birim_df.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="table-container">' + birim_df.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab4:
     st.write("#### 👨‍🏫 Sorumlu Araştırmacı Analizi")
     if df_pivot is not None:
         sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
         sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
-        sorumlu_df["Dosya Sayısı"] = sorumlu_df["Dosya Sayısı"].apply(clean_num)
-        st.markdown('<div class="table-container">' + sorumlu_df.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="table-container">' + sorumlu_df.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
