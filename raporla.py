@@ -11,6 +11,7 @@ EXCEL_FILE = "2026_SBA.xlsx"
 def load_all_data():
     try:
         df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
+        # Üye_1 sayfasını okurken yeni eklediğiniz sütunu da otomatik alacaktır
         df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", header=0) 
         df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot")
         df_r.columns = [str(c).strip() for c in df_r.columns]
@@ -21,7 +22,7 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: MÜHÜRLÜ VE İKONLU TASARIM ---
+# --- CSS: MÜHÜRLÜ TASARIM ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
@@ -41,7 +42,7 @@ st.markdown("""
     .sub-lab { color: #ffffff; font-size: 0.8rem; display: block; }
 
     .table-wrapper { display: flex; justify-content: center; width: 100%; overflow-x: auto; padding: 10px; }
-    .styled-table { border-collapse: collapse; color: #ffffff; font-size: 0.85rem; width: auto !important; margin: auto; }
+    .styled-table { border-collapse: collapse; color: #ffffff !important; font-size: 0.85rem; width: auto !important; margin: auto; }
     .styled-table th { background-color: #001d3d !important; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 10px 15px; text-align: center !important; white-space: nowrap; }
     .styled-table td { border: 1px solid #FEDD00; padding: 8px 12px; text-align: center !important; background-color: #001d3d; color: white !important; white-space: nowrap; }
     
@@ -89,6 +90,7 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Anali
 with tab1:
     st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi</div>', unsafe_allow_html=True)
     if df_raportor is not None:
+        # Excel'e eklediğiniz "Bekleyen Dosya Sayısı" sütunu burada otomatik olarak en sonda görünecek
         st.markdown('<div class="wide-table-wrapper">' + df_raportor.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 with tab2:
@@ -98,20 +100,15 @@ with tab2:
         sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = df_raportor[df_raportor.iloc[:, 1] == sec_r].iloc[0]
         
-        # İKONLU LİSTE VERİSİ
+        # İKONLU DETAY LİSTESİ
         ik_detay = pd.DataFrame({
             "Karar Türü": ["📌 Toplam Dosya", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📤 Geri Çekildi", "📊 KARAR VERİLEN", "⏳ BEKLEYEN"],
             "Sayı": [
-                clean_num(r_row.iloc[2]), # Atanan
-                clean_num(r_row.iloc[-11]), # Onay (Excel sütun sırasına göre ayarlı)
-                clean_num(r_row.iloc[-10]), # Düzeltme
-                clean_num(r_row.iloc[-9]),  # KAEK
-                clean_num(r_row.iloc[-8]),  # Görüş
-                clean_num(r_row.iloc[-7]),  # Ret
-                clean_num(r_row.iloc[-6]),  # Kapsam Dışı
-                clean_num(r_row.iloc[-5]),  # Geri Çekildi
-                clean_num(r_row.iloc[-1]),  # Karar Verilen Toplam
-                clean_num(float(r_row.iloc[2]) - float(r_row.iloc[-1])) # Bekleyen
+                clean_num(r_row.iloc[2]), clean_num(r_row.iloc[-11]), clean_num(r_row.iloc[-10]),
+                clean_num(r_row.iloc[-9]), clean_num(r_row.iloc[-8]), clean_num(r_row.iloc[-7]),
+                clean_num(r_row.iloc[-6]), clean_num(r_row.iloc[-5]), clean_num(r_row.iloc[-1]),
+                # Eğer Excel'de "Bekleyen" sütunu varsa r_row["Bekleyen Dosya Sayısı"] olarak da çekebiliriz
+                clean_num(float(r_row.iloc[2]) - float(r_row.iloc[-1]))
             ]
         })
         st.markdown('<div class="table-wrapper">' + ik_detay.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
@@ -131,4 +128,3 @@ with tab4:
         st.markdown('<div class="table-wrapper">' + sorumlu_df[sorumlu_df["Sorumlu Araştırmacı"] != "Satır Etiketleri"].applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
-
