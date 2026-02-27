@@ -87,7 +87,7 @@ st.markdown('<div class="centered-title">📊 ANALİZLER</div>', unsafe_allow_ht
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Araştırmacı Analizi"])
 
 with tab1:
-    st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi (Üye_1 Sayfası)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi</div>', unsafe_allow_html=True)
     if df_raportor is not None:
         st.markdown('<div class="wide-table-wrapper">' + df_raportor.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
@@ -131,3 +131,4 @@ with tab4:
         st.markdown('<div class="table-wrapper">' + sorumlu_df[sorumlu_df["Sorumlu Araştırmacı"] != "Satır Etiketleri"].applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
+
