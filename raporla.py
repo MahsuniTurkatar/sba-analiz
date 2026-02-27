@@ -21,13 +21,22 @@ def load_all_data():
 
 df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: MÜHÜRLÜ VE İKONLU TASARIM ---
+# --- CSS: MÜHÜRLÜ VE PDF UYUMLU TASARIM ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
     .centered-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 2.2rem; margin: 30px 0; }
     .section-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 1.8rem; margin: 25px 0; display: block; }
     
+    /* PDF ÇIKTISI İÇİN ÖZEL AYAR (Yazdırırken butonları gizler) */
+    @media print {
+        .stButton, .stDownloadButton, [data-testid="stSidebar"], .stSelectbox { display: none !important; }
+        .stApp { background-color: white !important; }
+        .styled-table td, .styled-table th { color: black !important; border: 1px solid black !important; }
+        .main-box, .sub-box { border: 1px solid black !important; background: white !important; }
+        .main-val, .sub-val, .main-lab, .sub-lab { color: black !important; }
+    }
+
     .metric-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
     .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 15px 40px; text-align: center; min-width: 180px; position: relative; }
     .main-box::before { content: "📌"; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #001d3d; padding: 0 10px; font-size: 1.2rem; }
@@ -59,7 +68,7 @@ def clean_num(val):
     try: return str(int(float(val)))
     except: return str(val)
 
-# --- 1. GÖSTERGELER ---
+# --- 1. ANA PANEL ---
 st.markdown('<div class="centered-title">Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</div>', unsafe_allow_html=True)
 st.markdown("""
     <div class="metric-row">
@@ -87,9 +96,12 @@ st.markdown('<div class="centered-title">📊 ANALİZLER</div>', unsafe_allow_ht
 tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Araştırmacı Analizi"])
 
 with tab1:
-    st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi (Üye_1 Sayfası)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi</div>', unsafe_allow_html=True)
     if df_raportor is not None:
         st.markdown('<div class="wide-table-wrapper">' + df_raportor.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        # Tabloyu indirme seçeneği
+        csv = df_raportor.to_csv(index=False).encode('utf-8-sig')
+        st.download_button("📥 Çizelgeyi Excel (CSV) Olarak İndir", csv, "Karar_Cizelgesi.csv", "text/csv")
 
 with tab2:
     st.markdown('<div class="section-title">👥 Raportör Karar Ayrıntıları</div>', unsafe_allow_html=True)
@@ -98,20 +110,13 @@ with tab2:
         sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = df_raportor[df_raportor.iloc[:, 1] == sec_r].iloc[0]
         
-        # İKONLU LİSTE VERİSİ
         ik_detay = pd.DataFrame({
             "Karar Türü": ["📌 Toplam Dosya", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📤 Geri Çekildi", "📊 KARAR VERİLEN", "⏳ BEKLEYEN"],
             "Sayı": [
-                clean_num(r_row.iloc[2]), # Atanan
-                clean_num(r_row.iloc[-11]), # Onay (Excel sütun sırasına göre ayarlı)
-                clean_num(r_row.iloc[-10]), # Düzeltme
-                clean_num(r_row.iloc[-9]),  # KAEK
-                clean_num(r_row.iloc[-8]),  # Görüş
-                clean_num(r_row.iloc[-7]),  # Ret
-                clean_num(r_row.iloc[-6]),  # Kapsam Dışı
-                clean_num(r_row.iloc[-5]),  # Geri Çekildi
-                clean_num(r_row.iloc[-1]),  # Karar Verilen Toplam
-                clean_num(float(r_row.iloc[2]) - float(r_row.iloc[-1])) # Bekleyen
+                clean_num(r_row.iloc[2]), clean_num(r_row.iloc[-11]), clean_num(r_row.iloc[-10]),
+                clean_num(r_row.iloc[-9]), clean_num(r_row.iloc[-8]), clean_num(r_row.iloc[-7]),
+                clean_num(r_row.iloc[-6]), clean_num(r_row.iloc[-5]), clean_num(r_row.iloc[-1]),
+                clean_num(float(r_row.iloc[2]) - float(r_row.iloc[-1]))
             ]
         })
         st.markdown('<div class="table-wrapper">' + ik_detay.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
