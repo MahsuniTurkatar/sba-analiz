@@ -1,65 +1,69 @@
 import streamlit as st
 import pandas as pd
 
-# --- SAYFA YAPILANDIRMASI ---
+# Sayfa Yapılandırması (SABİT)
 st.set_page_config(page_title="Hacettepe SBA 2026", layout="wide")
 
+# --- VERİ YÜKLEME ---
+EXCEL_FILE = "2026_SBA.xlsx" 
+
 @st.cache_data
-def load_data():
+def load_all_data():
     try:
-        # Excel sayfalarını en ham haliyle oku
-        df_g = pd.read_excel("2026_SBA.xlsx", sheet_name="Sayılar")
-        df_r = pd.read_excel("2026_SBA.xlsx", sheet_name="Üye_1", header=None)
-        df_p = pd.read_excel("2026_SBA.xlsx", sheet_name="Pivot")
+        df_g = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", skiprows=2)
+        df_r = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", header=0) 
+        df_p = pd.read_excel(EXCEL_FILE, sheet_name="Pivot")
+        df_r.columns = [str(c).strip() for c in df_r.columns]
         return df_g, df_r, df_p
     except Exception as e:
         st.error(f"Excel Okuma Hatası: {e}")
         return None, None, None
 
-df_g, df_r, df_p = load_data()
+df_gundem, df_raportor, df_pivot = load_all_data()
 
-# --- CSS: SÜTUNLAR VERİ KADAR GENİŞ OLACAK ---
+# --- CSS: MÜHÜRLÜ VE İKONLU TASARIM ---
 st.markdown("""
     <style>
     .stApp { background-color: #000814; }
-    .centered-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 2.2rem; margin-bottom: 30px; }
+    .centered-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 2.2rem; margin: 30px 0; }
     .section-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 1.8rem; margin: 25px 0; display: block; }
     
-    /* GÖSTERGELER (İKONSUZ) */
     .metric-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
-    .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 20px 45px; text-align: center; min-width: 200px; }
-    .main-val { color: #FEDD00; font-size: 3.5rem; font-weight: bold; display: block; line-height: 1; }
-    .main-lab { color: #ffffff; font-size: 1.2rem; display: block; margin-top: 8px; }
-
-    .sub-box { background-color: #001d3d; border: 1px solid #FEDD00; border-radius: 8px; padding: 15px; text-align: center; min-width: 160px; }
-    .sub-val { color: #FEDD00; font-size: 1.8rem; font-weight: bold; }
-    .sub-lab { color: #ffffff; font-size: 0.9rem; display: block; margin-top: 5px; }
-
-    /* TABLOLAR: SÜTUNLAR İÇİNDEKİ VERİ KADAR GENİŞ OLACAK */
-    .wide-table-wrapper { width: 100%; overflow-x: auto; border: 1px solid #FEDD00; border-radius: 8px; margin-bottom: 20px; }
-    .styled-table { border-collapse: collapse; color: white !important; font-size: 0.85rem; width: auto !important; min-width: 100%; }
-    .styled-table td, .styled-table th { 
-        border: 1px solid #FEDD00; 
-        padding: 10px 15px; 
-        text-align: center; 
-        background-color: #001d3d; 
-        white-space: nowrap !important; /* VERİ KADAR GENİŞLEME GARANTİSİ */
-    }
+    .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 15px 40px; text-align: center; min-width: 180px; position: relative; }
+    .main-box::before { content: "📌"; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #001d3d; padding: 0 10px; font-size: 1.2rem; }
+    .kurul-box::before { content: "📋"; }
     
-    .footer { text-align: center; color: #FEDD00; padding: 20px; margin-top: 40px; font-weight: bold; border-top: 1px solid #FEDD00; }
+    .main-val { color: #FEDD00; font-size: 3rem; font-weight: bold; display: block; line-height: 1; }
+    .main-lab { color: #ffffff; font-size: 1rem; display: block; margin-top: 5px; }
+
+    .sub-box { background-color: #001d3d; border: 1px solid #FEDD00; border-radius: 8px; padding: 10px; text-align: center; min-width: 140px; }
+    .sub-val { color: #FEDD00; font-size: 1.5rem; font-weight: bold; display: block; }
+    .sub-lab { color: #ffffff; font-size: 0.8rem; display: block; }
+
+    .table-wrapper { display: flex; justify-content: center; width: 100%; overflow-x: auto; padding: 10px; }
+    .styled-table { border-collapse: collapse; color: #ffffff; font-size: 0.85rem; width: auto !important; margin: auto; }
+    .styled-table th { background-color: #001d3d !important; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 10px 15px; text-align: center !important; white-space: nowrap; }
+    .styled-table td { border: 1px solid #FEDD00; padding: 8px 12px; text-align: center !important; background-color: #001d3d; color: white !important; white-space: nowrap; }
+    
+    .wide-table-wrapper { width: 100%; overflow-x: scroll; border: 1px solid #FEDD00; border-radius: 8px; }
+
+    .stTabs [data-baseweb="tab"] { color: #ffffff !important; font-weight: bold !important; font-size: 1.1rem; }
+    .stTabs [aria-selected="true"] { color: #FEDD00 !important; border-bottom: 3px solid #FEDD00 !important; }
+    
+    .footer { text-align: center; color: #FEDD00; padding: 20px; border-top: 1px solid #FEDD00; margin-top: 40px; font-weight: bold; }
     </style>
     """, unsafe_allow_html=True)
 
-def fmt(val):
+def clean_num(val):
     if pd.isna(val) or val == "" or str(val).strip() in ["0", "0.0", "nan"]: return ""
     try: return str(int(float(val)))
     except: return str(val)
 
-# --- ÜST PANEL ---
+# --- 1. GÖSTERGELER ---
 st.markdown('<div class="centered-title">Sağlık Bilimleri Araştırma Etik Kurulu Başvuruları</div>', unsafe_allow_html=True)
 st.markdown("""
     <div class="metric-row">
-        <div class="main-box"><span class="main-val">5</span><span class="main-lab">Kurul Sayısı</span></div>
+        <div class="main-box kurul-box"><span class="main-val">5</span><span class="main-lab">Kurul Sayısı</span></div>
         <div class="main-box"><span class="main-val">225</span><span class="main-lab">Toplam Başvuru</span></div>
     </div>
     <div class="metric-row">
@@ -70,55 +74,60 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-# --- ANALİZ SEKMELERİ ---
-t1, t2, t3, t4, t5 = st.tabs(["🗓️ Gündem Sayıları", "📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Araştırmacı Analizi"])
+# --- 2. GÜNDEM SAYILARI ---
+st.markdown('<div class="section-title">🗓️ 2026 Gündem Sayıları</div>', unsafe_allow_html=True)
+if df_gundem is not None:
+    dg = df_gundem[df_gundem['Gündem Tarihleri'].notna()].copy()
+    dg['Gündem Tarihleri'] = pd.to_datetime(dg['Gündem Tarihleri'], errors='coerce').dt.strftime('%d.%m.%Y')
+    t_row = pd.DataFrame([{"S.NO": "TOPLAM", "Gündem Tarihleri": "", "Başvuru": 225, "Düzeltme": 68, "Dilekçe": 45, "Toplam": 338}])
+    st.markdown('<div class="table-wrapper">' + pd.concat([dg, t_row], ignore_index=True).applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
-with t1:
-    st.markdown('<div class="section-title">🗓️ 2026 Gündem Sayıları</div>', unsafe_allow_html=True)
-    if df_g is not None:
-        # Sayılar sayfasındaki Gündem tablosu (S.No, Tarih, Başvuru, Düzeltme, Dilekçe, Toplam)
-        g_data = df_g.iloc[2:26, 0:6] 
-        st.markdown('<div class="wide-table-wrapper">' + g_data.applymap(fmt).to_html(index=False, header=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+# --- 3. ANALİZLER ---
+st.markdown('<div class="centered-title">📊 ANALİZLER</div>', unsafe_allow_html=True)
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Analizi", "🏢 Birim Analizi", "👨‍🏫 Araştırmacı Analizi"])
 
-with t2:
-    st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi (Üye_1)</div>', unsafe_allow_html=True)
-    if df_r is not None:
-        st.markdown('<div class="wide-table-wrapper">' + df_r.applymap(fmt).to_html(index=False, header=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+with tab1:
+    st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi (Üye_1 Sayfası)</div>', unsafe_allow_html=True)
+    if df_raportor is not None:
+        st.markdown('<div class="wide-table-wrapper">' + df_raportor.applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
-with t3:
+with tab2:
     st.markdown('<div class="section-title">👥 Raportör Karar Ayrıntıları</div>', unsafe_allow_html=True)
-    if df_r is not None:
-        # 1. Sıradan (Ayşe Nurten AKARSU) başlayan liste
-        r_list = df_r.iloc[2:14, 1].tolist()
+    if df_raportor is not None:
+        r_list = df_raportor.iloc[:, 1].dropna().unique().tolist()
         sec_r = st.selectbox("Raportör Seçin:", r_list)
-        r_row = df_r[df_r.iloc[:, 1] == sec_r].iloc[0]
+        r_row = df_raportor[df_raportor.iloc[:, 1] == sec_r].iloc[0]
         
-        # Veri çekme mantığı
-        atanan = r_row.iloc[2]
-        onay_top = r_row.iloc[35] # AJ sütunu
-        karar_top = r_row.iloc[42] # AQ sütunu
-        bekleyen = float(atanan) - float(karar_top)
-
-        res_df = pd.DataFrame({
-            "Kategori": ["📌 Atanan Dosya", "✅ Onay Toplam", "📊 Karar Verilen", "⏳ Bekleyen Dosya Sayısı", "📉 Bekleyen / 2"],
-            "Değer": [fmt(atanan), fmt(onay_top), fmt(karar_top), fmt(bekleyen), fmt(bekleyen/2)]
+        # İKONLU LİSTE VERİSİ
+        ik_detay = pd.DataFrame({
+            "Karar Türü": ["📌 Toplam Dosya", "✅ Onay", "📝 Düzeltme", "🏛️ KAEK", "💬 Görüş", "❌ Ret", "🚫 Kapsam Dışı", "📤 Geri Çekildi", "📊 KARAR VERİLEN", "⏳ BEKLEYEN"],
+            "Sayı": [
+                clean_num(r_row.iloc[2]), # Atanan
+                clean_num(r_row.iloc[-11]), # Onay (Excel sütun sırasına göre ayarlı)
+                clean_num(r_row.iloc[-10]), # Düzeltme
+                clean_num(r_row.iloc[-9]),  # KAEK
+                clean_num(r_row.iloc[-8]),  # Görüş
+                clean_num(r_row.iloc[-7]),  # Ret
+                clean_num(r_row.iloc[-6]),  # Kapsam Dışı
+                clean_num(r_row.iloc[-5]),  # Geri Çekildi
+                clean_num(r_row.iloc[-1]),  # Karar Verilen Toplam
+                clean_num(float(r_row.iloc[2]) - float(r_row.iloc[-1])) # Bekleyen
+            ]
         })
-        st.markdown('<div class="wide-table-wrapper" style="max-width:600px; margin:auto;">' + res_df.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+        st.markdown('<div class="table-wrapper">' + ik_detay.to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
-with t4:
+with tab3:
     st.markdown('<div class="section-title">🏢 Birim Analizi</div>', unsafe_allow_html=True)
-    if df_p is not None:
-        # Pivot sayfasındaki Birim verileri (A ve B sütunları)
-        b_df = df_p.iloc[1:, [0, 1]].dropna()
-        b_df.columns = ["Birim Adı", "Sayı"]
-        st.markdown('<div class="wide-table-wrapper">' + b_df.applymap(fmt).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+    if df_pivot is not None:
+        birim_df = df_pivot.iloc[:, [0, 1]].dropna().copy()
+        birim_df.columns = ["Birim Adı", "Dosya Sayısı"]
+        st.markdown('<div class="table-wrapper">' + birim_df[birim_df["Birim Adı"] != "Satır Etiketleri"].applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
-with t5:
+with tab4:
     st.markdown('<div class="section-title">👨‍🏫 Sorumlu Araştırmacı Analizi</div>', unsafe_allow_html=True)
-    if df_p is not None:
-        # Pivot sayfasındaki Araştırmacı verileri (D ve E sütunları)
-        s_df = df_p.iloc[1:, [3, 4]].dropna()
-        s_df.columns = ["Araştırmacı", "Sayı"]
-        st.markdown('<div class="wide-table-wrapper">' + s_df.applymap(fmt).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
+    if df_pivot is not None:
+        sorumlu_df = df_pivot.iloc[:, [3, 4]].dropna().copy()
+        sorumlu_df.columns = ["Sorumlu Araştırmacı", "Dosya Sayısı"]
+        st.markdown('<div class="table-wrapper">' + sorumlu_df[sorumlu_df["Sorumlu Araştırmacı"] != "Satır Etiketleri"].applymap(clean_num).to_html(index=False, classes='styled-table') + '</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="footer">Mahsuni TÜRKATAR</div>', unsafe_allow_html=True)
