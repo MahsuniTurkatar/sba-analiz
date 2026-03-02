@@ -143,13 +143,22 @@ tab1, tab2, tab3, tab4 = st.tabs(["📊 Karar Çizelgesi", "👥 Raportör Anali
 with tab1:
     st.markdown('<div class="section-title">📄 Genel Karar Çizelgesi</div>', unsafe_allow_html=True)
     if df_uye is not None:
-        st.markdown('<div class="wide-table-wrapper">' + df_to_html(df_uye) + '</div>', unsafe_allow_html=True)
+        sayi_sutunlar = df_uye.select_dtypes(include="number").columns.tolist()
+        toplam_uye_satir = {col: "" for col in df_uye.columns}
+        toplam_uye_satir["S.No"] = "TOPLAM"
+        toplam_uye_satir["Adı Soyadı"] = ""
+        for col in sayi_sutunlar:
+            toplam_uye_satir[col] = int(df_uye[col].sum())
+        df_uye_toplam = pd.concat([df_uye, pd.DataFrame([toplam_uye_satir])], ignore_index=True)
+        st.markdown('<div class="wide-table-wrapper">' + df_to_html(df_uye_toplam) + '</div>', unsafe_allow_html=True)
 
 with tab2:
     st.markdown('<div class="section-title">👥 Raportör Karar Ayrıntıları</div>', unsafe_allow_html=True)
     if df_uye is not None:
         r_list = df_uye["Adı Soyadı"].dropna().unique().tolist()
-        sec_r = st.selectbox("Raportör Seçin:", r_list)
+        _, col_mid, _ = st.columns([1, 2, 1])
+        with col_mid:
+            sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = df_uye[df_uye["Adı Soyadı"] == sec_r].iloc[0]
 
         ik_detay = pd.DataFrame({
