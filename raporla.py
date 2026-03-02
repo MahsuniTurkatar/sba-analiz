@@ -67,9 +67,9 @@ st.markdown("""
     .section-title { color: #ffffff !important; text-align: center !important; font-weight: bold !important; font-size: 1.8rem; margin: 25px 0; display: block; }
 
     .metric-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
-    .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 15px 40px; text-align: center; min-width: 180px; position: relative; }
-    .main-box::before { content: "📌"; position: absolute; top: -15px; left: 50%; transform: translateX(-50%); background: #001d3d; padding: 0 10px; font-size: 1.2rem; }
-    .kurul-box::before { content: "📋"; }
+    .main-box { background-color: #001d3d; border: 2px solid #FEDD00; border-radius: 12px; padding: 25px 40px; text-align: center; min-width: 180px; }
+    .main-box::before { content: ""; }
+    .kurul-box::before { content: ""; }
 
     .main-val { color: #FEDD00; font-size: 3rem; font-weight: bold; display: block; line-height: 1; }
     .main-lab { color: #ffffff; font-size: 1rem; display: block; margin-top: 5px; }
@@ -82,6 +82,8 @@ st.markdown("""
     .styled-table { border-collapse: collapse; color: #ffffff; font-size: 0.85rem; width: auto !important; margin: auto; }
     .styled-table th { background-color: #001d3d !important; color: #FEDD00 !important; border: 1px solid #FEDD00; padding: 10px 15px; text-align: center !important; white-space: nowrap; }
     .styled-table td { border: 1px solid #FEDD00; padding: 8px 12px; text-align: center !important; background-color: #001d3d; color: white !important; white-space: nowrap; }
+    .styled-table tr:nth-last-child(1) td { background-color: #003366 !important; color: #90ee90 !important; font-weight: bold; }
+    .styled-table tr:nth-last-child(2) td { background-color: #002244 !important; color: #FEDD00 !important; font-weight: bold; }
 
     .wide-table-wrapper { width: 100%; overflow-x: scroll; border: 1px solid #FEDD00; border-radius: 8px; }
 
@@ -149,14 +151,20 @@ with tab1:
         toplam_uye_satir["Adı Soyadı"] = ""
         for col in sayi_sutunlar:
             toplam_uye_satir[col] = int(df_uye[col].sum())
-        df_uye_toplam = pd.concat([df_uye, pd.DataFrame([toplam_uye_satir])], ignore_index=True)
+        # /2 satırı: her sayıyı 2'ye böl (1 dosya = 2 raportör mantığı)
+        bolum_satir = {col: "" for col in df_uye.columns}
+        bolum_satir["S.No"] = "DOSYA SAYISI"
+        bolum_satir["Adı Soyadı"] = "(Toplam / 2)"
+        for col in sayi_sutunlar:
+            bolum_satir[col] = int(df_uye[col].sum() // 2)
+        df_uye_toplam = pd.concat([df_uye, pd.DataFrame([toplam_uye_satir]), pd.DataFrame([bolum_satir])], ignore_index=True)
         st.markdown('<div class="wide-table-wrapper">' + df_to_html(df_uye_toplam) + '</div>', unsafe_allow_html=True)
 
 with tab2:
     st.markdown('<div class="section-title">👥 Raportör Karar Ayrıntıları</div>', unsafe_allow_html=True)
     if df_uye is not None:
         r_list = df_uye["Adı Soyadı"].dropna().unique().tolist()
-        _, col_mid, _ = st.columns([1, 2, 1])
+        _, col_mid, _ = st.columns([2, 1, 2])
         with col_mid:
             sec_r = st.selectbox("Raportör Seçin:", r_list)
         r_row = df_uye[df_uye["Adı Soyadı"] == sec_r].iloc[0]
