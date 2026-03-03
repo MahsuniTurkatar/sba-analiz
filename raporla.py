@@ -317,43 +317,142 @@ with tab2:
         with col_mid:
             sec_r = st.selectbox("Raportör Seçin:", r_list)
         r = df_uye[df_uye["Adı Soyadı"] == sec_r].iloc[0]
+
         dosya = safe_int(r["Dosya Sayısı"])
-        onay  = safe_int(r["Onay Toplam"])
-        duz   = safe_int(r["Düzeltme Toplam"])
-        kaek  = safe_int(r["KAEK  Toplam"])
-        gorus = safe_int(r["Görüş Toplam"])
-        ret   = safe_int(r["Ret Toplam"])
-        kap   = safe_int(r["Kapsam Dışı Toplam"])
-        geri  = safe_int(r["Geri Çekildi Toplam"])
         genel = safe_int(r["GENEL TOPLAM"])
         bek   = safe_int(r["BEKLEYEN DOSYA SAYISI"])
         tam   = round(genel/dosya*100) if dosya else 0
 
+        # Nitelik × Karar matrisi
+        # Sütunlar: Bireysel, YL, Doktora, Uzmanlık, Toplam
+        # Satırlar: Onay, Düzeltme, KAEK, Görüş, Ret, Kapsam Dışı, Geri Çekildi, TOPLAM
+        nit = {
+            "Bireysel": "Bireysel Araştırma",
+            "YL Tezi":  "Yüksek Lisans Tezi",
+            "Doktora":  "Doktora Tezi",
+            "Uzm. Tezi":"Uzmanlık Tezi",
+        }
+        kar = {
+            "✅ Onay":         "Onay",
+            "📝 Düzeltme":     "Düzeltme",
+            "🏛 KAEK":         "KAEK",
+            "💬 Görüş":        "Görüş",
+            "❌ Ret":          "Ret",
+            "🚫 Kapsam Dışı":  "Kapsam Dışı",
+            "📤 Geri Çekildi": "Geri Çekildi",
+        }
+
+        def v(nitelik_prefix, karar_suffix):
+            # Üye_1 sütun adı: "{Nitelik} {Karar}" formatı
+            # Özel: "Doktora Tezi  Düzeltme" (çift boşluk)
+            col = f"{nitelik_prefix} {karar_suffix}"
+            # Çift boşluk varyantını da dene
+            col2 = f"{nitelik_prefix}  {karar_suffix}"
+            if col in r.index:  return safe_int(r[col])
+            if col2 in r.index: return safe_int(r[col2])
+            return 0
+
+        def toplam_satir_val(karar_label):
+            suffix = kar[karar_label]
+            # Genel toplam sütunları
+            mapping = {
+                "Onay": "Onay Toplam", "Düzeltme": "Düzeltme Toplam",
+                "KAEK": "KAEK  Toplam", "Görüş": "Görüş Toplam",
+                "Ret": "Ret Toplam", "Kapsam Dışı": "Kapsam Dışı Toplam",
+                "Geri Çekildi": "Geri Çekildi Toplam"
+            }
+            col = mapping.get(suffix, "")
+            return safe_int(r[col]) if col in r.index else 0
+
+        # Nitelik toplamları
+        nit_top = {
+            "Bireysel":  safe_int(r["BİREYSEL TOPLAM"]),
+            "YL Tezi":   safe_int(r["YÜKSEK LİSANS TEZİ TOPLAM"]),
+            "Doktora":   safe_int(r["DOKTORA TEZİ TOPLAM"]),
+            "Uzm. Tezi": safe_int(r["UZMANLIK TEZİ TOPLAM"]),
+        }
+
+        # Tablo satırları
+        matrix_rows = ""
+        for kar_label, kar_suffix in kar.items():
+            cells = ""
+            for nit_label, nit_prefix in nit.items():
+                val = v(nit_prefix, kar_suffix)
+                cells += f'<td class="c-num">{val or ""}</td>'
+            row_top = toplam_satir_val(kar_label)
+            p = pct_span(row_top, dosya)
+            matrix_rows += f"""<tr>
+                <td style="padding:10px 16px;color:#1A1814">{kar_label}</td>
+                {cells}
+                <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">
+                    {row_top or ""} {p}
+                </td>
+            </tr>"""
+
+        # TOPLAM satırı
+        top_cells = "".join(
+            f'<td class="c-num" style="font-weight:500">{nit_top[n]}</td>'
+            for n in nit
+        )
+        matrix_rows += f"""<tr class="toplam-satir">
+            <td>📊 TOPLAM (Karar Verilen)</td>
+            {top_cells}
+            <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">
+                {genel} {pct_span(genel,dosya)}
+            </td>
+        </tr>"""
+        # BEKLEYEN satırı
+        matrix_rows += f"""<tr style="background:#FFF0EB">
+            <td style="padding:10px 16px;color:#C8502A;font-weight:500">⏳ Bekleyen</td>
+            <td colspan="4"></td>
+            <td class="c-num" style="color:#C8502A;font-weight:500;border-left:2px solid #E0DCD4">
+                {bek} {pct_span(bek,dosya)}
+            </td>
+        </tr>"""
+
+        # Özet kartları
         st.markdown(f"""
-        <div class="panel" style="max-width:480px; margin:24px auto;">
-            <div class="panel-head"><span class="panel-title">{sec_r}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:24px 32px 0;">
+            <div class="card primary">
+                <div class="card-num">{dosya}</div>
+                <div class="card-label">Atanan Dosya</div>
+            </div>
+            <div class="card">
+                <div class="card-num">{genel}</div>
+                <div class="card-label">Karar Verilen</div>
+                <div class="card-sub">{pct_span(genel,dosya)}</div>
+            </div>
+            <div class="card">
+                <div class="card-num">{bek}</div>
+                <div class="card-label">Bekleyen</div>
+                <div class="card-sub">{pct_span(bek,dosya)}</div>
+            </div>
+            <div class="card">
+                <div class="card-num">{tam}%</div>
+                <div class="card-label">Tamamlanma</div>
+            </div>
+        </div>
+        <div class="panel" style="margin:16px 32px 24px;">
+            <div class="panel-head">
+                <span class="panel-title">Nitelik × Karar Matrisi</span>
+                <span style="font-size:0.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+                    satır: karar türü &nbsp;|&nbsp; sütun: başvuru niteliği
+                </span>
+            </div>
             <table class="styled-table">
-                <thead><tr><th>Karar Türü</th><th>Sayı</th><th>Pay</th></tr></thead>
-                <tbody>
-                <tr><td>📌 Atanan Dosya</td><td class="mono">{dosya}</td><td>—</td></tr>
-                <tr><td>✅ Onay</td><td class="mono">{onay}</td><td class="mono">{pct_span(onay,dosya)}</td></tr>
-                <tr><td>📝 Düzeltme</td><td class="mono">{duz}</td><td class="mono">{pct_span(duz,dosya)}</td></tr>
-                <tr><td>🏛️ KAEK</td><td class="mono">{kaek}</td><td class="mono">{pct_span(kaek,dosya)}</td></tr>
-                <tr><td>💬 Görüş</td><td class="mono">{gorus}</td><td class="mono">{pct_span(gorus,dosya)}</td></tr>
-                <tr><td>❌ Ret</td><td class="mono">{ret}</td><td class="mono">{pct_span(ret,dosya)}</td></tr>
-                <tr><td>🚫 Kapsam Dışı</td><td class="mono">{kap}</td><td class="mono">{pct_span(kap,dosya)}</td></tr>
-                <tr><td>📤 Geri Çekildi</td><td class="mono">{geri}</td><td>—</td></tr>
-                <tr style="border-top:2px solid #E0DCD4">
-                    <td><b>📊 Karar Verilen</b></td>
-                    <td class="mono"><b>{genel}</b></td>
-                    <td class="mono"><b>{pct_span(genel,dosya)}</b></td>
-                </tr>
-                <tr><td>⏳ Bekleyen</td><td class="mono">{bek}</td><td class="mono">{pct_span(bek,dosya)}</td></tr>
-                </tbody>
+                <thead><tr>
+                    <th>Karar Türü</th>
+                    <th class="c-num">Bireysel</th>
+                    <th class="c-num">YL Tezi</th>
+                    <th class="c-num">Doktora</th>
+                    <th class="c-num">Uzm. Tezi</th>
+                    <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
+                </tr></thead>
+                <tbody>{matrix_rows}</tbody>
             </table>
             <div class="panel-footer">
-                <span>Tamamlanma oranı</span>
-                <span><b>{tam}%</b></span>
+                <span>{sec_r}</span>
+                <span>Son güncelleme: {son_tarih}</span>
             </div>
         </div>""", unsafe_allow_html=True)
 
