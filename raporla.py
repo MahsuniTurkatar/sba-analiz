@@ -372,25 +372,54 @@ with tab3:
 
 # ── TAB 4: BİRİM ANALİZİ ─────────────────────────────────────────────────────
 with tab4:
-    if df_pivot is not None:
-        birim_df = df_pivot[["Satır Etiketleri","Say BİRİMİ"]].dropna().copy()
-        birim_df.columns = ["Birim Adı","Dosya Sayısı"]
-        birim_df = birim_df[
-            ~birim_df["Birim Adı"].isin(["Satır Etiketleri", "Genel Toplam"])
-        ].copy()
-        b_top = int(birim_df["Dosya Sayısı"].sum())
+    if df_basvuru is not None:
+        nitelik_listesi = ["Bireysel Araştırma", "Uzmanlık Tezi", "Yüksek Lisans Tezi", "Doktora Tezi"]
+
+        # Birim + Nitelik pivot
+        birim_nitelik = df_basvuru.groupby(["BİRİMİ", "NİTELİĞİ"]).size().unstack(fill_value=0)
+        for n in nitelik_listesi:
+            if n not in birim_nitelik.columns:
+                birim_nitelik[n] = 0
+        birim_nitelik = birim_nitelik[nitelik_listesi]
+        birim_nitelik["Toplam"] = birim_nitelik.sum(axis=1)
+        birim_nitelik = birim_nitelik.sort_values("Toplam", ascending=False).reset_index()
+
+        b_top = int(birim_nitelik["Toplam"].sum())
+
+        # Kısa etiketler
+        kis = {"Bireysel Araştırma": "Bireysel", "Uzmanlık Tezi": "Uzm. Tezi",
+               "Yüksek Lisans Tezi": "YL Tezi", "Doktora Tezi": "Doktora"}
+
         rows = ""
-        for i, (_, row) in enumerate(birim_df.iterrows(), 1):
-            s = int(row["Dosya Sayısı"])
-            p = round(s/b_top*100,1) if b_top else 0
+        for i, row in birim_nitelik.iterrows():
+            detay = " &nbsp;·&nbsp; ".join(
+                f"<span style='color:#8C8880;font-size:0.78rem'>{kis[n]}: <b style='color:#1A1814'>{int(row[n])}</b></span>"
+                for n in nitelik_listesi if int(row[n]) > 0
+            )
             rows += f"""<tr>
-                <td class="mono" style="color:#C4BFB8;width:40px">{i:02d}</td>
-                <td>{row['Birim Adı']}</td>
-                <td class="mono">{s}</td>
+                <td class="mono" style="color:#C4BFB8">{i+1:02d}</td>
+                <td>{row['BİRİMİ']} <span style='margin-left:8px'>{detay}</span></td>
+                <td class="mono">{int(row['Toplam'])}</td>
             </tr>"""
+
+        # Toplam satırı
+        t_bir = int(birim_nitelik["Bireysel Araştırma"].sum())
+        t_uzm = int(birim_nitelik["Uzmanlık Tezi"].sum())
+        t_yl  = int(birim_nitelik["Yüksek Lisans Tezi"].sum())
+        t_dok = int(birim_nitelik["Doktora Tezi"].sum())
+        rows += f"""<tr class="toplam-satir">
+            <td colspan="2">TOPLAM &nbsp;·&nbsp;
+                <span style='font-weight:400;font-size:0.82rem'>
+                Bireysel: {t_bir} &nbsp;·&nbsp; Uzm. Tezi: {t_uzm} &nbsp;·&nbsp;
+                YL Tezi: {t_yl} &nbsp;·&nbsp; Doktora: {t_dok}
+                </span>
+            </td>
+            <td class="mono">{b_top}</td>
+        </tr>"""
+
         st.markdown(f"""
-        <div class="panel" style="margin:24px 32px; max-width:700px;">
-            <div class="panel-head"><span class="panel-title">Birim Analizi — {len(birim_df)} birim</span></div>
+        <div class="panel" style="margin:24px 32px; max-width:860px;">
+            <div class="panel-head"><span class="panel-title">Birim Analizi — {len(birim_nitelik)} birim</span></div>
             <table class="styled-table"><thead><tr>
                 <th>#</th><th>Birim Adı</th><th>Dosya Sayısı</th>
             </tr></thead><tbody>{rows}</tbody></table>
@@ -398,34 +427,27 @@ with tab4:
 
 # ── TAB 5: ARAŞTIRMACI ANALİZİ ───────────────────────────────────────────────
 with tab5:
-    if df_pivot is not None:
-        sor_df = df_pivot[["Satır Etiketleri.1","Say SORUMLUSU"]].dropna().copy()
-        sor_df.columns = ["Sorumlu Araştırmacı","Dosya Sayısı"]
-        sor_df = sor_df[
-            ~sor_df["Sorumlu Araştırmacı"].isin(["Satır Etiketleri", "Genel Toplam"])
-        ].copy()
+    if df_basvuru is not None:
+        sor_df = df_basvuru.groupby("SORUMLUSU").size().reset_index(name="Dosya Sayısı")
+        sor_df = sor_df[sor_df["SORUMLUSU"].notna()].sort_values("Dosya Sayısı", ascending=False).reset_index(drop=True)
         s_top = int(sor_df["Dosya Sayısı"].sum())
         rows = ""
-        for i, (_, row) in enumerate(sor_df.iterrows(), 1):
+        for i, row in sor_df.iterrows():
             s = int(row["Dosya Sayısı"])
-            p = round(s/s_top*100,1) if s_top else 0
             rows += f"""<tr>
-                <td class="mono" style="color:#C4BFB8;width:40px">{i:02d}</td>
-                <td>{row['Sorumlu Araştırmacı']}</td>
+                <td class="mono" style="color:#C4BFB8">{i+1:02d}</td>
+                <td>{row['SORUMLUSU']}</td>
                 <td class="mono">{s}</td>
             </tr>"""
+        rows += f"""<tr class="toplam-satir">
+            <td colspan="2">TOPLAM</td>
+            <td class="mono">{s_top}</td>
+        </tr>"""
         st.markdown(f"""
         <div class="panel" style="margin:24px 32px; max-width:700px;">
             <div class="panel-head"><span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span></div>
             <table class="styled-table"><thead><tr>
                 <th>#</th><th>Sorumlu Araştırmacı</th><th>Dosya Sayısı</th>
-            </tr></thead><tbody>{rows}</tbody></table>
-        </div>""", unsafe_allow_html=True)
-        st.markdown(f"""
-        <div class="panel" style="margin:24px 32px;">
-            <div class="panel-head"><span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span></div>
-            <table class="styled-table"><thead><tr>
-                <th>#</th><th>Sorumlu Araştırmacı</th><th>Dosya Sayısı</th><th>Dağılım</th>
             </tr></thead><tbody>{rows}</tbody></table>
         </div>""", unsafe_allow_html=True)
 
