@@ -131,7 +131,12 @@ st.markdown("""
 .styled-table tr.bolum-satir td { background:#FFF0EB !important; font-family:'IBM Plex Mono',monospace; font-weight:500; color:#C8502A !important; }
 
 .mono { font-family:'IBM Plex Mono',monospace !important; font-size:0.9rem !important; }
-.pct { color:#C4BFB8; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; margin-left:4px; }
+.c-num { font-family:'IBM Plex Mono',monospace !important; font-size:0.88rem !important; text-align:center !important; white-space:nowrap; }
+.c-idx { font-family:'IBM Plex Mono',monospace !important; font-size:0.78rem !important; color:#C4BFB8; text-align:center !important; width:36px; }
+.styled-table td.c-num { text-align:center !important; }
+.styled-table th.c-num { text-align:center !important; }
+.styled-table td.c-idx { text-align:center !important; }
+.pct { color:#C4BFB8; font-size:0.72rem; font-family:'IBM Plex Mono',monospace; display:block; line-height:1.2; }
 
 .prog-wrap { display:flex; align-items:center; gap:8px; min-width:130px; }
 .prog-bar { flex:1; height:6px; background:#E0DCD4; border-radius:3px; overflow:hidden; }
@@ -230,19 +235,24 @@ with tab1:
             bek   = safe_int(row["BEKLEYEN DOSYA SAYISI"])
             tam   = round(genel/dosya*100) if dosya else 0
             bar_c = "green" if tam >= 80 else ""
+            kaek_v = safe_int(row['KAEK  Toplam'])
+            gorus_v= safe_int(row['Görüş Toplam'])
+            ret_v  = safe_int(row['Ret Toplam'])
+            kap_v  = safe_int(row['Kapsam Dışı Toplam'])
+            geri_v = safe_int(row['Geri Çekildi Toplam'])
             rows_html += f"""<tr>
-                <td class="mono" style="color:#C4BFB8">{clean_num(row['S.No'])}</td>
+                <td class="c-idx">{clean_num(row['S.No'])}</td>
                 <td>{row['Adı Soyadı']}</td>
-                <td class="mono">{dosya}</td>
-                <td class="mono">{onay} {pct_span(onay,dosya)}</td>
-                <td class="mono">{duz} {pct_span(duz,dosya)}</td>
-                <td class="mono">{clean_num(row['KAEK  Toplam'])}</td>
-                <td class="mono">{clean_num(row['Görüş Toplam'])}</td>
-                <td class="mono">{clean_num(row['Ret Toplam'])}</td>
-                <td class="mono">{clean_num(row['Kapsam Dışı Toplam'])}</td>
-                <td class="mono">{clean_num(row['Geri Çekildi Toplam'])}</td>
-                <td class="mono">{genel} {pct_span(genel,dosya)}</td>
-                <td class="mono">{bek}</td>
+                <td class="c-num">{dosya}</td>
+                <td class="c-num">{onay}<br/>{pct_span(onay,dosya)}</td>
+                <td class="c-num">{duz}<br/>{pct_span(duz,dosya)}</td>
+                <td class="c-num">{kaek_v or ''}</td>
+                <td class="c-num">{gorus_v or ''}</td>
+                <td class="c-num">{ret_v or ''}</td>
+                <td class="c-num">{kap_v or ''}</td>
+                <td class="c-num">{geri_v or ''}</td>
+                <td class="c-num">{genel}<br/>{pct_span(genel,dosya)}</td>
+                <td class="c-num">{bek}</td>
                 <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill {bar_c}" style="width:{tam}%"></div></div><span class="prog-pct">{tam}%</span></div></td>
             </tr>"""
 
@@ -250,38 +260,47 @@ with tab1:
         td = t.get("Dosya Sayısı",0); to = t.get("Onay Toplam",0)
         tdz= t.get("Düzeltme Toplam",0); tg = t.get("GENEL TOPLAM",0)
         tb = t.get("BEKLEYEN DOSYA SAYISI",0)
+        tk = t.get("KAEK  Toplam",0); tgo= t.get("Görüş Toplam",0)
+        tr_= t.get("Ret Toplam",0);  tkp= t.get("Kapsam Dışı Toplam",0)
+        tgr= t.get("Geri Çekildi Toplam",0)
         rows_html += f"""<tr class="toplam-satir">
             <td colspan="2">TOPLAM</td>
-            <td class="mono">{td}</td>
-            <td class="mono">{to} {pct_span(to,td)}</td>
-            <td class="mono">{tdz} {pct_span(tdz,td)}</td>
-            <td class="mono">{t.get('KAEK  Toplam',0)}</td>
-            <td class="mono">{t.get('Görüş Toplam',0)}</td>
-            <td class="mono">{t.get('Ret Toplam',0)}</td>
-            <td class="mono">{t.get('Kapsam Dışı Toplam',0)}</td>
-            <td class="mono">{t.get('Geri Çekildi Toplam',0)}</td>
-            <td class="mono">{tg} {pct_span(tg,td)}</td>
-            <td class="mono">{tb}</td><td></td>
+            <td class="c-num">{td}</td>
+            <td class="c-num">{to}<br/>{pct_span(to,td)}</td>
+            <td class="c-num">{tdz}<br/>{pct_span(tdz,td)}</td>
+            <td class="c-num">{tk}</td>
+            <td class="c-num">{tgo}</td>
+            <td class="c-num">{tr_}</td>
+            <td class="c-num">{tkp}</td>
+            <td class="c-num">{tgr}</td>
+            <td class="c-num">{tg}<br/>{pct_span(tg,td)}</td>
+            <td class="c-num">{tb}</td><td></td>
         </tr>"""
         dd=td//2; do_=to//2; ddz=tdz//2; dg=tg//2; db=tb//2
+        dk=tk//2; dgo=tgo//2; dr=tr_//2; dkp=tkp//2; dgr=tgr//2
         rows_html += f"""<tr class="bolum-satir">
             <td colspan="2">DOSYA SAYISI (Toplam / 2)</td>
-            <td class="mono">{dd}</td>
-            <td class="mono">{do_} {pct_span(do_,dd)}</td>
-            <td class="mono">{ddz} {pct_span(ddz,dd)}</td>
-            <td colspan="5"></td>
-            <td class="mono">{dg} {pct_span(dg,dd)}</td>
-            <td class="mono">{db}</td><td></td>
+            <td class="c-num">{dd}</td>
+            <td class="c-num">{do_}<br/>{pct_span(do_,dd)}</td>
+            <td class="c-num">{ddz}<br/>{pct_span(ddz,dd)}</td>
+            <td class="c-num">{dk or ''}<br/>{pct_span(dk,dd) if dk else ''}</td>
+            <td class="c-num">{dgo or ''}<br/>{pct_span(dgo,dd) if dgo else ''}</td>
+            <td class="c-num">{dr or ''}<br/>{pct_span(dr,dd) if dr else ''}</td>
+            <td class="c-num">{dkp or ''}<br/>{pct_span(dkp,dd) if dkp else ''}</td>
+            <td class="c-num">{dgr or ''}<br/>{pct_span(dgr,dd) if dgr else ''}</td>
+            <td class="c-num">{dg}<br/>{pct_span(dg,dd)}</td>
+            <td class="c-num">{db}</td><td></td>
         </tr>"""
         st.markdown(f"""
         <div class="panel">
             <div class="panel-head"><span class="panel-title">Raportör Performans Tablosu</span></div>
             <div class="wide-table-wrapper">
             <table class="styled-table"><thead><tr>
-                <th>#</th><th>Adı Soyadı</th><th>Atanan</th>
-                <th>Onay</th><th>Düzeltme</th><th>KAEK</th><th>Görüş</th>
-                <th>Ret</th><th>Kapsam Dışı</th><th>Geri Çekildi</th>
-                <th>Karar Verilen</th><th>Bekleyen</th><th>Tamamlanma</th>
+                <th class="c-idx">#</th><th>Adı Soyadı</th><th class="c-num">Atanan</th>
+                <th class="c-num">Onay</th><th class="c-num">Düzeltme</th>
+                <th class="c-num">KAEK</th><th class="c-num">Görüş</th>
+                <th class="c-num">Ret</th><th class="c-num">Kapsam Dışı</th><th class="c-num">Geri Çekildi</th>
+                <th class="c-num">Karar Verilen</th><th class="c-num">Bekleyen</th><th class="c-num">Tamamlanma</th>
             </tr></thead><tbody>{rows_html}</tbody></table>
             </div>
             <div class="panel-footer">
@@ -385,6 +404,10 @@ with tab4:
         birim_nitelik = birim_nitelik.sort_values("Toplam", ascending=False).reset_index()
 
         b_top = int(birim_nitelik["Toplam"].sum())
+        t_bir = int(birim_nitelik["Bireysel Araştırma"].sum())
+        t_uzm = int(birim_nitelik["Uzmanlık Tezi"].sum())
+        t_yl  = int(birim_nitelik["Yüksek Lisans Tezi"].sum())
+        t_dok = int(birim_nitelik["Doktora Tezi"].sum())
 
         # Kısa etiketler
         kis = {"Bireysel Araştırma": "Bireysel", "Uzmanlık Tezi": "Uzm. Tezi",
@@ -392,36 +415,33 @@ with tab4:
 
         rows = ""
         for i, row in birim_nitelik.iterrows():
-            detay = " &nbsp;·&nbsp; ".join(
-                f"<span style='color:#8C8880;font-size:0.78rem'>{kis[n]}: <b style='color:#1A1814'>{int(row[n])}</b></span>"
-                for n in nitelik_listesi if int(row[n]) > 0
-            )
             rows += f"""<tr>
-                <td class="mono" style="color:#C4BFB8">{i+1:02d}</td>
-                <td>{row['BİRİMİ']} <span style='margin-left:8px'>{detay}</span></td>
-                <td class="mono">{int(row['Toplam'])}</td>
+                <td class="c-idx">{i+1:02d}</td>
+                <td>{row['BİRİMİ']}</td>
+                <td class="c-num">{int(row['Bireysel Araştırma']) or ''}</td>
+                <td class="c-num">{int(row['Uzmanlık Tezi']) or ''}</td>
+                <td class="c-num">{int(row['Yüksek Lisans Tezi']) or ''}</td>
+                <td class="c-num">{int(row['Doktora Tezi']) or ''}</td>
+                <td class="c-num" style="font-weight:500">{int(row['Toplam'])}</td>
             </tr>"""
 
-        # Toplam satırı
-        t_bir = int(birim_nitelik["Bireysel Araştırma"].sum())
-        t_uzm = int(birim_nitelik["Uzmanlık Tezi"].sum())
-        t_yl  = int(birim_nitelik["Yüksek Lisans Tezi"].sum())
-        t_dok = int(birim_nitelik["Doktora Tezi"].sum())
         rows += f"""<tr class="toplam-satir">
-            <td colspan="2">TOPLAM &nbsp;·&nbsp;
-                <span style='font-weight:400;font-size:0.82rem'>
-                Bireysel: {t_bir} &nbsp;·&nbsp; Uzm. Tezi: {t_uzm} &nbsp;·&nbsp;
-                YL Tezi: {t_yl} &nbsp;·&nbsp; Doktora: {t_dok}
-                </span>
-            </td>
-            <td class="mono">{b_top}</td>
+            <td colspan="2">TOPLAM</td>
+            <td class="c-num">{t_bir}</td>
+            <td class="c-num">{t_uzm}</td>
+            <td class="c-num">{t_yl}</td>
+            <td class="c-num">{t_dok}</td>
+            <td class="c-num" style="font-weight:500">{b_top}</td>
         </tr>"""
 
         st.markdown(f"""
-        <div class="panel" style="margin:24px 32px; max-width:860px;">
+        <div class="panel" style="margin:24px 32px; max-width:900px;">
             <div class="panel-head"><span class="panel-title">Birim Analizi — {len(birim_nitelik)} birim</span></div>
             <table class="styled-table"><thead><tr>
-                <th>#</th><th>Birim Adı</th><th>Dosya Sayısı</th>
+                <th class="c-idx">#</th><th>Birim Adı</th>
+                <th class="c-num">Bireysel</th><th class="c-num">Uzm. Tezi</th>
+                <th class="c-num">YL Tezi</th><th class="c-num">Doktora</th>
+                <th class="c-num">Toplam</th>
             </tr></thead><tbody>{rows}</tbody></table>
         </div>""", unsafe_allow_html=True)
 
@@ -435,19 +455,19 @@ with tab5:
         for i, row in sor_df.iterrows():
             s = int(row["Dosya Sayısı"])
             rows += f"""<tr>
-                <td class="mono" style="color:#C4BFB8">{i+1:02d}</td>
+                <td class="c-idx">{i+1:02d}</td>
                 <td>{row['SORUMLUSU']}</td>
-                <td class="mono">{s}</td>
+                <td class="c-num">{s}</td>
             </tr>"""
         rows += f"""<tr class="toplam-satir">
             <td colspan="2">TOPLAM</td>
-            <td class="mono">{s_top}</td>
+            <td class="c-num">{s_top}</td>
         </tr>"""
         st.markdown(f"""
         <div class="panel" style="margin:24px 32px; max-width:700px;">
             <div class="panel-head"><span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span></div>
             <table class="styled-table"><thead><tr>
-                <th>#</th><th>Sorumlu Araştırmacı</th><th>Dosya Sayısı</th>
+                <th class="c-idx">#</th><th>Sorumlu Araştırmacı</th><th class="c-num">Dosya Sayısı</th>
             </tr></thead><tbody>{rows}</tbody></table>
         </div>""", unsafe_allow_html=True)
 
