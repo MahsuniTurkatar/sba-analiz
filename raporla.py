@@ -384,16 +384,15 @@ with tab4:
             s = int(row["Dosya Sayısı"])
             p = round(s/b_top*100,1) if b_top else 0
             rows += f"""<tr>
-                <td class="mono" style="color:#C4BFB8">{i:02d}</td>
+                <td class="mono" style="color:#C4BFB8;width:40px">{i:02d}</td>
                 <td>{row['Birim Adı']}</td>
-                <td class="mono">{s}</td>
-                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div></div></td>
+                <td class="mono" style="width:100px;text-align:right !important">{s}</td>
             </tr>"""
         st.markdown(f"""
-        <div class="panel" style="margin:24px 32px;">
+        <div class="panel" style="margin:24px 32px; max-width:700px;">
             <div class="panel-head"><span class="panel-title">Birim Analizi — {len(birim_df)} birim</span></div>
             <table class="styled-table"><thead><tr>
-                <th>#</th><th>Birim Adı</th><th>Dosya Sayısı</th><th>Dağılım</th>
+                <th style="width:40px">#</th><th>Birim Adı</th><th style="width:100px;text-align:right !important">Dosya Sayısı</th>
             </tr></thead><tbody>{rows}</tbody></table>
         </div>""", unsafe_allow_html=True)
 
@@ -411,11 +410,17 @@ with tab5:
             s = int(row["Dosya Sayısı"])
             p = round(s/s_top*100,1) if s_top else 0
             rows += f"""<tr>
-                <td class="mono" style="color:#C4BFB8">{i:02d}</td>
+                <td class="mono" style="color:#C4BFB8;width:40px">{i:02d}</td>
                 <td>{row['Sorumlu Araştırmacı']}</td>
-                <td class="mono">{s}</td>
-                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div></div></td>
+                <td class="mono" style="width:100px;text-align:right !important">{s}</td>
             </tr>"""
+        st.markdown(f"""
+        <div class="panel" style="margin:24px 32px; max-width:700px;">
+            <div class="panel-head"><span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span></div>
+            <table class="styled-table"><thead><tr>
+                <th style="width:40px">#</th><th>Sorumlu Araştırmacı</th><th style="width:100px;text-align:right !important">Dosya Sayısı</th>
+            </tr></thead><tbody>{rows}</tbody></table>
+        </div>""", unsafe_allow_html=True)
         st.markdown(f"""
         <div class="panel" style="margin:24px 32px;">
             <div class="panel-head"><span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span></div>
