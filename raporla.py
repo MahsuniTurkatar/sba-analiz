@@ -105,39 +105,39 @@ st.markdown("""
 .t-label { font-size:0.65rem; letter-spacing:0.07em; text-transform:uppercase; color:rgba(255,255,255,0.4); }
 
 .page-head { display:flex; align-items:baseline; justify-content:space-between; padding:28px 32px 0; margin-bottom:20px; }
-.page-title { font-family:'DM Serif Display',serif; font-size:1.6rem; font-weight:400; color:#1A1814; }
-.page-date { font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#8C8880; }
+.page-title { font-family:'DM Serif Display',serif; font-size:2rem; font-weight:400; color:#1A1814; }
+.page-date { font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:#8C8880; }
 
 .cards { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; padding:0 32px 24px; }
-.card { background:#FFFFFF; border:1px solid #E0DCD4; border-radius:12px; padding:18px 20px; position:relative; overflow:hidden; }
+.card { background:#FFFFFF; border:1px solid #E0DCD4; border-radius:12px; padding:20px 22px; position:relative; overflow:hidden; }
 .card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:#E0DCD4; }
 .card.primary::before { background:#C8502A; }
-.card-num { font-family:'IBM Plex Mono',monospace; font-size:1.8rem; font-weight:500; color:#1A1814; line-height:1; }
+.card-num { font-family:'IBM Plex Mono',monospace; font-size:2.2rem; font-weight:500; color:#1A1814; line-height:1; }
 .card.primary .card-num { color:#C8502A; }
-.card-label { font-size:0.65rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8C8880; margin-top:6px; }
-.card-sub { font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:#C4BFB8; margin-top:4px; }
+.card-label { font-size:0.78rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#8C8880; margin-top:8px; }
+.card-sub { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#C4BFB8; margin-top:4px; }
 
 .panel { background:#FFFFFF; border:1px solid #E0DCD4; border-radius:12px; overflow:hidden; margin:0 32px 24px; }
-.panel-head { padding:14px 20px; border-bottom:1px solid #E0DCD4; display:flex; align-items:center; justify-content:space-between; background:#FAF8F4; }
-.panel-title { font-size:0.7rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#8C8880; }
-.panel-footer { padding:10px 20px; background:#FAF8F4; border-top:1px solid #E0DCD4; font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:#8C8880; display:flex; justify-content:space-between; }
+.panel-head { padding:16px 22px; border-bottom:1px solid #E0DCD4; display:flex; align-items:center; justify-content:space-between; background:#FAF8F4; }
+.panel-title { font-size:0.82rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#8C8880; }
+.panel-footer { padding:12px 22px; background:#FAF8F4; border-top:1px solid #E0DCD4; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#8C8880; display:flex; justify-content:space-between; }
 
-.styled-table { border-collapse:collapse; width:100% !important; font-family:'DM Sans',sans-serif; font-size:0.8rem; }
-.styled-table th { padding:10px 14px; text-align:left !important; font-size:0.62rem; font-weight:600; letter-spacing:0.1em; text-transform:uppercase; color:#C4BFB8 !important; background:#FAF8F4 !important; border-bottom:1px solid #E0DCD4 !important; border-top:none !important; border-left:none !important; border-right:none !important; white-space:nowrap; }
-.styled-table td { padding:11px 14px; border-bottom:1px solid #F0EDE8 !important; border-top:none !important; border-left:none !important; border-right:none !important; color:#1A1814 !important; background:#FFFFFF !important; white-space:nowrap; text-align:left !important; }
+.styled-table { border-collapse:collapse; width:100% !important; font-family:'DM Sans',sans-serif; font-size:0.92rem; }
+.styled-table th { padding:12px 16px; text-align:left !important; font-size:0.75rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#8C8880 !important; background:#FAF8F4 !important; border-bottom:1px solid #E0DCD4 !important; border-top:none !important; border-left:none !important; border-right:none !important; white-space:nowrap; }
+.styled-table td { padding:13px 16px; border-bottom:1px solid #F0EDE8 !important; border-top:none !important; border-left:none !important; border-right:none !important; color:#1A1814 !important; background:#FFFFFF !important; white-space:nowrap; text-align:left !important; }
 .styled-table tr:last-child td { border-bottom:none !important; }
 .styled-table tr:hover td { background:#FAF8F4 !important; }
 .styled-table tr.toplam-satir td { background:#FAF8F4 !important; font-family:'IBM Plex Mono',monospace; font-weight:500; color:#1A1814 !important; border-top:2px solid #E0DCD4 !important; }
 .styled-table tr.bolum-satir td { background:#FFF0EB !important; font-family:'IBM Plex Mono',monospace; font-weight:500; color:#C8502A !important; }
 
-.mono { font-family:'IBM Plex Mono',monospace !important; font-size:0.78rem !important; }
-.pct { color:#C4BFB8; font-size:0.65rem; font-family:'IBM Plex Mono',monospace; margin-left:3px; }
+.mono { font-family:'IBM Plex Mono',monospace !important; font-size:0.9rem !important; }
+.pct { color:#C4BFB8; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; margin-left:4px; }
 
-.prog-wrap { display:flex; align-items:center; gap:8px; min-width:110px; }
-.prog-bar { flex:1; height:5px; background:#E0DCD4; border-radius:3px; overflow:hidden; }
+.prog-wrap { display:flex; align-items:center; gap:8px; min-width:130px; }
+.prog-bar { flex:1; height:6px; background:#E0DCD4; border-radius:3px; overflow:hidden; }
 .prog-fill { height:100%; border-radius:3px; background:#C8502A; }
 .prog-fill.green { background:#2A7A4F; }
-.prog-pct { font-family:'IBM Plex Mono',monospace; font-size:0.68rem; color:#8C8880; width:32px; text-align:right; flex-shrink:0; }
+.prog-pct { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#8C8880; width:36px; text-align:right; flex-shrink:0; }
 
 .wide-table-wrapper { width:100%; overflow-x:auto; }
 .table-wrapper { width:100%; overflow-x:auto; }
@@ -351,7 +351,7 @@ with tab3:
             rows += f"""<tr>
                 <td class="mono">{clean_num(row['S.NO'])}</td>
                 <td class="mono">{row['Gündem Tarihleri']}</td>
-                <td class="mono">{bas} {pct_span(bas,t_bas)}</td>
+                <td class="mono">{bas}</td>
                 <td class="mono">{clean_num(row['Düzeltme'])}</td>
                 <td class="mono">{clean_num(row['Dilekçe'])}</td>
                 <td class="mono">{clean_num(row['Toplam'])}</td>
@@ -384,7 +384,7 @@ with tab4:
             rows += f"""<tr>
                 <td class="mono" style="color:#C4BFB8">{i:02d}</td>
                 <td>{row['Birim Adı']}</td>
-                <td class="mono">{s} {pct_span(s,b_top)}</td>
+                <td class="mono">{s}</td>
                 <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div><span class="prog-pct">{p}%</span></div></td>
             </tr>"""
         st.markdown(f"""
@@ -409,7 +409,7 @@ with tab5:
             rows += f"""<tr>
                 <td class="mono" style="color:#C4BFB8">{i:02d}</td>
                 <td>{row['Sorumlu Araştırmacı']}</td>
-                <td class="mono">{s} {pct_span(s,s_top)}</td>
+                <td class="mono">{s}</td>
                 <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div><span class="prog-pct">{p}%</span></div></td>
             </tr>"""
         st.markdown(f"""
