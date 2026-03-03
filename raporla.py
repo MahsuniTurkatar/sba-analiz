@@ -435,7 +435,7 @@ with tab4:
         </tr>"""
 
         st.markdown(f"""
-        <div class="panel" style="margin:24px 32px; max-width:900px;">
+        <div class="panel" style="margin:24px 32px;">
             <div class="panel-head"><span class="panel-title">Birim Analizi — {len(birim_nitelik)} birim</span></div>
             <table class="styled-table"><thead><tr>
                 <th class="c-idx">#</th><th>Birim Adı</th>
