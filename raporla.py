@@ -448,27 +448,92 @@ with tab4:
 # ── TAB 5: ARAŞTIRMACI ANALİZİ ───────────────────────────────────────────────
 with tab5:
     if df_basvuru is not None:
-        sor_df = df_basvuru.groupby("SORUMLUSU").size().reset_index(name="Dosya Sayısı")
-        sor_df = sor_df[sor_df["SORUMLUSU"].notna()].sort_values("Dosya Sayısı", ascending=False).reset_index(drop=True)
-        s_top = int(sor_df["Dosya Sayısı"].sum())
+        b = df_basvuru.copy()
+
+        # Güncel durumu normalize et
+        b["GÜNCEL DURUM"] = b["GÜNCEL DURUM"].astype(str).str.strip().str.upper()
+        b["GÜNCEL DURUM"] = b["GÜNCEL DURUM"].replace({"0": "BEKLEYEN", "NAN": "BEKLEYEN", "": "BEKLEYEN"})
+
+        # Nitelik pivot
+        nit_pivot = b.groupby(["SORUMLUSU","NİTELİĞİ"]).size().unstack(fill_value=0)
+        for n in ["Bireysel Araştırma","Uzmanlık Tezi","Yüksek Lisans Tezi","Doktora Tezi"]:
+            if n not in nit_pivot.columns: nit_pivot[n] = 0
+
+        # Karar pivot
+        kar_pivot = b.groupby(["SORUMLUSU","GÜNCEL DURUM"]).size().unstack(fill_value=0)
+        for k in ["ONAY","DÜZELTME","BEKLEYEN"]:
+            if k not in kar_pivot.columns: kar_pivot[k] = 0
+
+        # Birleştir
+        sor_df = pd.concat([nit_pivot, kar_pivot], axis=1).fillna(0).astype(int)
+        sor_df["TOPLAM"] = b.groupby("SORUMLUSU").size()
+        sor_df = sor_df.reset_index().sort_values("TOPLAM", ascending=False).reset_index(drop=True)
+        sor_df = sor_df[sor_df["SORUMLUSU"].notna()]
+
+        s_top = int(sor_df["TOPLAM"].sum())
+        t_bir = int(sor_df["Bireysel Araştırma"].sum())
+        t_uzm = int(sor_df["Uzmanlık Tezi"].sum())
+        t_yl  = int(sor_df["Yüksek Lisans Tezi"].sum())
+        t_dok = int(sor_df["Doktora Tezi"].sum())
+        t_ona = int(sor_df["ONAY"].sum())
+        t_duz = int(sor_df["DÜZELTME"].sum())
+        t_bek = int(sor_df["BEKLEYEN"].sum())
+
         rows = ""
         for i, row in sor_df.iterrows():
-            s = int(row["Dosya Sayısı"])
+            top = int(row["TOPLAM"])
+            ona = int(row["ONAY"])
+            duz = int(row["DÜZELTME"])
+            bek = int(row["BEKLEYEN"])
             rows += f"""<tr>
                 <td class="c-idx">{i+1:02d}</td>
                 <td>{row['SORUMLUSU']}</td>
-                <td class="c-num">{s}</td>
+                <td class="c-num">{int(row['Bireysel Araştırma']) or ''}</td>
+                <td class="c-num">{int(row['Uzmanlık Tezi']) or ''}</td>
+                <td class="c-num">{int(row['Yüksek Lisans Tezi']) or ''}</td>
+                <td class="c-num">{int(row['Doktora Tezi']) or ''}</td>
+                <td class="c-num" style="border-left:2px solid #E0DCD4">{ona or ''}</td>
+                <td class="c-num">{duz or ''}</td>
+                <td class="c-num">{bek or ''}</td>
+                <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">{top}</td>
             </tr>"""
+
         rows += f"""<tr class="toplam-satir">
             <td colspan="2">TOPLAM</td>
-            <td class="c-num">{s_top}</td>
+            <td class="c-num">{t_bir}</td>
+            <td class="c-num">{t_uzm}</td>
+            <td class="c-num">{t_yl}</td>
+            <td class="c-num">{t_dok}</td>
+            <td class="c-num" style="border-left:2px solid #D0CBC0">{t_ona}</td>
+            <td class="c-num">{t_duz}</td>
+            <td class="c-num">{t_bek}</td>
+            <td class="c-num" style="font-weight:500;border-left:2px solid #D0CBC0">{s_top}</td>
         </tr>"""
+
         st.markdown(f"""
-        <div class="panel" style="margin:24px 32px; max-width:700px;">
-            <div class="panel-head"><span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span></div>
-            <table class="styled-table"><thead><tr>
-                <th class="c-idx">#</th><th>Sorumlu Araştırmacı</th><th class="c-num">Dosya Sayısı</th>
-            </tr></thead><tbody>{rows}</tbody></table>
+        <div class="panel" style="margin:24px 32px;">
+            <div class="panel-head">
+                <span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span>
+                <span style="font-size:0.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+                    Nitelik &nbsp;|&nbsp; Güncel Karar Durumu
+                </span>
+            </div>
+            <div class="wide-table-wrapper">
+            <table class="styled-table"><thead>
+                <tr>
+                    <th class="c-idx">#</th>
+                    <th>Sorumlu Araştırmacı</th>
+                    <th class="c-num">Bireysel</th>
+                    <th class="c-num">Uzm. Tezi</th>
+                    <th class="c-num">YL Tezi</th>
+                    <th class="c-num">Doktora</th>
+                    <th class="c-num" style="border-left:2px solid #E0DCD4">Onay</th>
+                    <th class="c-num">Düzeltme</th>
+                    <th class="c-num">Bekleyen</th>
+                    <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
+                </tr>
+            </thead><tbody>{rows}</tbody></table>
+            </div>
         </div>""", unsafe_allow_html=True)
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
