@@ -375,7 +375,9 @@ with tab4:
     if df_pivot is not None:
         birim_df = df_pivot[["Satır Etiketleri","Say BİRİMİ"]].dropna().copy()
         birim_df.columns = ["Birim Adı","Dosya Sayısı"]
-        birim_df = birim_df[birim_df["Birim Adı"] != "Satır Etiketleri"].copy()
+        birim_df = birim_df[
+            ~birim_df["Birim Adı"].isin(["Satır Etiketleri", "Genel Toplam"])
+        ].copy()
         b_top = int(birim_df["Dosya Sayısı"].sum())
         rows = ""
         for i, (_, row) in enumerate(birim_df.iterrows(), 1):
@@ -385,7 +387,7 @@ with tab4:
                 <td class="mono" style="color:#C4BFB8">{i:02d}</td>
                 <td>{row['Birim Adı']}</td>
                 <td class="mono">{s}</td>
-                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div><span class="prog-pct">{p}%</span></div></td>
+                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div></div></td>
             </tr>"""
         st.markdown(f"""
         <div class="panel" style="margin:24px 32px;">
@@ -400,7 +402,9 @@ with tab5:
     if df_pivot is not None:
         sor_df = df_pivot[["Satır Etiketleri.1","Say SORUMLUSU"]].dropna().copy()
         sor_df.columns = ["Sorumlu Araştırmacı","Dosya Sayısı"]
-        sor_df = sor_df[sor_df["Sorumlu Araştırmacı"] != "Satır Etiketleri"].copy()
+        sor_df = sor_df[
+            ~sor_df["Sorumlu Araştırmacı"].isin(["Satır Etiketleri", "Genel Toplam"])
+        ].copy()
         s_top = int(sor_df["Dosya Sayısı"].sum())
         rows = ""
         for i, (_, row) in enumerate(sor_df.iterrows(), 1):
@@ -410,7 +414,7 @@ with tab5:
                 <td class="mono" style="color:#C4BFB8">{i:02d}</td>
                 <td>{row['Sorumlu Araştırmacı']}</td>
                 <td class="mono">{s}</td>
-                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div><span class="prog-pct">{p}%</span></div></td>
+                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill" style="width:{round(p)}%"></div></div></div></td>
             </tr>"""
         st.markdown(f"""
         <div class="panel" style="margin:24px 32px;">
