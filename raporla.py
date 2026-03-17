@@ -554,7 +554,10 @@ with tab5:
     sor = nit_p.copy()
     sor = sor.join(ona_p, how="left").join(duz_p, how="left").join(bek_p, how="left")
     sor["TOPLAM"] = df.groupby("SORUMLUSU").size()
-    sor = sor.fillna(0).astype(int)
+    sor = sor.fillna(0)
+    for c in sor.columns:
+        if c != "SORUMLUSU":
+            sor[c] = pd.to_numeric(sor[c], errors="coerce").fillna(0).astype(int)
     sor = sor.reset_index().sort_values("TOPLAM", ascending=False).reset_index(drop=True)
     sor = sor[sor["SORUMLUSU"].ne("")]
 
