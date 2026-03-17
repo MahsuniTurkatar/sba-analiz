@@ -384,6 +384,85 @@ with tab2:
       </div>
     </div>""", unsafe_allow_html=True)
 
+    # ── DOSYA LİSTESİ — karara göre gruplandı ────────────────────────────────
+    G_SIRA = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','']
+    G_LBL  = {'ONAY':'✅ ONAY','DÜZELTME':'📝 DÜZELTME','GÖRÜŞ':'💬 GÖRÜŞ',
+               'KAEK':'🏛 KAEK','RET':'❌ RET','KAPSAM DIŞI':'🚫 KAPSAM DIŞI',
+               '':'⏳ BEKLİYOR'}
+    G_CLR  = {'ONAY':('#E8F5E9','#2E7D32'),'DÜZELTME':('#FFF8E1','#E65100'),
+               'GÖRÜŞ':('#E3F2FD','#1565C0'),'KAEK':('#EDE7F6','#4527A0'),
+               'RET':('#FFEBEE','#C62828'),'KAPSAM DIŞI':('#F5F5F5','#616161'),
+               '':('#FFF3E0','#C8502A')}
+
+    satirlar = []
+    for grup in G_SIRA:
+        gdf = r_df[r_df["KURUL KARARI 1"] == grup]
+        if gdf.empty:
+            continue
+        bg_g, clr_g = G_CLR.get(grup, ('#FAF8F4','#1A1814'))
+        satirlar.append(
+            '<tr><td colspan="10" style="background:' + bg_g + ';color:' + clr_g + ';'
+            'font-family:\'IBM Plex Mono\',monospace;font-weight:600;font-size:.78rem;'
+            'letter-spacing:.08em;padding:10px 16px;border-top:2px solid ' + clr_g + '40">'
+            + G_LBL.get(grup, grup) + ' &nbsp;·&nbsp; ' + str(len(gdf)) + ' dosya</td></tr>'
+        )
+        for n_idx, (_, satir) in enumerate(gdf.iterrows(), 1):
+            sba_v = satir.get("SBA NUMARASI","")
+            ad_v  = satir.get("ADI","")
+            sor_v = satir.get("SORUMLUSU","")
+            bir_v = satir.get("BİRİMİ","")
+            nit_v = satir.get("NİTELİĞİ","")
+            kk1_v = satir.get("KURUL KARARI 1","")
+            gd_v  = satir.get("GÜNCEL DURUM","") or kk1_v
+            tar_v = satir.get("KURUL TARİHİ","")
+            rol_v = "R1" if satir.get("RAPORTÖR 1","") == sec else "R2"
+            kb, kc = G_CLR.get(kk1_v, ('#F5F5F5','#616161'))
+            gb, gc = G_CLR.get(gd_v,  ('#F5F5F5','#616161'))
+            rb = '#E3F2FD' if rol_v=='R1' else '#E8F5E9'
+            rc = '#1565C0' if rol_v=='R1' else '#2E7D32'
+            satirlar.append(
+                '<tr>'
+                '<td class="c-idx">' + str(n_idx) + '</td>'
+                '<td class="c-num" style="font-weight:500">' + sba_v + '</td>'
+                '<td style="max-width:260px;white-space:normal;line-height:1.4;font-size:.85rem">' + ad_v + '</td>'
+                '<td style="font-size:.85rem">' + sor_v + '</td>'
+                '<td style="font-size:.82rem;color:#5A7A8A">' + bir_v + '</td>'
+                '<td class="c-num" style="font-size:.82rem">' + nit_v + '</td>'
+                '<td class="c-num"><span style="background:' + kb + ';color:' + kc + ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' + (kk1_v or '—') + '</span></td>'
+                '<td class="c-num"><span style="background:' + gb + ';color:' + gc + ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' + (gd_v or '—') + '</span></td>'
+                '<td class="c-num" style="font-size:.82rem;color:#8C8880">' + tar_v + '</td>'
+                '<td class="c-num"><span style="background:' + rb + ';color:' + rc + ';padding:2px 6px;border-radius:4px;font-size:.75rem;font-weight:600">' + rol_v + '</span></td>'
+                '</tr>'
+            )
+
+    liste_html2 = "\n".join(satirlar)
+    st.markdown(f"""
+    <div class="panel" style="margin:0 32px 24px">
+      <div class="panel-head">
+        <span class="panel-title">Dosya Listesi — {dosya} dosya</span>
+        <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          Karara göre gruplandı &nbsp;·&nbsp; R1/R2 rolü
+        </span>
+      </div>
+      <div class="wide-wrap">
+      <table class="styled-table"><thead><tr>
+        <th class="c-idx">#</th>
+        <th class="c-num">SBA No</th>
+        <th>Araştırma Adı</th>
+        <th>Sorumlusu</th>
+        <th>Birimi</th>
+        <th class="c-num">Niteliği</th>
+        <th class="c-num">KK1</th>
+        <th class="c-num">Güncel</th>
+        <th class="c-num">Kurul Tarihi</th>
+        <th class="c-num">Rol</th>
+      </tr></thead><tbody>{liste_html2}</tbody></table>
+      </div>
+      <div class="panel-footer">
+        <span>{sec}</span><span>Son güncelleme: {son_tarih}</span>
+      </div>
+    </div>""", unsafe_allow_html=True)
+
 # ══ TAB 3: GÜNDEM SAYILARI ════════════════════════════════════════════════════
 with tab3:
     gundem = df[df["KURUL TARİHİ"].ne("")].groupby("KURUL TARİHİ").agg(
