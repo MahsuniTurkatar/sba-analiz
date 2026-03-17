@@ -26,14 +26,15 @@ def load():
     df = pd.read_excel(EXCEL_FILE, sheet_name="Başvuru", header=0)
     df = df[df["SBA NUMARASI"].notna() &
             df["SBA NUMARASI"].astype(str).str.startswith("SBA")].copy()
+    # Tarih sütunlarını ÖNCE dönüştür (ham datetime iken)
+    for tc in ["KURUL TARİHİ", "BAŞVURU TARİHİ"]:
+        if tc in df.columns:
+            df[tc] = pd.to_datetime(df[tc], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
+    # Sonra tüm sütunları string olarak temizle
     for c in df.columns:
         df[c] = df[c].apply(lambda x:
             str(x).strip() if pd.notna(x) and str(x).strip() not in
             ('nan','None','0.0') else '')
-    # Tarih sütunlarını DD.MM.YYYY formatına çevir
-    for tc in ["KURUL TARİHİ", "BAŞVURU TARİHİ"]:
-        if tc in df.columns:
-            df[tc] = pd.to_datetime(df[tc], dayfirst=True, errors="coerce").dt.strftime("%d.%m.%Y").fillna("")
     # Sayılar sayfası — gündem tablosu
     try:
         sg = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=None)
@@ -68,9 +69,10 @@ tarihler = df["KURUL TARİHİ"].replace('',pd.NA).dropna().unique()
 kurul_sayisi = len(tarihler)
 son_tarih = ""
 try:
-    son = pd.to_datetime(pd.Series(tarihler), dayfirst=True,
+    # Tarihler zaten DD/MM/YYYY string — datetime parse edip max al
+    son = pd.to_datetime(pd.Series(tarihler), format="%d/%m/%Y",
                          errors='coerce').dropna().max()
-    if pd.notna(son): son_tarih = son.strftime("%d.%m.%Y")
+    if pd.notna(son): son_tarih = son.strftime("%d/%m/%Y")
 except: pass
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
