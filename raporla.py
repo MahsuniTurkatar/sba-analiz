@@ -541,34 +541,42 @@ with tab4:
 
 # ══ TAB 5: ARAŞTIRMACI ANALİZİ ═══════════════════════════════════════════════
 with tab5:
+    # Nitelik pivot
     nit_p = df.groupby("SORUMLUSU")["NİTELİĞİ"].value_counts().unstack(fill_value=0)
     for n in NIT_KEYS:
         if n not in nit_p.columns: nit_p[n] = 0
-    kar_p = df.groupby("SORUMLUSU")["KURUL KARARI 1"].value_counts().unstack(fill_value=0)
-    for k in ["ONAY","DÜZELTME",""]:
-        if k not in kar_p.columns: kar_p[k] = 0
-    sor = pd.concat([nit_p,kar_p],axis=1).fillna(0).astype(int)
+
+    # Karar pivot — bekleyen = KK1 boş
+    bek_p = df[df["KURUL KARARI 1"].eq("")].groupby("SORUMLUSU").size().rename("BEKLEYEN")
+    ona_p = df[df["KURUL KARARI 1"].eq("ONAY")].groupby("SORUMLUSU").size().rename("ONAY_S")
+    duz_p = df[df["KURUL KARARI 1"].eq("DÜZELTME")].groupby("SORUMLUSU").size().rename("DÜZELTME_S")
+
+    sor = nit_p.copy()
+    sor = sor.join(ona_p, how="left").join(duz_p, how="left").join(bek_p, how="left")
     sor["TOPLAM"] = df.groupby("SORUMLUSU").size()
-    sor = sor.reset_index().sort_values("TOPLAM",ascending=False).reset_index(drop=True)
+    sor = sor.fillna(0).astype(int)
+    sor = sor.reset_index().sort_values("TOPLAM", ascending=False).reset_index(drop=True)
     sor = sor[sor["SORUMLUSU"].ne("")]
 
     rows5 = ""
-    for i,row in sor.iterrows():
-        bek5 = int(row.get("BEKLİYOR", row.get("", 0)))
+    for i, row in sor.iterrows():
+        ona5 = int(row.get("ONAY_S", 0))
+        duz5 = int(row.get("DÜZELTME_S", 0))
+        bek5 = int(row.get("BEKLEYEN", 0))
         rows5 += f"""<tr>
           <td class="c-idx">{i+1:02d}</td><td>{row['SORUMLUSU']}</td>
           {"".join(f'<td class="c-num">{int(row[n]) or ""}</td>' for n in NIT_KEYS)}
-          <td class="c-num" style="border-left:2px solid #E0DCD4;color:#2E7D32">{int(row.get('ONAY',0)) or ''}</td>
-          <td class="c-num" style="color:#E65100">{int(row.get('DÜZELTME',0)) or ''}</td>
+          <td class="c-num" style="border-left:2px solid #E0DCD4;color:#2E7D32">{ona5 or ''}</td>
+          <td class="c-num" style="color:#E65100">{duz5 or ''}</td>
           <td class="c-num" style="color:#C8502A">{bek5 or ''}</td>
           <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">{int(row['TOPLAM'])}</td>
         </tr>"""
     rows5 += f"""<tr class="tot"><td colspan="2">TOPLAM</td>
       {"".join(f'<td class="c-num">{int(sor[n].sum())}</td>' for n in NIT_KEYS)}
-      <td class="c-num" style="border-left:2px solid #D0CBC0">{int(sor.get('ONAY',pd.Series([0])).sum())}</td>
-      <td class="c-num">{int(sor.get('DÜZELTME',pd.Series([0])).sum())}</td>
-      <td class="c-num">{int(sor.get('',pd.Series([0])).sum())}</td>
-      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{int(sor['TOPLAM'].sum())}</td>
+      <td class="c-num" style="border-left:2px solid #D0CBC0">{int(sor["ONAY_S"].sum())}</td>
+      <td class="c-num">{int(sor["DÜZELTME_S"].sum())}</td>
+      <td class="c-num">{int(sor["BEKLEYEN"].sum())}</td>
+      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{int(sor["TOPLAM"].sum())}</td>
     </tr>"""
     nit_h5 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
     st.markdown(f"""
