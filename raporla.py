@@ -57,10 +57,6 @@ uzmanlik = int(nit_say.get("Uzmanlık Tezi",0))
 yuksek   = int(nit_say.get("Yüksek Lisans Tezi",0))
 doktora  = int(nit_say.get("Doktora Tezi",0))
 
-bekleyen = int((df["GÜNCEL DURUM"] == "").sum() &
-               df["RAPORTÖR 1"].ne("") |
-               False)
-# Bekleyen: KK1 boş ama raportör atanmış
 bekleyen = int((df["KURUL KARARI 1"].eq("") & df["RAPORTÖR 1"].ne("")).sum())
 
 # Kurul tarihleri
