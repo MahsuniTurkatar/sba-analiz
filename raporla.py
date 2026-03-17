@@ -3,642 +3,513 @@ import pandas as pd
 
 st.set_page_config(page_title="SBA 2026 — Etik Kurul", layout="wide", page_icon="🔬")
 
-# ── VERİ YÜKLEME ─────────────────────────────────────────────────────────────
-EXCEL_FILE = "2026_SBA.xlsx"
+EXCEL_FILE  = "2026_SBA.xlsx"
+RAPORTORLER = [
+    'Prof. Dr. Ayşe Nurten AKARSU', 'Prof. Dr. M. Özgür UYANIK',
+    'Prof. Dr. Melih Önder BABAOĞLU', 'Prof. Dr. Ayşe KİN İŞLER',
+    'Prof. Dr. Yavuz AYHAN', 'Prof. Dr. Nazmiye Ebru ORTAÇ ERSOY',
+    'Prof. Dr. Gözde GİRGİN', 'Doç. Dr. Kübra AYKAÇ',
+    'Doç. Dr. Tolga ÇAKMAK', 'Doç. Dr. Burcu ERSÖZ ALAN',
+    'Doç. Dr. Ekim GÜMELER', 'Dr. Öğr. Üyesi Müge DEMİR',
+]
+NIT_KEYS  = ['Bireysel Araştırma','Uzmanlık Tezi','Yüksek Lisans Tezi','Doktora Tezi']
+NIT_KISA  = ['Bireysel','Uzm. Tezi','YL Tezi','Doktora']
+KARARLAR  = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI']
+KAR_RENK  = {'ONAY':'#2E7D32','DÜZELTME':'#E65100','GÖRÜŞ':'#1565C0',
+              'KAEK':'#4527A0','RET':'#C62828','KAPSAM DIŞI':'#616161'}
+KAR_EMO   = {'ONAY':'✅','DÜZELTME':'📝','GÖRÜŞ':'💬',
+              'KAEK':'🏛','RET':'❌','KAPSAM DIŞI':'🚫'}
 
+# ── VERİ ──────────────────────────────────────────────────────────────────────
 @st.cache_data
-def load_all_data():
+def load():
+    df = pd.read_excel(EXCEL_FILE, sheet_name="Başvuru", header=0)
+    df = df[df["SBA NUMARASI"].notna() &
+            df["SBA NUMARASI"].astype(str).str.startswith("SBA")].copy()
+    for c in df.columns:
+        df[c] = df[c].apply(lambda x:
+            str(x).strip() if pd.notna(x) and str(x).strip() not in
+            ('nan','None','0.0') else '')
+    # Sayılar sayfası — gündem tablosu
     try:
-        df_basvuru = pd.read_excel(EXCEL_FILE, sheet_name="Başvuru", header=0)
-        df_basvuru = df_basvuru[
-            df_basvuru["SBA NUMARASI"].notna() &
-            df_basvuru["SBA NUMARASI"].astype(str).str.startswith("SBA")
-        ].copy()
+        sg = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=None)
+        toplam_satir = sg[sg[0]=="TOPLAM"].iloc[0]
+    except:
+        toplam_satir = None
+    return df, toplam_satir
 
-        df_sayilar = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=2)
-        df_sayilar.columns = ["S.NO", "Gündem Tarihleri", "Başvuru", "Düzeltme", "Dilekçe", "Toplam"]
-        df_sayilar = df_sayilar[df_sayilar["Gündem Tarihleri"].notna()].copy()
+df, toplam_satir = load()
 
-        df_sayilar_raw = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=None)
-        toplam_satir = df_sayilar_raw[df_sayilar_raw[0] == "TOPLAM"].iloc[0]
-
-        df_uye = pd.read_excel(EXCEL_FILE, sheet_name="Üye_1", header=0)
-        df_uye.columns = [str(c).strip() for c in df_uye.columns]
-        df_uye = df_uye[df_uye["Adı Soyadı"].notna()].copy()
-
-        df_pivot = pd.read_excel(EXCEL_FILE, sheet_name="Pivot", header=0)
-
-        return df_basvuru, df_sayilar, toplam_satir, df_uye, df_pivot
-    except Exception as e:
-        st.error(f"Excel Okuma Hatası: {e}")
-        return None, None, None, None, None
-
-df_basvuru, df_sayilar, toplam_satir, df_uye, df_pivot = load_all_data()
-
-# ── DİNAMİK SAYILAR ──────────────────────────────────────────────────────────
-toplam_b = bireysel = uzmanlik = yuksek = doktora = bekleyen = 0
-kurul_sayisi = 0
-
-if df_basvuru is not None and toplam_satir is not None:
-    toplam_b = int(toplam_satir[2])
-    nitelik  = df_basvuru["NİTELİĞİ"].value_counts()
-    bireysel = int(nitelik.get("Bireysel Araştırma", 0))
-    uzmanlik = int(nitelik.get("Uzmanlık Tezi", 0))
-    yuksek   = int(nitelik.get("Yüksek Lisans Tezi", 0))
-    doktora  = int(nitelik.get("Doktora Tezi", 0))
-
-if df_uye is not None:
-    bekleyen     = int(df_uye["BEKLEYEN DOSYA SAYISI"].sum() // 2)
-    kurul_sayisi = len(df_sayilar) if df_sayilar is not None else 0
-
-son_tarih = ""
-if df_sayilar is not None and len(df_sayilar) > 0:
-    son = pd.to_datetime(df_sayilar["Gündem Tarihleri"].dropna().iloc[-1], errors="coerce")
-    if pd.notna(son):
-        son_tarih = son.strftime("%d.%m.%Y")
-
-def clean_num(val):
-    if pd.isna(val) or val == "" or str(val).strip() in ["0", "0.0", "nan"]: return ""
-    try: return str(int(float(val)))
-    except: return str(val)
-
-def safe_int(val):
-    try:
-        v = float(val)
-        return int(v) if not pd.isna(v) else 0
+# ── HESAPLAMALAR ──────────────────────────────────────────────────────────────
+def si(v):
+    try: return int(float(v)) if v not in ('','nan') else 0
     except: return 0
 
-def pct_span(sayi, toplam):
-    if toplam == 0: return ""
-    return f"<span class='pct'>%{round(sayi/toplam*100,1)}</span>"
+def pct(n, t, blk=True):
+    if not t: return ""
+    s = f"%{round(n/t*100,1)}"
+    return f"<span class='pct'>{s}</span>" if blk else s
+
+toplam_b = len(df)
+nit_say  = df["NİTELİĞİ"].value_counts()
+bireysel = int(nit_say.get("Bireysel Araştırma",0))
+uzmanlik = int(nit_say.get("Uzmanlık Tezi",0))
+yuksek   = int(nit_say.get("Yüksek Lisans Tezi",0))
+doktora  = int(nit_say.get("Doktora Tezi",0))
+
+bekleyen = int((df["GÜNCEL DURUM"] == "").sum() &
+               df["RAPORTÖR 1"].ne("") |
+               False)
+# Bekleyen: KK1 boş ama raportör atanmış
+bekleyen = int((df["KURUL KARARI 1"].eq("") & df["RAPORTÖR 1"].ne("")).sum())
+
+# Kurul tarihleri
+tarihler = df["KURUL TARİHİ"].replace('',pd.NA).dropna().unique()
+kurul_sayisi = len(tarihler)
+son_tarih = ""
+try:
+    son = pd.to_datetime(pd.Series(tarihler), dayfirst=True,
+                         errors='coerce').dropna().max()
+    if pd.notna(son): son_tarih = son.strftime("%d.%m.%Y")
+except: pass
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
-.stApp { background-color: #F5F3EE !important; }
-.block-container { padding: 0 !important; max-width: 100% !important; }
-
-.topbar {
-    background: #1A1814; padding: 0 32px; height: 52px;
-    display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 999;
-}
-.topbar-brand {
-    display: flex; align-items: center; gap: 10px;
-    font-family: 'DM Sans', sans-serif; font-size: 0.75rem;
-    font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
-    color: rgba(255,255,255,0.85);
-}
-.brand-dot {
-    width: 8px; height: 8px; border-radius: 50%; background: #C8502A;
-    animation: pulse 2.5s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.5);opacity:0.7} }
-.topbar-center { font-family:'DM Sans',sans-serif; font-size:0.78rem; color:rgba(255,255,255,0.45); }
-.topbar-center b { color:rgba(255,255,255,0.85); font-weight:500; }
-.topbar-stats { display:flex; align-items:center; }
-.t-stat { display:flex; align-items:center; gap:8px; padding:0 20px; border-left:1px solid rgba(255,255,255,0.1); }
-.t-num { font-family:'IBM Plex Mono',monospace; font-size:0.9rem; font-weight:500; color:#fff; }
-.t-num.hi { color:#C8502A; }
-.t-label { font-size:0.65rem; letter-spacing:0.07em; text-transform:uppercase; color:rgba(255,255,255,0.4); }
-
-.page-head { display:flex; align-items:baseline; justify-content:space-between; padding:28px 32px 0; margin-bottom:20px; }
-.page-title { font-family:'DM Serif Display',serif; font-size:2rem; font-weight:400; color:#1A1814; }
-.page-date { font-family:'IBM Plex Mono',monospace; font-size:0.85rem; color:#8C8880; }
-
-.cards { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; padding:0 32px 24px; }
-.card { background:#FFFFFF; border:1px solid #E0DCD4; border-radius:12px; padding:20px 22px; position:relative; overflow:hidden; }
-.card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:#E0DCD4; }
-.card.primary::before { background:#C8502A; }
-.card-num { font-family:'IBM Plex Mono',monospace; font-size:2.2rem; font-weight:500; color:#1A1814; line-height:1; }
-.card.primary .card-num { color:#C8502A; }
-.card-label { font-size:0.78rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#8C8880; margin-top:8px; }
-.card-sub { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#C4BFB8; margin-top:4px; }
-
-.panel { background:#FFFFFF; border:1px solid #E0DCD4; border-radius:12px; overflow:hidden; margin:0 32px 24px; }
-.panel-head { padding:16px 22px; border-bottom:1px solid #E0DCD4; display:flex; align-items:center; justify-content:space-between; background:#FAF8F4; }
-.panel-title { font-size:0.82rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#8C8880; }
-.panel-footer { padding:12px 22px; background:#FAF8F4; border-top:1px solid #E0DCD4; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#8C8880; display:flex; justify-content:space-between; }
-
-.styled-table { border-collapse:collapse; width:100% !important; font-family:'DM Sans',sans-serif; font-size:0.92rem; }
-.styled-table th { padding:12px 16px; text-align:left !important; font-size:0.75rem; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:#8C8880 !important; background:#FAF8F4 !important; border-bottom:1px solid #E0DCD4 !important; border-top:none !important; border-left:none !important; border-right:none !important; white-space:nowrap; }
-.styled-table td { padding:13px 16px; border-bottom:1px solid #F0EDE8 !important; border-top:none !important; border-left:none !important; border-right:none !important; color:#1A1814 !important; background:#FFFFFF !important; white-space:nowrap; text-align:left !important; }
-.styled-table tr:last-child td { border-bottom:none !important; }
-.styled-table tr:hover td { background:#FAF8F4 !important; }
-.styled-table tr.toplam-satir td { background:#FAF8F4 !important; font-family:'IBM Plex Mono',monospace; font-weight:500; color:#1A1814 !important; border-top:2px solid #E0DCD4 !important; }
-.styled-table tr.bolum-satir td { background:#FFF0EB !important; font-family:'IBM Plex Mono',monospace; font-weight:500; color:#C8502A !important; }
-
-.mono { font-family:'IBM Plex Mono',monospace !important; font-size:0.9rem !important; }
-.c-num { font-family:'IBM Plex Mono',monospace !important; font-size:0.88rem !important; text-align:center !important; white-space:nowrap; }
-.c-idx { font-family:'IBM Plex Mono',monospace !important; font-size:0.78rem !important; color:#C4BFB8; text-align:center !important; width:36px; }
-.styled-table td.c-num { text-align:center !important; }
-.styled-table th.c-num { text-align:center !important; }
-.styled-table td.c-idx { text-align:center !important; }
-.pct { color:#C4BFB8; font-size:0.72rem; font-family:'IBM Plex Mono',monospace; display:block; line-height:1.2; }
-
-.prog-wrap { display:flex; align-items:center; gap:8px; min-width:130px; }
-.prog-bar { flex:1; height:6px; background:#E0DCD4; border-radius:3px; overflow:hidden; }
-.prog-fill { height:100%; border-radius:3px; background:#C8502A; }
-.prog-fill.green { background:#2A7A4F; }
-.prog-pct { font-family:'IBM Plex Mono',monospace; font-size:0.78rem; color:#8C8880; width:36px; text-align:right; flex-shrink:0; }
-
-.wide-table-wrapper { width:100%; overflow-x:auto; }
-.table-wrapper { width:100%; overflow-x:auto; }
-
-.stTabs [data-baseweb="tab-list"] { background:#FAF8F4 !important; border-bottom:1px solid #E0DCD4 !important; padding:0 32px !important; gap:0 !important; }
-.stTabs [data-baseweb="tab"] { color:#8C8880 !important; font-family:'DM Sans',sans-serif !important; font-size:0.82rem !important; font-weight:400 !important; padding:14px 20px !important; border-bottom:2px solid transparent !important; background:transparent !important; }
-.stTabs [aria-selected="true"] { color:#C8502A !important; border-bottom:2px solid #C8502A !important; background:transparent !important; }
-.stTabs [data-baseweb="tab-panel"] { padding:0 !important; }
-
-.stSelectbox label { font-family:'DM Sans',sans-serif !important; font-size:0.78rem !important; color:#8C8880 !important; }
-
-.footer { text-align:center; padding:20px; border-top:1px solid #E0DCD4; font-family:'IBM Plex Mono',monospace; font-size:0.72rem; color:#8C8880; margin-top:16px; }
-.footer b { color:#1A1814; }
+.stApp{background:#F5F3EE!important}.block-container{padding:0!important;max-width:100%!important}
+.topbar{background:#1A1814;padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:999}
+.topbar-brand{display:flex;align-items:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.brand-dot{width:8px;height:8px;border-radius:50%;background:#C8502A;animation:pulse 2.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.7}}
+.topbar-center{font-family:'DM Sans',sans-serif;font-size:.78rem;color:rgba(255,255,255,.45)}
+.topbar-center b{color:rgba(255,255,255,.85);font-weight:500}
+.topbar-stats{display:flex;align-items:center}
+.t-stat{display:flex;align-items:center;gap:8px;padding:0 20px;border-left:1px solid rgba(255,255,255,.1)}
+.t-num{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:500;color:#fff}
+.t-num.hi{color:#C8502A}
+.t-label{font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;padding:28px 32px 0;margin-bottom:20px}
+.page-title{font-family:'DM Serif Display',serif;font-size:2rem;font-weight:400;color:#1A1814}
+.page-date{font-family:'IBM Plex Mono',monospace;font-size:.85rem;color:#8C8880}
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;padding:0 32px 24px}
+.card{background:#fff;border:1px solid #E0DCD4;border-radius:12px;padding:20px 22px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#E0DCD4}
+.card.primary::before{background:#C8502A}
+.card-num{font-family:'IBM Plex Mono',monospace;font-size:2.2rem;font-weight:500;color:#1A1814;line-height:1}
+.card.primary .card-num{color:#C8502A}
+.card-label{font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880;margin-top:8px}
+.card-sub{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#C4BFB8;margin-top:4px}
+.panel{background:#fff;border:1px solid #E0DCD4;border-radius:12px;overflow:hidden;margin:0 32px 24px}
+.panel-head{padding:16px 22px;border-bottom:1px solid #E0DCD4;display:flex;align-items:center;justify-content:space-between;background:#FAF8F4}
+.panel-title{font-size:.82rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880}
+.panel-footer{padding:12px 22px;background:#FAF8F4;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;display:flex;justify-content:space-between}
+.styled-table{border-collapse:collapse;width:100%!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
+.styled-table th{padding:12px 16px;text-align:left!important;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880!important;background:#FAF8F4!important;border-bottom:1px solid #E0DCD4!important;border-top:none!important;border-left:none!important;border-right:none!important;white-space:nowrap}
+.styled-table td{padding:11px 16px;border-bottom:1px solid #F0EDE8!important;border-top:none!important;border-left:none!important;border-right:none!important;color:#1A1814!important;background:#fff!important;white-space:nowrap;text-align:left!important}
+.styled-table tr:last-child td{border-bottom:none!important}
+.styled-table tr:hover td{background:#FAF8F4!important}
+.styled-table tr.tot td{background:#FAF8F4!important;font-family:'IBM Plex Mono',monospace;font-weight:500;border-top:2px solid #E0DCD4!important}
+.styled-table tr.sub td{background:#FFF0EB!important;font-family:'IBM Plex Mono',monospace;font-weight:500;color:#C8502A!important}
+.c-num{font-family:'IBM Plex Mono',monospace!important;font-size:.88rem!important;text-align:center!important;white-space:nowrap}
+.c-idx{font-family:'IBM Plex Mono',monospace!important;font-size:.78rem!important;color:#C4BFB8;text-align:center!important;width:36px}
+.styled-table td.c-num,.styled-table th.c-num{text-align:center!important}
+.pct{color:#C4BFB8;font-size:.72rem;font-family:'IBM Plex Mono',monospace;display:block;line-height:1.2}
+.prog-wrap{display:flex;align-items:center;gap:8px;min-width:130px}
+.prog-bar{flex:1;height:6px;background:#E0DCD4;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:#C8502A}
+.prog-fill.green{background:#2A7A4F}
+.prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;width:36px;text-align:right;flex-shrink:0}
+.wide-wrap{width:100%;overflow-x:auto}
+.stTabs [data-baseweb="tab-list"]{background:#FAF8F4!important;border-bottom:1px solid #E0DCD4!important;padding:0 32px!important;gap:0!important}
+.stTabs [data-baseweb="tab"]{color:#8C8880!important;font-family:'DM Sans',sans-serif!important;font-size:.82rem!important;padding:14px 20px!important;border-bottom:2px solid transparent!important;background:transparent!important}
+.stTabs [aria-selected="true"]{color:#C8502A!important;border-bottom:2px solid #C8502A!important}
+.stTabs [data-baseweb="tab-panel"]{padding:0!important}
+.footer{text-align:center;padding:20px;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#8C8880;margin-top:16px}
+.footer b{color:#1A1814}
 </style>
 """, unsafe_allow_html=True)
 
 # ── TOPBAR ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="topbar">
-    <div class="topbar-brand">
-        <div class="brand-dot"></div>SBA Etik Kurul
-    </div>
-    <div class="topbar-center">
-        <b>Sağlık Bilimleri Araştırma Etik Kurulu</b> &nbsp;/&nbsp; Analiz Portalı &nbsp;/&nbsp; 2026
-    </div>
-    <div class="topbar-stats">
-        <div class="t-stat"><span class="t-num hi">{toplam_b}</span><span class="t-label">Başvuru</span></div>
-        <div class="t-stat"><span class="t-num">{kurul_sayisi}</span><span class="t-label">Toplantı</span></div>
-        <div class="t-stat"><span class="t-num">{bekleyen}</span><span class="t-label">Bekleyen</span></div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+  <div class="topbar-brand"><div class="brand-dot"></div>SBA Etik Kurul</div>
+  <div class="topbar-center">
+    <b>Sağlık Bilimleri Araştırma Etik Kurulu</b> &nbsp;/&nbsp; Analiz Portalı &nbsp;/&nbsp; 2026
+  </div>
+  <div class="topbar-stats">
+    <div class="t-stat"><span class="t-num hi">{toplam_b}</span><span class="t-label">Başvuru</span></div>
+    <div class="t-stat"><span class="t-num">{kurul_sayisi}</span><span class="t-label">Toplantı</span></div>
+    <div class="t-stat"><span class="t-num">{bekleyen}</span><span class="t-label">Bekleyen</span></div>
+  </div>
+</div>""", unsafe_allow_html=True)
 
-# ── SAYFA BAŞLIĞI + KARTLAR ───────────────────────────────────────────────────
+# ── KARTLAR ───────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="page-head">
-    <div class="page-title">Başvuru Gösterge Paneli</div>
-    <span class="page-date">Son toplantı: {son_tarih} &nbsp;·&nbsp; {kurul_sayisi}. Toplantı</span>
+  <div class="page-title">Başvuru Gösterge Paneli</div>
+  <span class="page-date">Son toplantı: {son_tarih} &nbsp;·&nbsp; {kurul_sayisi}. Toplantı</span>
 </div>
 <div class="cards">
-    <div class="card primary">
-        <div class="card-num">{toplam_b}</div>
-        <div class="card-label">Toplam Başvuru</div>
-        <div class="card-sub">{kurul_sayisi} toplantı · 2026</div>
-    </div>
-    <div class="card">
-        <div class="card-num">{bireysel}</div>
-        <div class="card-label">Bireysel Araştırma</div>
-        <div class="card-sub">%{round(bireysel/toplam_b*100,1) if toplam_b else 0} pay</div>
-    </div>
-    <div class="card">
-        <div class="card-num">{uzmanlik}</div>
-        <div class="card-label">Uzmanlık Tezi</div>
-        <div class="card-sub">%{round(uzmanlik/toplam_b*100,1) if toplam_b else 0} pay</div>
-    </div>
-    <div class="card">
-        <div class="card-num">{yuksek}</div>
-        <div class="card-label">Y. Lisans Tezi</div>
-        <div class="card-sub">%{round(yuksek/toplam_b*100,1) if toplam_b else 0} pay</div>
-    </div>
-    <div class="card">
-        <div class="card-num">{doktora}</div>
-        <div class="card-label">Doktora Tezi</div>
-        <div class="card-sub">%{round(doktora/toplam_b*100,1) if toplam_b else 0} pay</div>
-    </div>
-    <div class="card">
-        <div class="card-num">{bekleyen}</div>
-        <div class="card-label">Bekleyen Dosya</div>
-        <div class="card-sub">%{round(bekleyen/toplam_b*100,1) if toplam_b else 0} oranı</div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
+  <div class="card primary">
+    <div class="card-num">{toplam_b}</div>
+    <div class="card-label">Toplam Başvuru</div>
+    <div class="card-sub">{kurul_sayisi} toplantı · 2026</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{bireysel}</div>
+    <div class="card-label">Bireysel Araştırma</div>
+    <div class="card-sub">{pct(bireysel,toplam_b,False)} pay</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{uzmanlik}</div>
+    <div class="card-label">Uzmanlık Tezi</div>
+    <div class="card-sub">{pct(uzmanlik,toplam_b,False)} pay</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{yuksek}</div>
+    <div class="card-label">Y. Lisans Tezi</div>
+    <div class="card-sub">{pct(yuksek,toplam_b,False)} pay</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{doktora}</div>
+    <div class="card-label">Doktora Tezi</div>
+    <div class="card-sub">{pct(doktora,toplam_b,False)} pay</div>
+  </div>
+  <div class="card">
+    <div class="card-num">{bekleyen}</div>
+    <div class="card-label">Bekleyen Dosya</div>
+    <div class="card-sub">{pct(bekleyen,toplam_b,False)} oranı</div>
+  </div>
+</div>""", unsafe_allow_html=True)
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "📊 Karar Çizelgesi", "👥 Raportör Analizi", "🗓 Gündem Sayıları",
-    "🏢 Birim Analizi", "👨‍🏫 Araştırmacı Analizi"
+    "📊 Karar Çizelgesi","👥 Raportör Analizi","🗓 Gündem Sayıları",
+    "🏢 Birim Analizi","👨‍🏫 Araştırmacı Analizi"
 ])
 
-# ── TAB 1: KARAR ÇİZELGESİ ───────────────────────────────────────────────────
+# ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
 with tab1:
-    if df_uye is not None:
-        sayi_cols = df_uye.select_dtypes(include="number").columns.tolist()
-        rows_html = ""
-        for _, row in df_uye.iterrows():
-            dosya = safe_int(row["Dosya Sayısı"])
-            onay  = safe_int(row["Onay Toplam"])
-            duz   = safe_int(row["Düzeltme Toplam"])
-            genel = safe_int(row["GENEL TOPLAM"])
-            bek   = safe_int(row["BEKLEYEN DOSYA SAYISI"])
-            tam   = round(genel/dosya*100) if dosya else 0
-            bar_c = "green" if tam >= 80 else ""
-            kaek_v = safe_int(row['KAEK  Toplam'])
-            gorus_v= safe_int(row['Görüş Toplam'])
-            ret_v  = safe_int(row['Ret Toplam'])
-            kap_v  = safe_int(row['Kapsam Dışı Toplam'])
-            geri_v = safe_int(row['Geri Çekildi Toplam'])
-            rows_html += f"""<tr>
-                <td class="c-idx">{clean_num(row['S.No'])}</td>
-                <td>{row['Adı Soyadı']}</td>
-                <td class="c-num">{dosya}</td>
-                <td class="c-num">{onay}<br/>{pct_span(onay,dosya)}</td>
-                <td class="c-num">{duz}<br/>{pct_span(duz,dosya)}</td>
-                <td class="c-num">{kaek_v or ''}</td>
-                <td class="c-num">{gorus_v or ''}</td>
-                <td class="c-num">{ret_v or ''}</td>
-                <td class="c-num">{kap_v or ''}</td>
-                <td class="c-num">{geri_v or ''}</td>
-                <td class="c-num">{genel}<br/>{pct_span(genel,dosya)}</td>
-                <td class="c-num">{bek}</td>
-                <td><div class="prog-wrap"><div class="prog-bar"><div class="prog-fill {bar_c}" style="width:{tam}%"></div></div><span class="prog-pct">{tam}%</span></div></td>
-            </tr>"""
+    rows = ""
+    T = {k:0 for k in KARARLAR+['toplam','bekleyen']}
+    T_nit = {n:0 for n in NIT_KEYS}
 
-        t = {c: int(df_uye[c].sum()) for c in sayi_cols}
-        td = t.get("Dosya Sayısı",0); to = t.get("Onay Toplam",0)
-        tdz= t.get("Düzeltme Toplam",0); tg = t.get("GENEL TOPLAM",0)
-        tb = t.get("BEKLEYEN DOSYA SAYISI",0)
-        tk = t.get("KAEK  Toplam",0); tgo= t.get("Görüş Toplam",0)
-        tr_= t.get("Ret Toplam",0);  tkp= t.get("Kapsam Dışı Toplam",0)
-        tgr= t.get("Geri Çekildi Toplam",0)
-        rows_html += f"""<tr class="toplam-satir">
-            <td colspan="2">TOPLAM</td>
-            <td class="c-num">{td}</td>
-            <td class="c-num">{to}<br/>{pct_span(to,td)}</td>
-            <td class="c-num">{tdz}<br/>{pct_span(tdz,td)}</td>
-            <td class="c-num">{tk}</td>
-            <td class="c-num">{tgo}</td>
-            <td class="c-num">{tr_}</td>
-            <td class="c-num">{tkp}</td>
-            <td class="c-num">{tgr}</td>
-            <td class="c-num">{tg}<br/>{pct_span(tg,td)}</td>
-            <td class="c-num">{tb}</td><td></td>
-        </tr>"""
-        dd=td//2; do_=to//2; ddz=tdz//2; dg=tg//2; db=tb//2
-        dk=tk//2; dgo=tgo//2; dr=tr_//2; dkp=tkp//2; dgr=tgr//2
-        rows_html += f"""<tr class="bolum-satir">
-            <td colspan="2">DOSYA SAYISI (Toplam / 2)</td>
-            <td class="c-num">{dd}</td>
-            <td class="c-num">{do_}<br/>{pct_span(do_,dd)}</td>
-            <td class="c-num">{ddz}<br/>{pct_span(ddz,dd)}</td>
-            <td class="c-num">{dk or ''}<br/>{pct_span(dk,dd) if dk else ''}</td>
-            <td class="c-num">{dgo or ''}<br/>{pct_span(dgo,dd) if dgo else ''}</td>
-            <td class="c-num">{dr or ''}<br/>{pct_span(dr,dd) if dr else ''}</td>
-            <td class="c-num">{dkp or ''}<br/>{pct_span(dkp,dd) if dkp else ''}</td>
-            <td class="c-num">{dgr or ''}<br/>{pct_span(dgr,dd) if dgr else ''}</td>
-            <td class="c-num">{dg}<br/>{pct_span(dg,dd)}</td>
-            <td class="c-num">{db}</td><td></td>
-        </tr>"""
-        st.markdown(f"""
-        <div class="panel">
-            <div class="panel-head"><span class="panel-title">Raportör Performans Tablosu</span></div>
-            <div class="wide-table-wrapper">
-            <table class="styled-table"><thead><tr>
-                <th class="c-idx">#</th><th>Adı Soyadı</th><th class="c-num">Atanan</th>
-                <th class="c-num">Onay</th><th class="c-num">Düzeltme</th>
-                <th class="c-num">KAEK</th><th class="c-num">Görüş</th>
-                <th class="c-num">Ret</th><th class="c-num">Kapsam Dışı</th><th class="c-num">Geri Çekildi</th>
-                <th class="c-num">Karar Verilen</th><th class="c-num">Bekleyen</th><th class="c-num">Tamamlanma</th>
-            </tr></thead><tbody>{rows_html}</tbody></table>
-            </div>
-            <div class="panel-footer">
-                <span>Her dosyaya 2 raportör atanır · Toplam raportör bazında, Dosya Sayısı (/2) gerçek dosya sayısıdır</span>
-                <span>Son güncelleme: {son_tarih}</span>
-            </div>
-        </div>""", unsafe_allow_html=True)
-
-# ── TAB 2: RAPORTÖR ANALİZİ ──────────────────────────────────────────────────
-with tab2:
-    if df_uye is not None:
-        r_list = df_uye["Adı Soyadı"].dropna().unique().tolist()
-        _, col_mid, _ = st.columns([2, 1, 2])
-        with col_mid:
-            sec_r = st.selectbox("Raportör Seçin:", r_list)
-        r = df_uye[df_uye["Adı Soyadı"] == sec_r].iloc[0]
-
-        dosya = safe_int(r["Dosya Sayısı"])
-        genel = safe_int(r["GENEL TOPLAM"])
-        bek   = safe_int(r["BEKLEYEN DOSYA SAYISI"])
+    for si_r, raptor in enumerate(RAPORTORLER, 1):
+        mask = (df["RAPORTÖR 1"]==raptor)|(df["RAPORTÖR 2"]==raptor)
+        r_df = df[mask]
+        dosya = len(r_df)
+        bek   = int((r_df["KURUL KARARI 1"].eq("")).sum())
+        kk1_v = r_df["KURUL KARARI 1"].value_counts()
+        genel = dosya - bek
         tam   = round(genel/dosya*100) if dosya else 0
+        bc    = "green" if tam>=80 else ""
 
-        # Nitelik × Karar matrisi
-        # Sütunlar: Bireysel, YL, Doktora, Uzmanlık, Toplam
-        # Satırlar: Onay, Düzeltme, KAEK, Görüş, Ret, Kapsam Dışı, Geri Çekildi, TOPLAM
-        nit = {
-            "Bireysel": "Bireysel Araştırma",
-            "YL Tezi":  "Yüksek Lisans Tezi",
-            "Doktora":  "Doktora Tezi",
-            "Uzm. Tezi":"Uzmanlık Tezi",
-        }
-        kar = {
-            "✅ Onay":         "Onay",
-            "📝 Düzeltme":     "Düzeltme",
-            "🏛 KAEK":         "KAEK",
-            "💬 Görüş":        "Görüş",
-            "❌ Ret":          "Ret",
-            "🚫 Kapsam Dışı":  "Kapsam Dışı",
-            "📤 Geri Çekildi": "Geri Çekildi",
-        }
+        # Nitelik × Karar
+        nit_cells = ""
+        for nit in NIT_KEYS:
+            n_df = r_df[r_df["NİTELİĞİ"]==nit]
+            n_top = len(n_df)
+            T_nit[nit] += n_top
+            nit_cells += f'<td class="c-num">{n_top or ""}</td>'
 
-        def v(nitelik_prefix, karar_suffix):
-            # Üye_1 sütun adı: "{Nitelik} {Karar}" formatı
-            # Özel: "Doktora Tezi  Düzeltme" (çift boşluk)
-            col = f"{nitelik_prefix} {karar_suffix}"
-            # Çift boşluk varyantını da dene
-            col2 = f"{nitelik_prefix}  {karar_suffix}"
-            if col in r.index:  return safe_int(r[col])
-            if col2 in r.index: return safe_int(r[col2])
-            return 0
+        # Karar hücreleri
+        kar_cells = ""
+        for kar in KARARLAR:
+            v = int(kk1_v.get(kar,0))
+            T[kar] += v
+            clr = KAR_RENK.get(kar,"#9E9E9E")
+            kar_cells += f'<td class="c-num" style="color:{clr if v else "#CFD8DC"}">{v or ""}</td>'
 
-        def toplam_satir_val(karar_label):
-            suffix = kar[karar_label]
-            # Genel toplam sütunları
-            mapping = {
-                "Onay": "Onay Toplam", "Düzeltme": "Düzeltme Toplam",
-                "KAEK": "KAEK  Toplam", "Görüş": "Görüş Toplam",
-                "Ret": "Ret Toplam", "Kapsam Dışı": "Kapsam Dışı Toplam",
-                "Geri Çekildi": "Geri Çekildi Toplam"
-            }
-            col = mapping.get(suffix, "")
-            return safe_int(r[col]) if col in r.index else 0
-
-        # Nitelik toplamları
-        nit_top = {
-            "Bireysel":  safe_int(r["BİREYSEL TOPLAM"]),
-            "YL Tezi":   safe_int(r["YÜKSEK LİSANS TEZİ TOPLAM"]),
-            "Doktora":   safe_int(r["DOKTORA TEZİ TOPLAM"]),
-            "Uzm. Tezi": safe_int(r["UZMANLIK TEZİ TOPLAM"]),
-        }
-
-        # Tablo satırları
-        matrix_rows = ""
-        for kar_label, kar_suffix in kar.items():
-            cells = ""
-            for nit_label, nit_prefix in nit.items():
-                val = v(nit_prefix, kar_suffix)
-                cells += f'<td class="c-num">{val or ""}</td>'
-            row_top = toplam_satir_val(kar_label)
-            p = pct_span(row_top, dosya)
-            matrix_rows += f"""<tr>
-                <td style="padding:10px 16px;color:#1A1814">{kar_label}</td>
-                {cells}
-                <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">
-                    {row_top or ""} {p}
-                </td>
-            </tr>"""
-
-        # TOPLAM satırı
-        top_cells = "".join(
-            f'<td class="c-num" style="font-weight:500">{nit_top[n]}</td>'
-            for n in nit
-        )
-        matrix_rows += f"""<tr class="toplam-satir">
-            <td>📊 TOPLAM (Karar Verilen)</td>
-            {top_cells}
-            <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">
-                {genel} {pct_span(genel,dosya)}
-            </td>
-        </tr>"""
-        # BEKLEYEN satırı
-        matrix_rows += f"""<tr style="background:#FFF0EB">
-            <td style="padding:10px 16px;color:#C8502A;font-weight:500">⏳ Bekleyen</td>
-            <td colspan="4"></td>
-            <td class="c-num" style="color:#C8502A;font-weight:500;border-left:2px solid #E0DCD4">
-                {bek} {pct_span(bek,dosya)}
-            </td>
+        T["toplam"]   += genel
+        T["bekleyen"] += bek
+        rows += f"""<tr>
+          <td class="c-idx">{si_r}</td>
+          <td>{raptor}</td>
+          {nit_cells}
+          <td style="border-left:2px solid #E8E4DC"></td>
+          {kar_cells}
+          <td class="c-num" style="font-weight:500;border-left:2px solid #E8E4DC">{genel or ""}</td>
+          <td class="c-num" style="color:{'#C8502A' if bek else '#CFD8DC'}">{bek or ""}</td>
+          <td><div class="prog-wrap"><div class="prog-bar">
+            <div class="prog-fill {bc}" style="width:{tam}%"></div>
+          </div><span class="prog-pct">{tam}%</span></div></td>
         </tr>"""
 
-        # Özet kartları
-        st.markdown(f"""
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:24px 32px 0;">
-            <div class="card primary">
-                <div class="card-num">{dosya}</div>
-                <div class="card-label">Atanan Dosya</div>
-            </div>
-            <div class="card">
-                <div class="card-num">{genel}</div>
-                <div class="card-label">Karar Verilen</div>
-                <div class="card-sub">{pct_span(genel,dosya)}</div>
-            </div>
-            <div class="card">
-                <div class="card-num">{bek}</div>
-                <div class="card-label">Bekleyen</div>
-                <div class="card-sub">{pct_span(bek,dosya)}</div>
-            </div>
-            <div class="card">
-                <div class="card-num">{tam}%</div>
-                <div class="card-label">Tamamlanma</div>
-            </div>
-        </div>
-        <div class="panel" style="margin:16px 32px 24px;">
-            <div class="panel-head">
-                <span class="panel-title">Nitelik × Karar Matrisi</span>
-                <span style="font-size:0.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
-                    satır: karar türü &nbsp;|&nbsp; sütun: başvuru niteliği
-                </span>
-            </div>
-            <table class="styled-table">
-                <thead><tr>
-                    <th>Karar Türü</th>
-                    <th class="c-num">Bireysel</th>
-                    <th class="c-num">YL Tezi</th>
-                    <th class="c-num">Doktora</th>
-                    <th class="c-num">Uzm. Tezi</th>
-                    <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
-                </tr></thead>
-                <tbody>{matrix_rows}</tbody>
-            </table>
-            <div class="panel-footer">
-                <span>{sec_r}</span>
-                <span>Son güncelleme: {son_tarih}</span>
-            </div>
-        </div>""", unsafe_allow_html=True)
+    # Toplam satırı
+    nit_tot = "".join(f'<td class="c-num">{T_nit[n] or ""}</td>' for n in NIT_KEYS)
+    kar_tot = "".join(
+        f'<td class="c-num" style="color:{KAR_RENK.get(k,"")}">{T[k] or ""}</td>'
+        for k in KARARLAR)
+    td2 = sum(T_nit.values())
+    rows += f"""<tr class="tot">
+      <td colspan="2">TOPLAM</td>
+      {nit_tot}
+      <td style="border-left:2px solid #D0CBC0"></td>
+      {kar_tot}
+      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{T['toplam']}</td>
+      <td class="c-num" style="color:#C8502A">{T['bekleyen']}</td>
+      <td></td>
+    </tr>"""
+    # /2 satırı
+    nit_half = "".join(f'<td class="c-num">{T_nit[n]//2 or ""}</td>' for n in NIT_KEYS)
+    kar_half = "".join(
+        f'<td class="c-num">{T[k]//2 or ""}</td>' for k in KARARLAR)
+    rows += f"""<tr class="sub">
+      <td colspan="2">DOSYA SAYISI (Toplam / 2)</td>
+      {nit_half}
+      <td style="border-left:2px solid #D0CBC0"></td>
+      {kar_half}
+      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{T['toplam']//2}</td>
+      <td class="c-num">{T['bekleyen']//2}</td>
+      <td></td>
+    </tr>"""
 
-# ── TAB 3: GÜNDEM SAYILARI ────────────────────────────────────────────────────
+    nit_hdrs = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
+    kar_hdrs = "".join(f'<th class="c-num">{k[:3]}</th>' for k in KARARLAR)
+    st.markdown(f"""
+    <div class="panel">
+      <div class="panel-head"><span class="panel-title">Raportör Karar Çizelgesi</span>
+        <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          KK1 bazlı · Her dosyaya 2 raportör atanır · /2 = gerçek dosya sayısı
+        </span>
+      </div>
+      <div class="wide-wrap">
+      <table class="styled-table"><thead><tr>
+        <th class="c-idx">#</th><th>Adı Soyadı</th>
+        {nit_hdrs}
+        <th style="border-left:2px solid #E8E4DC"></th>
+        {kar_hdrs}
+        <th class="c-num" style="border-left:2px solid #E8E4DC">Karar<br>Verilen</th>
+        <th class="c-num">Bek.</th>
+        <th class="c-num">Tamam.</th>
+      </tr></thead><tbody>{rows}</tbody></table>
+      </div>
+      <div class="panel-footer">
+        <span>Her dosyaya 2 raportör atanır · Toplam /2 = gerçek dosya sayısı</span>
+        <span>Son güncelleme: {son_tarih}</span>
+      </div>
+    </div>""", unsafe_allow_html=True)
+
+# ══ TAB 2: RAPORTÖR ANALİZİ ══════════════════════════════════════════════════
+with tab2:
+    _, cm, _ = st.columns([2,1,2])
+    with cm:
+        sec = st.selectbox("Raportör Seçin:", RAPORTORLER)
+
+    mask  = (df["RAPORTÖR 1"]==sec)|(df["RAPORTÖR 2"]==sec)
+    r_df  = df[mask].copy()
+    dosya = len(r_df)
+    bek   = int((r_df["KURUL KARARI 1"].eq("")).sum())
+    genel = dosya - bek
+    tam   = round(genel/dosya*100) if dosya else 0
+
+    # Nitelik × KK1 matrisi
+    mrows = ""
+    for kar in KARARLAR:
+        kar_df = r_df[r_df["KURUL KARARI 1"]==kar]
+        cells  = "".join(
+            f'<td class="c-num">{int((kar_df["NİTELİĞİ"]==n).sum()) or ""}</td>'
+            for n in NIT_KEYS)
+        top = len(kar_df)
+        mrows += f"""<tr>
+          <td>{KAR_EMO.get(kar,'')} {kar}</td>{cells}
+          <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">
+            {top or ""} {pct(top,dosya)}</td></tr>"""
+    nit_tot2 = "".join(
+        f'<td class="c-num" style="font-weight:500">{int((r_df["NİTELİĞİ"]==n).sum())}</td>'
+        for n in NIT_KEYS)
+    mrows += f"""<tr class="tot">
+      <td>📊 Karar Verilen</td>{nit_tot2}
+      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">
+        {genel} {pct(genel,dosya)}</td></tr>"""
+    mrows += f"""<tr style="background:#FFF0EB">
+      <td style="color:#C8502A;font-weight:500">⏳ Bekleyen</td>
+      <td colspan="{len(NIT_KEYS)}"></td>
+      <td class="c-num" style="color:#C8502A;font-weight:500;border-left:2px solid #E0DCD4">
+        {bek or ""} {pct(bek,dosya)}</td></tr>"""
+
+    # Düzeltme takibi — KK1=DÜZELTME/GÖRÜŞ → KK2 durumu
+    duz_df   = r_df[r_df["KURUL KARARI 1"].isin(["DÜZELTME","GÖRÜŞ"])]
+    duz_alan = len(duz_df)
+    duz_gel  = int((duz_df["KURUL KARARI 2"].ne("")).sum())
+    duz_bek  = duz_alan - duz_gel
+    kk2_dag  = duz_df[duz_df["KURUL KARARI 2"].ne("")]["KURUL KARARI 2"].value_counts().to_dict()
+    kk2_ozet = "  ".join(f"{k}:{v}" for k,v in kk2_dag.items()) or "—"
+
+    def drow(lbl, sub_df, clr, bg):
+        cells = "".join(
+            f'<td class="c-num">{int((sub_df["NİTELİĞİ"]==n).sum()) or ""}</td>'
+            for n in NIT_KEYS)
+        return f"""<tr style="background:{bg}">
+          <td style="padding:9px 16px;color:{clr};font-weight:500">{lbl}</td>
+          {cells}
+          <td class="c-num" style="font-weight:600;border-left:2px solid #E0DCD4;color:{clr}">
+            {len(sub_df) or ""}</td></tr>"""
+
+    duz_rows = (
+        drow("📝 Düzeltme/Görüş Alan", duz_df, "#C8502A","#FFF8EE") +
+        drow("✅ Geri Gelen", duz_df[duz_df["KURUL KARARI 2"].ne("")], "#2A7A4F","#F0FBF0") +
+        drow("⏳ Bekliyor",   duz_df[duz_df["KURUL KARARI 2"].eq("")], "#8C6030","#FFFBF0")
+    )
+    nit_hdrs2 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
+    tot_hdr   = f'<th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>'
+
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:24px 32px 0">
+      <div class="card primary"><div class="card-num">{dosya}</div><div class="card-label">Atanan Dosya</div></div>
+      <div class="card"><div class="card-num">{genel}</div><div class="card-label">Karar Verilen</div><div class="card-sub">{pct(genel,dosya,False)}</div></div>
+      <div class="card"><div class="card-num">{bek}</div><div class="card-label">Bekleyen</div><div class="card-sub">{pct(bek,dosya,False)}</div></div>
+      <div class="card"><div class="card-num">{tam}%</div><div class="card-label">Tamamlanma</div></div>
+    </div>
+    <div class="panel" style="margin:16px 32px 8px">
+      <div class="panel-head"><span class="panel-title">KK1 × Nitelik Matrisi</span></div>
+      <table class="styled-table"><thead><tr>
+        <th>Karar</th>{nit_hdrs2}{tot_hdr}
+      </tr></thead><tbody>{mrows}</tbody></table>
+      <div class="panel-footer"><span>{sec}</span><span>Son güncelleme: {son_tarih}</span></div>
+    </div>
+    <div class="panel" style="margin:0 32px 24px">
+      <div class="panel-head"><span class="panel-title">Düzeltme/Görüş Takibi</span>
+        <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          KK1=DÜZELTME/GÖRÜŞ → KK2 durumu
+        </span>
+      </div>
+      <table class="styled-table"><thead><tr>
+        <th>Durum</th>{nit_hdrs2}{tot_hdr}
+      </tr></thead><tbody>{duz_rows}</tbody></table>
+      <div class="panel-footer">
+        <span>Geri gelenlerin KK2 kararları: {kk2_ozet}</span>
+        <span>{sec}</span>
+      </div>
+    </div>""", unsafe_allow_html=True)
+
+# ══ TAB 3: GÜNDEM SAYILARI ════════════════════════════════════════════════════
 with tab3:
-    if df_sayilar is not None:
-        dg = df_sayilar.copy()
-        dg["Gündem Tarihleri"] = pd.to_datetime(dg["Gündem Tarihleri"], errors="coerce").dt.strftime("%d.%m.%Y")
-        t_bas=int(toplam_satir[2]); t_duz=int(toplam_satir[3])
-        t_dil=int(toplam_satir[4]); t_top=int(toplam_satir[5])
-        rows = ""
-        for _, row in dg.iterrows():
-            bas = safe_int(row["Başvuru"])
-            rows += f"""<tr>
-                <td class="mono">{clean_num(row['S.NO'])}</td>
-                <td class="mono">{row['Gündem Tarihleri']}</td>
-                <td class="mono">{bas}</td>
-                <td class="mono">{clean_num(row['Düzeltme'])}</td>
-                <td class="mono">{clean_num(row['Dilekçe'])}</td>
-                <td class="mono">{clean_num(row['Toplam'])}</td>
-            </tr>"""
-        rows += f"""<tr class="toplam-satir">
-            <td colspan="2">TOPLAM</td>
-            <td class="mono">{t_bas}</td><td class="mono">{t_duz}</td>
-            <td class="mono">{t_dil}</td><td class="mono">{t_top}</td>
-        </tr>"""
-        st.markdown(f"""
-        <div class="panel" style="max-width:560px; margin:24px 32px;">
-            <div class="panel-head"><span class="panel-title">2026 Gündem Sayıları</span></div>
-            <table class="styled-table"><thead><tr>
-                <th>S.NO</th><th>Gündem Tarihi</th><th>Başvuru</th>
-                <th>Düzeltme</th><th>Dilekçe</th><th>Toplam</th>
-            </tr></thead><tbody>{rows}</tbody></table>
-        </div>""", unsafe_allow_html=True)
+    gundem = df[df["KURUL TARİHİ"].ne("")].groupby("KURUL TARİHİ").agg(
+        Başvuru   =("SBA NUMARASI","count"),
+        Onay      =("KURUL KARARI 1", lambda x:(x=="ONAY").sum()),
+        Düzeltme  =("KURUL KARARI 1", lambda x:(x=="DÜZELTME").sum()),
+        Görüş     =("KURUL KARARI 1", lambda x:(x=="GÖRÜŞ").sum()),
+        Bekleyen  =("KURUL KARARI 1", lambda x:(x=="").sum()),
+    ).reset_index()
+    try:
+        gundem["_s"] = pd.to_datetime(gundem["KURUL TARİHİ"],dayfirst=True,errors='coerce')
+        gundem = gundem.sort_values("_s").drop(columns="_s")
+    except: pass
 
-# ── TAB 4: BİRİM ANALİZİ ─────────────────────────────────────────────────────
+    rows3 = ""
+    for si3,(_, row) in enumerate(gundem.iterrows(),1):
+        rows3 += f"""<tr>
+          <td class="c-num">{si3}</td>
+          <td class="c-num">{row['KURUL TARİHİ']}</td>
+          <td class="c-num">{int(row['Başvuru'])}</td>
+          <td class="c-num" style="color:#2E7D32">{int(row['Onay']) or ''}</td>
+          <td class="c-num" style="color:#E65100">{int(row['Düzeltme']) or ''}</td>
+          <td class="c-num" style="color:#1565C0">{int(row['Görüş']) or ''}</td>
+          <td class="c-num" style="color:#C8502A">{int(row['Bekleyen']) or ''}</td>
+          <td class="c-num" style="font-weight:500">{int(row['Başvuru'])}</td>
+        </tr>"""
+    rows3 += f"""<tr class="tot">
+      <td colspan="2">TOPLAM</td>
+      <td class="c-num">{int(gundem['Başvuru'].sum())}</td>
+      <td class="c-num">{int(gundem['Onay'].sum())}</td>
+      <td class="c-num">{int(gundem['Düzeltme'].sum())}</td>
+      <td class="c-num">{int(gundem['Görüş'].sum())}</td>
+      <td class="c-num">{int(gundem['Bekleyen'].sum())}</td>
+      <td class="c-num" style="font-weight:600">{int(gundem['Başvuru'].sum())}</td>
+    </tr>"""
+
+    st.markdown(f"""
+    <div class="panel" style="max-width:600px;margin:24px 32px">
+      <div class="panel-head"><span class="panel-title">2026 Gündem Sayıları</span></div>
+      <table class="styled-table"><thead><tr>
+        <th class="c-num">S.NO</th><th class="c-num">Gündem Tarihi</th>
+        <th class="c-num">Başvuru</th><th class="c-num">Onay</th>
+        <th class="c-num">Düzeltme</th><th class="c-num">Görüş</th>
+        <th class="c-num">Bekleyen</th><th class="c-num">Toplam</th>
+      </tr></thead><tbody>{rows3}</tbody></table>
+    </div>""", unsafe_allow_html=True)
+
+# ══ TAB 4: BİRİM ANALİZİ ═════════════════════════════════════════════════════
 with tab4:
-    if df_basvuru is not None:
-        nitelik_listesi = ["Bireysel Araştırma", "Uzmanlık Tezi", "Yüksek Lisans Tezi", "Doktora Tezi"]
+    bn = df.groupby("BİRİMİ")["NİTELİĞİ"].value_counts().unstack(fill_value=0)
+    for n in NIT_KEYS:
+        if n not in bn.columns: bn[n] = 0
+    bn = bn[NIT_KEYS]; bn["Toplam"] = bn.sum(axis=1)
+    bn = bn.sort_values("Toplam",ascending=False).reset_index()
 
-        # Birim + Nitelik pivot
-        birim_nitelik = df_basvuru.groupby(["BİRİMİ", "NİTELİĞİ"]).size().unstack(fill_value=0)
-        for n in nitelik_listesi:
-            if n not in birim_nitelik.columns:
-                birim_nitelik[n] = 0
-        birim_nitelik = birim_nitelik[nitelik_listesi]
-        birim_nitelik["Toplam"] = birim_nitelik.sum(axis=1)
-        birim_nitelik = birim_nitelik.sort_values("Toplam", ascending=False).reset_index()
-
-        b_top = int(birim_nitelik["Toplam"].sum())
-        t_bir = int(birim_nitelik["Bireysel Araştırma"].sum())
-        t_uzm = int(birim_nitelik["Uzmanlık Tezi"].sum())
-        t_yl  = int(birim_nitelik["Yüksek Lisans Tezi"].sum())
-        t_dok = int(birim_nitelik["Doktora Tezi"].sum())
-
-        # Kısa etiketler
-        kis = {"Bireysel Araştırma": "Bireysel", "Uzmanlık Tezi": "Uzm. Tezi",
-               "Yüksek Lisans Tezi": "YL Tezi", "Doktora Tezi": "Doktora"}
-
-        rows = ""
-        for i, row in birim_nitelik.iterrows():
-            rows += f"""<tr>
-                <td class="c-idx">{i+1:02d}</td>
-                <td>{row['BİRİMİ']}</td>
-                <td class="c-num">{int(row['Bireysel Araştırma']) or ''}</td>
-                <td class="c-num">{int(row['Uzmanlık Tezi']) or ''}</td>
-                <td class="c-num">{int(row['Yüksek Lisans Tezi']) or ''}</td>
-                <td class="c-num">{int(row['Doktora Tezi']) or ''}</td>
-                <td class="c-num" style="font-weight:500">{int(row['Toplam'])}</td>
-            </tr>"""
-
-        rows += f"""<tr class="toplam-satir">
-            <td colspan="2">TOPLAM</td>
-            <td class="c-num">{t_bir}</td>
-            <td class="c-num">{t_uzm}</td>
-            <td class="c-num">{t_yl}</td>
-            <td class="c-num">{t_dok}</td>
-            <td class="c-num" style="font-weight:500">{b_top}</td>
+    rows4 = ""
+    for i,row in bn.iterrows():
+        rows4 += f"""<tr>
+          <td class="c-idx">{i+1:02d}</td><td>{row['BİRİMİ']}</td>
+          {"".join(f'<td class="c-num">{int(row[n]) or ""}</td>' for n in NIT_KEYS)}
+          <td class="c-num" style="font-weight:500">{int(row['Toplam'])}</td>
         </tr>"""
+    rows4 += f"""<tr class="tot"><td colspan="2">TOPLAM</td>
+      {"".join(f'<td class="c-num">{int(bn[n].sum())}</td>' for n in NIT_KEYS)}
+      <td class="c-num" style="font-weight:600">{int(bn['Toplam'].sum())}</td>
+    </tr>"""
+    nit_h4 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
+    st.markdown(f"""
+    <div class="panel" style="margin:24px 32px">
+      <div class="panel-head"><span class="panel-title">Birim Analizi — {len(bn)} birim</span></div>
+      <table class="styled-table"><thead><tr>
+        <th class="c-idx">#</th><th>Birim Adı</th>{nit_h4}
+        <th class="c-num">Toplam</th>
+      </tr></thead><tbody>{rows4}</tbody></table>
+    </div>""", unsafe_allow_html=True)
 
-        st.markdown(f"""
-        <div class="panel" style="margin:24px 32px;">
-            <div class="panel-head"><span class="panel-title">Birim Analizi — {len(birim_nitelik)} birim</span></div>
-            <table class="styled-table"><thead><tr>
-                <th class="c-idx">#</th><th>Birim Adı</th>
-                <th class="c-num">Bireysel</th><th class="c-num">Uzm. Tezi</th>
-                <th class="c-num">YL Tezi</th><th class="c-num">Doktora</th>
-                <th class="c-num">Toplam</th>
-            </tr></thead><tbody>{rows}</tbody></table>
-        </div>""", unsafe_allow_html=True)
-
-# ── TAB 5: ARAŞTIRMACI ANALİZİ ───────────────────────────────────────────────
+# ══ TAB 5: ARAŞTIRMACI ANALİZİ ═══════════════════════════════════════════════
 with tab5:
-    if df_basvuru is not None:
-        b = df_basvuru.copy()
+    nit_p = df.groupby("SORUMLUSU")["NİTELİĞİ"].value_counts().unstack(fill_value=0)
+    for n in NIT_KEYS:
+        if n not in nit_p.columns: nit_p[n] = 0
+    kar_p = df.groupby("SORUMLUSU")["KURUL KARARI 1"].value_counts().unstack(fill_value=0)
+    for k in ["ONAY","DÜZELTME",""]:
+        if k not in kar_p.columns: kar_p[k] = 0
+    sor = pd.concat([nit_p,kar_p],axis=1).fillna(0).astype(int)
+    sor["TOPLAM"] = df.groupby("SORUMLUSU").size()
+    sor = sor.reset_index().sort_values("TOPLAM",ascending=False).reset_index(drop=True)
+    sor = sor[sor["SORUMLUSU"].ne("")]
 
-        # Güncel durumu normalize et
-        b["GÜNCEL DURUM"] = b["GÜNCEL DURUM"].astype(str).str.strip().str.upper()
-        b["GÜNCEL DURUM"] = b["GÜNCEL DURUM"].replace({"0": "BEKLEYEN", "NAN": "BEKLEYEN", "": "BEKLEYEN"})
-
-        # Nitelik pivot
-        nit_pivot = b.groupby(["SORUMLUSU","NİTELİĞİ"]).size().unstack(fill_value=0)
-        for n in ["Bireysel Araştırma","Uzmanlık Tezi","Yüksek Lisans Tezi","Doktora Tezi"]:
-            if n not in nit_pivot.columns: nit_pivot[n] = 0
-
-        # Karar pivot
-        kar_pivot = b.groupby(["SORUMLUSU","GÜNCEL DURUM"]).size().unstack(fill_value=0)
-        for k in ["ONAY","DÜZELTME","BEKLEYEN"]:
-            if k not in kar_pivot.columns: kar_pivot[k] = 0
-
-        # Birleştir
-        sor_df = pd.concat([nit_pivot, kar_pivot], axis=1).fillna(0).astype(int)
-        sor_df["TOPLAM"] = b.groupby("SORUMLUSU").size()
-        sor_df = sor_df.reset_index().sort_values("TOPLAM", ascending=False).reset_index(drop=True)
-        sor_df = sor_df[sor_df["SORUMLUSU"].notna()]
-
-        s_top = int(sor_df["TOPLAM"].sum())
-        t_bir = int(sor_df["Bireysel Araştırma"].sum())
-        t_uzm = int(sor_df["Uzmanlık Tezi"].sum())
-        t_yl  = int(sor_df["Yüksek Lisans Tezi"].sum())
-        t_dok = int(sor_df["Doktora Tezi"].sum())
-        t_ona = int(sor_df["ONAY"].sum())
-        t_duz = int(sor_df["DÜZELTME"].sum())
-        t_bek = int(sor_df["BEKLEYEN"].sum())
-
-        rows = ""
-        for i, row in sor_df.iterrows():
-            top = int(row["TOPLAM"])
-            ona = int(row["ONAY"])
-            duz = int(row["DÜZELTME"])
-            bek = int(row["BEKLEYEN"])
-            rows += f"""<tr>
-                <td class="c-idx">{i+1:02d}</td>
-                <td>{row['SORUMLUSU']}</td>
-                <td class="c-num">{int(row['Bireysel Araştırma']) or ''}</td>
-                <td class="c-num">{int(row['Uzmanlık Tezi']) or ''}</td>
-                <td class="c-num">{int(row['Yüksek Lisans Tezi']) or ''}</td>
-                <td class="c-num">{int(row['Doktora Tezi']) or ''}</td>
-                <td class="c-num" style="border-left:2px solid #E0DCD4">{ona or ''}</td>
-                <td class="c-num">{duz or ''}</td>
-                <td class="c-num">{bek or ''}</td>
-                <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">{top}</td>
-            </tr>"""
-
-        rows += f"""<tr class="toplam-satir">
-            <td colspan="2">TOPLAM</td>
-            <td class="c-num">{t_bir}</td>
-            <td class="c-num">{t_uzm}</td>
-            <td class="c-num">{t_yl}</td>
-            <td class="c-num">{t_dok}</td>
-            <td class="c-num" style="border-left:2px solid #D0CBC0">{t_ona}</td>
-            <td class="c-num">{t_duz}</td>
-            <td class="c-num">{t_bek}</td>
-            <td class="c-num" style="font-weight:500;border-left:2px solid #D0CBC0">{s_top}</td>
+    rows5 = ""
+    for i,row in sor.iterrows():
+        bek5 = int(row.get("",0))
+        rows5 += f"""<tr>
+          <td class="c-idx">{i+1:02d}</td><td>{row['SORUMLUSU']}</td>
+          {"".join(f'<td class="c-num">{int(row[n]) or ""}</td>' for n in NIT_KEYS)}
+          <td class="c-num" style="border-left:2px solid #E0DCD4;color:#2E7D32">{int(row.get('ONAY',0)) or ''}</td>
+          <td class="c-num" style="color:#E65100">{int(row.get('DÜZELTME',0)) or ''}</td>
+          <td class="c-num" style="color:#C8502A">{bek5 or ''}</td>
+          <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">{int(row['TOPLAM'])}</td>
         </tr>"""
-
-        st.markdown(f"""
-        <div class="panel" style="margin:24px 32px;">
-            <div class="panel-head">
-                <span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor_df)} araştırmacı</span>
-                <span style="font-size:0.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
-                    Nitelik &nbsp;|&nbsp; Güncel Karar Durumu
-                </span>
-            </div>
-            <div class="wide-table-wrapper">
-            <table class="styled-table"><thead>
-                <tr>
-                    <th class="c-idx">#</th>
-                    <th>Sorumlu Araştırmacı</th>
-                    <th class="c-num">Bireysel</th>
-                    <th class="c-num">Uzm. Tezi</th>
-                    <th class="c-num">YL Tezi</th>
-                    <th class="c-num">Doktora</th>
-                    <th class="c-num" style="border-left:2px solid #E0DCD4">Onay</th>
-                    <th class="c-num">Düzeltme</th>
-                    <th class="c-num">Bekleyen</th>
-                    <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
-                </tr>
-            </thead><tbody>{rows}</tbody></table>
-            </div>
-        </div>""", unsafe_allow_html=True)
+    rows5 += f"""<tr class="tot"><td colspan="2">TOPLAM</td>
+      {"".join(f'<td class="c-num">{int(sor[n].sum())}</td>' for n in NIT_KEYS)}
+      <td class="c-num" style="border-left:2px solid #D0CBC0">{int(sor.get('ONAY',pd.Series([0])).sum())}</td>
+      <td class="c-num">{int(sor.get('DÜZELTME',pd.Series([0])).sum())}</td>
+      <td class="c-num">{int(sor.get('',pd.Series([0])).sum())}</td>
+      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{int(sor['TOPLAM'].sum())}</td>
+    </tr>"""
+    nit_h5 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
+    st.markdown(f"""
+    <div class="panel" style="margin:24px 32px">
+      <div class="panel-head">
+        <span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor)} araştırmacı</span>
+      </div>
+      <div class="wide-wrap">
+      <table class="styled-table"><thead><tr>
+        <th class="c-idx">#</th><th>Sorumlu Araştırmacı</th>{nit_h5}
+        <th class="c-num" style="border-left:2px solid #E0DCD4">Onay</th>
+        <th class="c-num">Düzeltme</th><th class="c-num">Bekleyen</th>
+        <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
+      </tr></thead><tbody>{rows5}</tbody></table>
+      </div>
+    </div>""", unsafe_allow_html=True)
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="footer">
-    <b>Mahsuni TÜRKATAR</b> &nbsp;·&nbsp; Hacettepe Üniversitesi &nbsp;·&nbsp;
-    Sağlık Bilimleri Araştırma Etik Kurulu &nbsp;·&nbsp; {son_tarih}
-</div>
-""", unsafe_allow_html=True)
+  <b>Mahsuni TÜRKATAR</b> &nbsp;·&nbsp; Hacettepe Üniversitesi &nbsp;·&nbsp;
+  Sağlık Bilimleri Araştırma Etik Kurulu &nbsp;·&nbsp; {son_tarih}
+</div>""", unsafe_allow_html=True)
