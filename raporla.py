@@ -30,6 +30,10 @@ def load():
         df[c] = df[c].apply(lambda x:
             str(x).strip() if pd.notna(x) and str(x).strip() not in
             ('nan','None','0.0') else '')
+    # Tarih sütunlarını DD.MM.YYYY formatına çevir
+    for tc in ["KURUL TARİHİ", "BAŞVURU TARİHİ"]:
+        if tc in df.columns:
+            df[tc] = pd.to_datetime(df[tc], dayfirst=True, errors="coerce").dt.strftime("%d.%m.%Y").fillna("")
     # Sayılar sayfası — gündem tablosu
     try:
         sg = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=None)
@@ -550,7 +554,7 @@ with tab5:
 
     rows5 = ""
     for i,row in sor.iterrows():
-        bek5 = int(row.get("",0))
+        bek5 = int(row.get("BEKLİYOR", row.get("", 0)))
         rows5 += f"""<tr>
           <td class="c-idx">{i+1:02d}</td><td>{row['SORUMLUSU']}</td>
           {"".join(f'<td class="c-num">{int(row[n]) or ""}</td>' for n in NIT_KEYS)}
