@@ -185,9 +185,9 @@ st.markdown(f"""
 </div>""", unsafe_allow_html=True)
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "📊 Karar Çizelgesi","👥 Raportör Analizi","🗓 Gündem Sayıları",
-    "🏢 Birim Analizi","👨‍🏫 Araştırmacı Analizi"
+    "🏢 Birim Analizi","👨‍🏫 Araştırmacı Analizi","🔄 Sonuçlar","📈 Grafikler"
 ])
 
 # ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
