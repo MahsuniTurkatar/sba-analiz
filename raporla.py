@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
 
 st.set_page_config(page_title="SBA 2026 — Etik Kurul", layout="wide", page_icon="🔬")
 
@@ -38,15 +40,9 @@ def load():
         df[c] = df[c].apply(lambda x:
             str(x).strip() if pd.notna(x) and str(x).strip() not in
             ('nan','None','0.0') else '')
-    # Sayılar sayfası — gündem tablosu
-    try:
-        sg = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=None)
-        toplam_satir = sg[sg[0]=="TOPLAM"].iloc[0]
-    except:
-        toplam_satir = None
-    return df, toplam_satir
+    return df
 
-df, toplam_satir = load()
+df = load()
 
 # ── HESAPLAMALAR ──────────────────────────────────────────────────────────────
 def si(v):
@@ -604,9 +600,6 @@ with tab5:
 
 # ══ TAB 7: GRAFİKLER ══════════════════════════════════════════════════════════
 with tab7:
-    import plotly.express as px
-    import plotly.graph_objects as go
-
     st.markdown("""<div style="padding:16px 32px 0">
       <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A1814">
         Grafik Raporu</div>
