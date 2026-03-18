@@ -598,13 +598,146 @@ with tab5:
       </div>
     </div>""", unsafe_allow_html=True)
 
+
+# ══ TAB 6: SONUÇLAR ══════════════════════════════════════════════════════════
+with tab6:
+    KARARLAR_TUM6 = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','GERİ ÇEKİLDİ']
+    K_BG6 = {'ONAY':'#E8F5E9','DÜZELTME':'#FFF8E1','GÖRÜŞ':'#E3F2FD','KAEK':'#EDE7F6',
+              'RET':'#FFEBEE','KAPSAM DIŞI':'#F5F5F5','GERİ ÇEKİLDİ':'#FFF9C4'}
+    K_FG6 = {'ONAY':'#2E7D32','DÜZELTME':'#E65100','GÖRÜŞ':'#1565C0','KAEK':'#4527A0',
+              'RET':'#C62828','KAPSAM DIŞI':'#616161','GERİ ÇEKİLDİ':'#795548'}
+
+    d6 = df.copy()
+    for c6 in ['KURUL KARARI 1','KURUL KARARI 2','KURUL KARARI 3','KURUL KARARI 4']:
+        d6[c6] = d6[c6].fillna('').astype(str).str.strip().replace({'nan':'','0':'','None':''})
+    kk2_var6 = d6[d6['KURUL KARARI 2'].ne('')]
+
+    st.markdown("""<div style="padding:20px 32px 8px">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.5rem;color:#1A1814;margin-bottom:4px">Karar Akış Analizi</div>
+      <div style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+        KK1 → KK2 geçiş matrisi &nbsp;·&nbsp; Birden fazla tur geçiren dosyaların tam karar zinciri
+      </div></div>""", unsafe_allow_html=True)
+
+    def rozet6(k):
+        bg = K_BG6.get(k,'#F5F5F5')
+        fg = K_FG6.get(k,'#616161')
+        return '<span style="background:' + bg + ';color:' + fg + ';padding:3px 10px;border-radius:6px;font-weight:600;font-size:.82rem;display:inline-block">' + k + '</span>'
+
+    mat_rows6 = ''
+    for k1 in KARARLAR_TUM6:
+        sub = kk2_var6[kk2_var6['KURUL KARARI 1']==k1]
+        if sub.empty: continue
+        cells = ''
+        for k2 in KARARLAR_TUM6:
+            v = int((sub['KURUL KARARI 2']==k2).sum())
+            if v:
+                cells += '<td class="c-num">' + rozet6(k2) + '<br><b>' + str(v) + '</b></td>'
+            else:
+                cells += '<td class="c-num" style="color:#E0DCD4">—</td>'
+        mat_rows6 += '<tr><td>' + rozet6(k1) + '</td>' + cells + '<td class="c-num" style="font-weight:700;border-left:2px solid #E0DCD4">' + str(len(sub)) + '</td></tr>'
+
+    k2_hdrs6 = ''.join('<th class="c-num" style="font-size:.7rem">' + k + '</th>' for k in KARARLAR_TUM6)
+
+    st.markdown(
+        '''<div class="panel" style="margin:8px 32px 20px">
+      <div class="panel-head">
+        <span class="panel-title">KK1 → KK2 Geçiş Matrisi</span>
+        <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">''' +
+        str(len(kk2_var6)) + ''' dosya 2. tura girdi &nbsp;·&nbsp; Satır = ilk karar &nbsp;·&nbsp; Sütun = 2. karar
+        </span>
+      </div>
+      <div class="wide-wrap">
+      <table class="styled-table"><thead><tr>
+        <th>KK1 ↓ / KK2 →</th>''' + k2_hdrs6 + '''
+        <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
+      </tr></thead><tbody>''' + mat_rows6 + '''</tbody></table>
+      </div>
+      <div class="panel-footer">
+        <span>Satır: ilk karar (KK1) &nbsp;·&nbsp; Sütun: düzeltme sonrası 2. karar (KK2) &nbsp;·&nbsp; Örnek: DÜZELTME satırı → ONAY sütunu = düzeltme yapıp onay alan dosya sayısı</span>
+      </div>
+    </div>''',
+        unsafe_allow_html=True)
+
+    cok_tur6 = d6[d6['KURUL KARARI 2'].ne('')].sort_values('SBA NUMARASI').reset_index(drop=True)
+    tur_rows6 = ''
+    for i6, (_, s6) in enumerate(cok_tur6.iterrows(), 1):
+        kk = [s6.get('KURUL KARARI ' + str(t),'') for t in range(1,5)]
+        tur_say6 = sum(1 for k in kk if k)
+        bg6 = '#F7FAFB' if i6%2==1 else '#FFFFFF'
+        zincir = ''
+        for ki6, kk_v in enumerate(kk):
+            if kk_v:
+                zincir += rozet6(kk_v)
+                if ki6 < 3 and kk[ki6+1]:
+                    zincir += ' <span style="color:#B0BEC5;font-size:1rem;margin:0 4px">→</span> '
+        tur_rows6 += (
+            '<tr style="background:' + bg6 + '">'
+            '<td class="c-idx">' + str(i6) + '</td>'
+            '<td class="c-num" style="font-weight:600">' + s6.get('SBA NUMARASI','') + '</td>'
+            '<td style="font-size:.82rem;color:#5A7A8A">' + s6.get('NİTELİĞİ','') + '</td>'
+            '<td style="font-size:.82rem">' + s6.get('SORUMLUSU','') + '</td>'
+            '<td style="white-space:normal;padding:8px 16px">' + zincir + '</td>'
+            '<td class="c-num" style="color:#8C8880;font-size:.8rem">' + str(tur_say6) + ' tur</td>'
+            '</tr>'
+        )
+
+    st.markdown(
+        '''<div class="panel" style="margin:0 32px 24px">
+      <div class="panel-head">
+        <span class="panel-title">Dosya Tur Geçmişi — ''' + str(len(cok_tur6)) + ''' dosya</span>
+        <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          2+ tur geçiren dosyalar · Karar zinciri soldan sağa
+        </span>
+      </div>
+      <div class="wide-wrap">
+      <table class="styled-table"><thead><tr>
+        <th class="c-idx">#</th>
+        <th class="c-num">SBA No</th>
+        <th>Niteliği</th>
+        <th>Sorumlusu</th>
+        <th>Karar Zinciri</th>
+        <th class="c-num">Tur</th>
+      </tr></thead><tbody>''' + tur_rows6 + '''</tbody></table>
+      </div>
+      <div class="panel-footer">
+        <span>KK1 → KK2 → KK3 → KK4 sırasıyla</span>
+      </div>
+    </div>''',
+        unsafe_allow_html=True)
+
+
 # ══ TAB 7: GRAFİKLER ══════════════════════════════════════════════════════════
 with tab7:
-    st.markdown("""<div style="padding:16px 32px 0">
-      <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A1814">
+    onay_s  = int(df['KURUL KARARI 1'].eq('ONAY').sum())
+    duz_s   = int(df['KURUL KARARI 1'].eq('DÜZELTME').sum())
+    gk_s    = int(df['KURUL KARARI 1'].isin(['GÖRÜŞ','KAEK']).sum())
+    st.markdown(f"""<div style="padding:20px 32px 12px">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A1814;margin-bottom:8px">
         Grafik Raporu</div>
-      <div style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace;margin-top:4px">
-        Tüm veriler Başvuru sayfasından canlı hesaplanır</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">📊 Toplam: <b style="color:#1A1814">{toplam_b}</b></span>
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">🗓 Toplantı: <b style="color:#1A1814">{kurul_sayisi}</b></span>
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">📅 Son: <b style="color:#1A1814">{son_tarih}</b></span>
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">⚡ Canlı veri</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div style="background:#E8F5E9;border-radius:8px;padding:10px 16px;border-left:3px solid #2E7D32">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#2E7D32">{onay_s}</div>
+          <div style="font-size:.72rem;color:#8C8880">ONAY</div>
+        </div>
+        <div style="background:#FFF8E1;border-radius:8px;padding:10px 16px;border-left:3px solid #E65100">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#E65100">{duz_s}</div>
+          <div style="font-size:.72rem;color:#8C8880">DÜZELTME</div>
+        </div>
+        <div style="background:#E3F2FD;border-radius:8px;padding:10px 16px;border-left:3px solid #1565C0">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#1565C0">{gk_s}</div>
+          <div style="font-size:.72rem;color:#8C8880">GÖRÜŞ/KAEK</div>
+        </div>
+        <div style="background:#FFF3E0;border-radius:8px;padding:10px 16px;border-left:3px solid #C8502A">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#C8502A">{bekleyen}</div>
+          <div style="font-size:.72rem;color:#8C8880">BEKLİYOR</div>
+        </div>
+      </div>
     </div>""", unsafe_allow_html=True)
 
     # Veri hazırlık
