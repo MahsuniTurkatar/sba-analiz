@@ -26,6 +26,9 @@ def load():
     df = pd.read_excel(EXCEL_FILE, sheet_name="Başvuru", header=0)
     df = df[df["SBA NUMARASI"].notna() &
             df["SBA NUMARASI"].astype(str).str.startswith("SBA")].copy()
+    # Sadece gerçek dolu satırlar (ADI veya KURUL TARİHİ dolu)
+    df = df[df["ADI"].notna() & df["ADI"].astype(str).str.strip().ne("") &
+            ~df["ADI"].astype(str).isin(["nan","None","0"])].copy()
     # Tarih sütunlarını ÖNCE dönüştür (ham datetime iken)
     for tc in ["KURUL TARİHİ", "BAŞVURU TARİHİ"]:
         if tc in df.columns:
