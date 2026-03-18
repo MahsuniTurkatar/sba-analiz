@@ -602,6 +602,174 @@ with tab5:
       </div>
     </div>""", unsafe_allow_html=True)
 
+# ══ TAB 7: GRAFİKLER ══════════════════════════════════════════════════════════
+with tab7:
+    import plotly.express as px
+    import plotly.graph_objects as go
+
+    st.markdown("""<div style="padding:16px 32px 0">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A1814">
+        Grafik Raporu</div>
+      <div style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace;margin-top:4px">
+        Tüm veriler Başvuru sayfasından canlı hesaplanır</div>
+    </div>""", unsafe_allow_html=True)
+
+    # Veri hazırlık
+    d7 = df.copy()
+    for c7 in ['KURUL KARARI 1','NİTELİĞİ','KURUL TARİHİ']:
+        d7[c7] = d7[c7].fillna('').astype(str).str.strip().replace({'nan':'','None':''})
+
+    KARARLAR7 = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','GERİ ÇEKİLDİ']
+    KAR_CLR7  = {'ONAY':'#2E7D32','DÜZELTME':'#E65100','GÖRÜŞ':'#1565C0',
+                 'KAEK':'#4527A0','RET':'#C62828','KAPSAM DIŞI':'#616161',
+                 'GERİ ÇEKİLDİ':'#795548'}
+    NIT_CLR7 = {'Bireysel Araştırma':'#1565C0','Uzmanlık Tezi':'#2E7D32',
+                'Yüksek Lisans Tezi':'#E65100','Doktora Tezi':'#4527A0'}
+
+    col_a, col_b = st.columns(2)
+
+    # ── 1. KK1 Dağılımı — Pasta ──────────────────────────────────────────────
+    with col_a:
+        kk1_v = d7[d7['KURUL KARARI 1'].isin(KARARLAR7)]['KURUL KARARI 1'].value_counts()
+        kk1_df = kk1_v.reset_index()
+        kk1_df.columns = ['Karar','Sayı']
+        kk1_df['%'] = (kk1_df['Sayı'] / kk1_df['Sayı'].sum() * 100).round(1)
+        kk1_df['Etiket'] = kk1_df.apply(lambda r: f"{r['Karar']}<br>{r['Sayı']} ({r['%']}%)", axis=1)
+        fig1 = px.pie(kk1_df, names='Karar', values='Sayı',
+                      color='Karar',
+                      color_discrete_map=KAR_CLR7,
+                      hole=0.35)
+        fig1.update_traces(texttemplate='%{label}<br>%{value} (%{percent})',
+                          textfont_size=11, pull=[0.03]*len(kk1_df))
+        fig1.update_layout(title={'text':'Kurul Kararı (KK1) Dağılımı',
+                                   'font':{'size':14},'x':0.5},
+                           showlegend=True, legend={'orientation':'h','y':-0.15},
+                           margin={'t':60,'b':40,'l':20,'r':20},
+                           paper_bgcolor='rgba(0,0,0,0)',
+                           plot_bgcolor='rgba(0,0,0,0)', height=380)
+        st.plotly_chart(fig1, use_container_width=True)
+
+    # ── 2. Nitelik Dağılımı — Pasta ──────────────────────────────────────────
+    with col_b:
+        nit_v = d7[d7['NİTELİĞİ'].ne('')]['NİTELİĞİ'].value_counts()
+        nit_df = nit_v.reset_index()
+        nit_df.columns = ['Nitelik','Sayı']
+        nit_df['%'] = (nit_df['Sayı'] / nit_df['Sayı'].sum() * 100).round(1)
+        fig2 = px.pie(nit_df, names='Nitelik', values='Sayı',
+                      color='Nitelik', color_discrete_map=NIT_CLR7, hole=0.35)
+        fig2.update_traces(texttemplate='%{label}<br>%{value} (%{percent})',
+                          textfont_size=11, pull=[0.03]*len(nit_df))
+        fig2.update_layout(title={'text':'Başvuru Nitelik Dağılımı',
+                                   'font':{'size':14},'x':0.5},
+                           showlegend=True, legend={'orientation':'h','y':-0.15},
+                           margin={'t':60,'b':40,'l':20,'r':20},
+                           paper_bgcolor='rgba(0,0,0,0)',
+                           plot_bgcolor='rgba(0,0,0,0)', height=380)
+        st.plotly_chart(fig2, use_container_width=True)
+
+    # ── 3. Raportör Bazında — Yatay Bar ──────────────────────────────────────
+    rap_data = []
+    for raptor in RAPORTORLER:
+        mask7 = (d7['RAPORTÖR 1']==raptor)|(d7['RAPORTÖR 2']==raptor)
+        rtop = int(mask7.sum())
+        rona = int((d7[mask7]['KURUL KARARI 1']=='ONAY').sum())
+        rduz = int((d7[mask7]['KURUL KARARI 1']=='DÜZELTME').sum())
+        rbek = int((d7[mask7]['KURUL KARARI 1']=='').sum())
+        kisa = raptor.split()[-1]
+        rap_data.append({'Raportör':kisa,'Onay':rona,'Düzeltme':rduz,
+                         'Bekleyen':rbek,'Toplam':rtop})
+    rap_df7 = pd.DataFrame(rap_data).sort_values('Toplam')
+
+    fig3 = go.Figure()
+    fig3.add_trace(go.Bar(name='Onay', y=rap_df7['Raportör'], x=rap_df7['Onay'],
+                          orientation='h', marker_color='#2E7D32',
+                          text=rap_df7['Onay'], textposition='inside',
+                          textfont={'color':'white','size':10}))
+    fig3.add_trace(go.Bar(name='Düzeltme', y=rap_df7['Raportör'], x=rap_df7['Düzeltme'],
+                          orientation='h', marker_color='#E65100',
+                          text=rap_df7['Düzeltme'], textposition='inside',
+                          textfont={'color':'white','size':10}))
+    fig3.add_trace(go.Bar(name='Bekleyen', y=rap_df7['Raportör'], x=rap_df7['Bekleyen'],
+                          orientation='h', marker_color='#B0BEC5',
+                          text=rap_df7['Bekleyen'], textposition='inside',
+                          textfont={'color':'white','size':10}))
+    fig3.update_layout(barmode='stack',
+                       title={'text':'Raportör Bazında Dosya Dağılımı',
+                              'font':{'size':14},'x':0.5},
+                       legend={'orientation':'h','y':-0.12},
+                       margin={'t':60,'b':60,'l':20,'r':20},
+                       paper_bgcolor='rgba(0,0,0,0)',
+                       plot_bgcolor='rgba(0,0,0,0)', height=420,
+                       xaxis={'gridcolor':'#F0EDE8'},
+                       yaxis={'gridcolor':'#F0EDE8'})
+    st.plotly_chart(fig3, use_container_width=True)
+
+    # ── 4. Kurul Bazında Başvuru + KK1→KK2 Akış — yan yana ──────────────────
+    col_c, col_d = st.columns(2)
+
+    with col_c:
+        d7['_TAR7'] = pd.to_datetime(d7['KURUL TARİHİ'], errors='coerce')
+        g7 = d7[d7['_TAR7'].notna()].groupby('_TAR7').agg(
+            Başvuru=('SBA NUMARASI','count'),
+            Onay=('KURUL KARARI 1', lambda x:(x=='ONAY').sum()),
+            Düzeltme=('KURUL KARARI 1', lambda x:(x=='DÜZELTME').sum()),
+        ).reset_index().sort_values('_TAR7')
+        g7['Tarih'] = g7['_TAR7'].dt.strftime('%d/%m')
+        fig4 = go.Figure()
+        fig4.add_trace(go.Bar(name='Başvuru', x=g7['Tarih'], y=g7['Başvuru'],
+                              marker_color='#2D4A5A',
+                              text=g7['Başvuru'], textposition='outside',
+                              textfont={'size':10,'color':'#1A1814'}))
+        fig4.add_trace(go.Bar(name='Onay', x=g7['Tarih'], y=g7['Onay'],
+                              marker_color='#2E7D32',
+                              text=g7['Onay'], textposition='inside',
+                              textfont={'size':9,'color':'white'}))
+        fig4.add_trace(go.Bar(name='Düzeltme', x=g7['Tarih'], y=g7['Düzeltme'],
+                              marker_color='#E65100',
+                              text=g7['Düzeltme'], textposition='inside',
+                              textfont={'size':9,'color':'white'}))
+        fig4.update_layout(barmode='group',
+                           title={'text':'Kurul Bazında Başvuru','font':{'size':13},'x':0.5},
+                           legend={'orientation':'h','y':-0.2},
+                           margin={'t':50,'b':60,'l':10,'r':10},
+                           paper_bgcolor='rgba(0,0,0,0)',
+                           plot_bgcolor='rgba(0,0,0,0)', height=340,
+                           yaxis={'gridcolor':'#F0EDE8'})
+        st.plotly_chart(fig4, use_container_width=True)
+
+    with col_d:
+        kk2_v7 = d7[d7['KURUL KARARI 2'].ne('')]
+        akis_data = []
+        for kar7 in ['DÜZELTME','GÖRÜŞ','KAEK','RET']:
+            sub7 = kk2_v7[kk2_v7['KURUL KARARI 1']==kar7]
+            if sub7.empty: continue
+            tot7 = len(sub7)
+            ona7 = int((sub7['KURUL KARARI 2']=='ONAY').sum())
+            akis_data.append({
+                'KK1':kar7,'ONAY':ona7,'Diğer':tot7-ona7,'Toplam':tot7,
+                'Oran':f"%{round(ona7/tot7*100,1)}"
+            })
+        akis_df = pd.DataFrame(akis_data)
+        fig5 = go.Figure()
+        fig5.add_trace(go.Bar(name='ONAY çıktı', x=akis_df['KK1'], y=akis_df['ONAY'],
+                              marker_color='#2E7D32',
+                              text=akis_df.apply(
+                                  lambda r: str(r['ONAY']) + ' (' + str(round(r['ONAY']/r['Toplam']*100,1)) + '%)',
+                                  axis=1),
+                              textposition='inside', textfont={'color':'white','size':10}))
+        fig5.add_trace(go.Bar(name='Diğer', x=akis_df['KK1'], y=akis_df['Diğer'],
+                              marker_color='#B0BEC5',
+                              text=akis_df['Diğer'], textposition='inside',
+                              textfont={'color':'white','size':10}))
+        fig5.update_layout(barmode='stack',
+                           title={'text':'KK1→KK2 Akış Oranı','font':{'size':13},'x':0.5},
+                           legend={'orientation':'h','y':-0.2},
+                           margin={'t':50,'b':60,'l':10,'r':10},
+                           paper_bgcolor='rgba(0,0,0,0)',
+                           plot_bgcolor='rgba(0,0,0,0)', height=340,
+                           yaxis={'gridcolor':'#F0EDE8'})
+        st.plotly_chart(fig5, use_container_width=True)
+
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="footer">
