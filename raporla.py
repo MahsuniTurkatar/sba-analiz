@@ -789,39 +789,72 @@ with tab6:
 with tab7:
     onay_s  = int(df['KURUL KARARI 1'].eq('ONAY').sum())
     duz_s   = int(df['KURUL KARARI 1'].eq('DÜZELTME').sum())
-    gk_s    = int(df['KURUL KARARI 1'].isin(['GÖRÜŞ','KAEK']).sum())
+    gorus_s = int(df['KURUL KARARI 1'].eq('GÖRÜŞ').sum())
+    kaek_s  = int(df['KURUL KARARI 1'].eq('KAEK').sum())
+    ret_s   = int(df['KURUL KARARI 1'].eq('RET').sum())
+    kap_s   = int(df['KURUL KARARI 1'].eq('KAPSAM DIŞI').sum())
+    duz_r_s = int(df['DÜZELTME R'].ne('').sum()) if 'DÜZELTME R' in df.columns else 0
+    kk2_say = int(df['KURUL KARARI 2'].ne('').sum())
+
+    # ── Özet başlık ──────────────────────────────────────────────────────────
     st.markdown(f"""<div style="padding:20px 32px 12px">
       <div style="font-family:'DM Serif Display',serif;font-size:1.6rem;color:#1A1814;margin-bottom:8px">
         Grafik Raporu</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
-        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">📊 Toplam: <b style="color:#1A1814">{toplam_b}</b></span>
-        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">🗓 Toplantı: <b style="color:#1A1814">{kurul_sayisi}</b></span>
-        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">📅 Son: <b style="color:#1A1814">{son_tarih}</b></span>
-        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">⚡ Canlı veri</span>
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          📊 Toplam başvuru: <b style="color:#1A1814">{toplam_b}</b>
+        </span>
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          🗓 Toplantı: <b style="color:#1A1814">{kurul_sayisi}</b>
+        </span>
+        <span style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          📅 Son güncelleme: <b style="color:#1A1814">{son_tarih}</b>
+        </span>
       </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <div style="background:#E8F5E9;border-radius:8px;padding:10px 16px;border-left:3px solid #2E7D32">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#2E7D32">{onay_s}</div>
-          <div style="font-size:.72rem;color:#8C8880">ONAY</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+        <div style="background:#E8F5E9;border-radius:8px;padding:10px 18px;border-left:3px solid #2E7D32;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#2E7D32">{onay_s}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">ONAY</div>
+          <div style="font-size:.7rem;color:#2E7D32">%{round(onay_s/toplam_b*100,1)}</div>
         </div>
-        <div style="background:#FFF8E1;border-radius:8px;padding:10px 16px;border-left:3px solid #E65100">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#E65100">{duz_s}</div>
-          <div style="font-size:.72rem;color:#8C8880">DÜZELTME</div>
+        <div style="background:#FFF8E1;border-radius:8px;padding:10px 18px;border-left:3px solid #E65100;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#E65100">{duz_s}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">DÜZELTME</div>
+          <div style="font-size:.7rem;color:#E65100">%{round(duz_s/toplam_b*100,1)}</div>
         </div>
-        <div style="background:#E3F2FD;border-radius:8px;padding:10px 16px;border-left:3px solid #1565C0">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#1565C0">{gk_s}</div>
-          <div style="font-size:.72rem;color:#8C8880">GÖRÜŞ/KAEK</div>
+        <div style="background:#E3F2FD;border-radius:8px;padding:10px 18px;border-left:3px solid #1565C0;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#1565C0">{gorus_s}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">GÖRÜŞ</div>
+          <div style="font-size:.7rem;color:#1565C0">%{round(gorus_s/toplam_b*100,1)}</div>
         </div>
-        <div style="background:#FFF3E0;border-radius:8px;padding:10px 16px;border-left:3px solid #C8502A">
-          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.3rem;font-weight:600;color:#C8502A">{bekleyen}</div>
-          <div style="font-size:.72rem;color:#8C8880">BEKLİYOR</div>
+        <div style="background:#EDE7F6;border-radius:8px;padding:10px 18px;border-left:3px solid #4527A0;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#4527A0">{kaek_s}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">KAEK</div>
+          <div style="font-size:.7rem;color:#4527A0">%{round(kaek_s/toplam_b*100,1)}</div>
+        </div>
+        <div style="background:#FFEBEE;border-radius:8px;padding:10px 18px;border-left:3px solid #C62828;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#C62828">{ret_s}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">RET</div>
+          <div style="font-size:.7rem;color:#C62828">%{round(ret_s/toplam_b*100,1)}</div>
+        </div>
+        <div style="background:#FFF3E0;border-radius:8px;padding:10px 18px;border-left:3px solid #C8502A;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#C8502A">{duz_r_s}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">DÜZELTME OKUYAN</div>
+          <div style="font-size:.7rem;color:#C8502A">{kk2_say} dosya 2. tura girdi</div>
+        </div>
+        <div style="background:#FFF3E0;border-radius:8px;padding:10px 18px;border-left:3px solid #E65100;min-width:90px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:1.4rem;font-weight:700;color:#E65100">{bekleyen}</div>
+          <div style="font-size:.7rem;color:#8C8880;margin-top:2px">BEKLİYOR</div>
+          <div style="font-size:.7rem;color:#E65100">%{round(bekleyen/toplam_b*100,1)}</div>
         </div>
       </div>
     </div>""", unsafe_allow_html=True)
 
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
     # Veri hazırlık
     d7 = df.copy()
-    for c7 in ['KURUL KARARI 1','NİTELİĞİ','KURUL TARİHİ']:
+    for c7 in ['KURUL KARARI 1','NİTELİĞİ','KURUL TARİHİ','KURUL KARARI 2']:
         d7[c7] = d7[c7].fillna('').astype(str).str.strip().replace({'nan':'','None':''})
 
     KARARLAR7 = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','GERİ ÇEKİLDİ']
@@ -831,148 +864,260 @@ with tab7:
     NIT_CLR7 = {'Bireysel Araştırma':'#1565C0','Uzmanlık Tezi':'#2E7D32',
                 'Yüksek Lisans Tezi':'#E65100','Doktora Tezi':'#4527A0'}
 
+    # ── GRAFİK 1 + 2: Pasta grafikler ────────────────────────────────────────
+    st.markdown("""<div style="padding:4px 32px 0">
+      <div style="font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8880;margin-bottom:4px">
+        KARAR VE NİTELİK DAĞILIMI</div>
+      <div style="font-size:.75rem;color:#B0BEC5;font-family:'IBM Plex Mono',monospace">
+        Her dilime tıklayarak detay görebilirsiniz
+      </div>
+    </div>""", unsafe_allow_html=True)
+
     col_a, col_b = st.columns(2)
 
-    # ── 1. KK1 Dağılımı — Pasta ──────────────────────────────────────────────
     with col_a:
         kk1_v = d7[d7['KURUL KARARI 1'].isin(KARARLAR7)]['KURUL KARARI 1'].value_counts()
-        kk1_df = kk1_v.reset_index()
-        kk1_df.columns = ['Karar','Sayı']
-        kk1_df['%'] = (kk1_df['Sayı'] / kk1_df['Sayı'].sum() * 100).round(1)
-        kk1_df['Etiket'] = kk1_df.apply(lambda r: f"{r['Karar']}<br>{r['Sayı']} ({r['%']}%)", axis=1)
-        fig1 = px.pie(kk1_df, names='Karar', values='Sayı',
-                      color='Karar',
-                      color_discrete_map=KAR_CLR7,
-                      hole=0.35)
-        fig1.update_traces(texttemplate='%{label}<br>%{value} (%{percent})',
-                          textfont_size=11, pull=[0.03]*len(kk1_df))
-        fig1.update_layout(title={'text':'Kurul Kararı (KK1) Dağılımı',
-                                   'font':{'size':14},'x':0.5},
-                           showlegend=True, legend={'orientation':'h','y':-0.15},
-                           margin={'t':60,'b':40,'l':20,'r':20},
-                           paper_bgcolor='rgba(0,0,0,0)',
-                           plot_bgcolor='rgba(0,0,0,0)', height=380)
+        kk1_df7 = kk1_v.reset_index()
+        kk1_df7.columns = ['Karar','Sayı']
+        kk1_df7['%'] = (kk1_df7['Sayı'] / kk1_df7['Sayı'].sum() * 100).round(1)
+        fig1 = px.pie(kk1_df7, names='Karar', values='Sayı',
+                      color='Karar', color_discrete_map=KAR_CLR7, hole=0.4)
+        fig1.update_traces(
+            texttemplate='<b>%{label}</b><br>%{value} dosya<br>%{percent}',
+            textfont_size=10, pull=[0.04]*len(kk1_df7),
+            hovertemplate='<b>%{label}</b><br>Sayı: %{value}<br>Oran: %{percent}<extra></extra>'
+        )
+        fig1.update_layout(
+            title={
+                'text': f'Kurul Kararı (KK1) Dağılımı<br><sup style="color:#8C8880">Toplam {toplam_b} başvuru · İlk kurul kararı bazlı</sup>',
+                'font': {'size': 13, 'color': '#1A1814'}, 'x': 0.5
+            },
+            showlegend=False,
+            margin={'t':80,'b':20,'l':10,'r':10},
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)', height=360
+        )
         st.plotly_chart(fig1, use_container_width=True)
 
-    # ── 2. Nitelik Dağılımı — Pasta ──────────────────────────────────────────
     with col_b:
         nit_v = d7[d7['NİTELİĞİ'].ne('')]['NİTELİĞİ'].value_counts()
-        nit_df = nit_v.reset_index()
-        nit_df.columns = ['Nitelik','Sayı']
-        nit_df['%'] = (nit_df['Sayı'] / nit_df['Sayı'].sum() * 100).round(1)
-        fig2 = px.pie(nit_df, names='Nitelik', values='Sayı',
-                      color='Nitelik', color_discrete_map=NIT_CLR7, hole=0.35)
-        fig2.update_traces(texttemplate='%{label}<br>%{value} (%{percent})',
-                          textfont_size=11, pull=[0.03]*len(nit_df))
-        fig2.update_layout(title={'text':'Başvuru Nitelik Dağılımı',
-                                   'font':{'size':14},'x':0.5},
-                           showlegend=True, legend={'orientation':'h','y':-0.15},
-                           margin={'t':60,'b':40,'l':20,'r':20},
-                           paper_bgcolor='rgba(0,0,0,0)',
-                           plot_bgcolor='rgba(0,0,0,0)', height=380)
+        nit_df7 = nit_v.reset_index()
+        nit_df7.columns = ['Nitelik','Sayı']
+        nit_df7['%'] = (nit_df7['Sayı'] / nit_df7['Sayı'].sum() * 100).round(1)
+        fig2 = px.pie(nit_df7, names='Nitelik', values='Sayı',
+                      color='Nitelik', color_discrete_map=NIT_CLR7, hole=0.4)
+        fig2.update_traces(
+            texttemplate='<b>%{label}</b><br>%{value} dosya<br>%{percent}',
+            textfont_size=10, pull=[0.04]*len(nit_df7),
+            hovertemplate='<b>%{label}</b><br>Sayı: %{value}<br>Oran: %{percent}<extra></extra>'
+        )
+        fig2.update_layout(
+            title={
+                'text': f'Başvuru Nitelik Dağılımı<br><sup style="color:#8C8880">Araştırma türüne göre dağılım</sup>',
+                'font': {'size': 13, 'color': '#1A1814'}, 'x': 0.5
+            },
+            showlegend=False,
+            margin={'t':80,'b':20,'l':10,'r':10},
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)', height=360
+        )
         st.plotly_chart(fig2, use_container_width=True)
 
-    # ── 3. Raportör Bazında — Yatay Bar ──────────────────────────────────────
-    rap_data = []
+    # ── GRAFİK 3: Raportör yatay bar ─────────────────────────────────────────
+    st.markdown("""<div style="padding:8px 32px 0">
+      <div style="font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8880;margin-bottom:4px">
+        RAPORTÖR BAZINDA DOSYA DAĞILIMI</div>
+      <div style="font-size:.75rem;color:#B0BEC5;font-family:'IBM Plex Mono',monospace">
+        Her raportörün toplam dosyası — yeşil: onay verilen, turuncu: düzeltme, gri: bekleyen
+      </div>
+    </div>""", unsafe_allow_html=True)
+
+    rap_data7 = []
     for raptor in RAPORTORLER:
         mask7 = (d7['RAPORTÖR 1']==raptor)|(d7['RAPORTÖR 2']==raptor)
         rtop = int(mask7.sum())
         rona = int((d7[mask7]['KURUL KARARI 1']=='ONAY').sum())
         rduz = int((d7[mask7]['KURUL KARARI 1']=='DÜZELTME').sum())
         rbek = int((d7[mask7]['KURUL KARARI 1']=='').sum())
+        rduz_r = int((d7['DÜZELTME R']==raptor).sum()) if 'DÜZELTME R' in d7.columns else 0
         kisa = raptor.split()[-1]
-        rap_data.append({'Raportör':kisa,'Onay':rona,'Düzeltme':rduz,
-                         'Bekleyen':rbek,'Toplam':rtop})
-    rap_df7 = pd.DataFrame(rap_data).sort_values('Toplam')
+        rap_data7.append({
+            'Raportör': kisa, 'Tam Ad': raptor,
+            'Onay': rona, 'Düzeltme': rduz,
+            'Bekleyen': rbek, 'Toplam': rtop,
+            'Düzeltme Okuyan': rduz_r
+        })
+    rap_df7 = pd.DataFrame(rap_data7).sort_values('Toplam')
 
     fig3 = go.Figure()
-    fig3.add_trace(go.Bar(name='Onay', y=rap_df7['Raportör'], x=rap_df7['Onay'],
-                          orientation='h', marker_color='#2E7D32',
-                          text=rap_df7['Onay'], textposition='inside',
-                          textfont={'color':'white','size':10}))
-    fig3.add_trace(go.Bar(name='Düzeltme', y=rap_df7['Raportör'], x=rap_df7['Düzeltme'],
-                          orientation='h', marker_color='#E65100',
-                          text=rap_df7['Düzeltme'], textposition='inside',
-                          textfont={'color':'white','size':10}))
-    fig3.add_trace(go.Bar(name='Bekleyen', y=rap_df7['Raportör'], x=rap_df7['Bekleyen'],
-                          orientation='h', marker_color='#B0BEC5',
-                          text=rap_df7['Bekleyen'], textposition='inside',
-                          textfont={'color':'white','size':10}))
-    fig3.update_layout(barmode='stack',
-                       title={'text':'Raportör Bazında Dosya Dağılımı',
-                              'font':{'size':14},'x':0.5},
-                       legend={'orientation':'h','y':-0.12},
-                       margin={'t':60,'b':60,'l':20,'r':20},
-                       paper_bgcolor='rgba(0,0,0,0)',
-                       plot_bgcolor='rgba(0,0,0,0)', height=420,
-                       xaxis={'gridcolor':'#F0EDE8'},
-                       yaxis={'gridcolor':'#F0EDE8'})
+    fig3.add_trace(go.Bar(
+        name='Onay', y=rap_df7['Raportör'], x=rap_df7['Onay'],
+        orientation='h', marker_color='#2E7D32',
+        text=rap_df7['Onay'], textposition='inside',
+        textfont={'color':'white','size':10,'family':'IBM Plex Mono'},
+        hovertemplate='<b>%{y}</b><br>Onay: %{x}<extra></extra>'
+    ))
+    fig3.add_trace(go.Bar(
+        name='Düzeltme', y=rap_df7['Raportör'], x=rap_df7['Düzeltme'],
+        orientation='h', marker_color='#E65100',
+        text=rap_df7['Düzeltme'], textposition='inside',
+        textfont={'color':'white','size':10,'family':'IBM Plex Mono'},
+        hovertemplate='<b>%{y}</b><br>Düzeltme: %{x}<extra></extra>'
+    ))
+    fig3.add_trace(go.Bar(
+        name='Bekleyen', y=rap_df7['Raportör'], x=rap_df7['Bekleyen'],
+        orientation='h', marker_color='#B0BEC5',
+        text=rap_df7['Bekleyen'], textposition='inside',
+        textfont={'color':'white','size':10,'family':'IBM Plex Mono'},
+        hovertemplate='<b>%{y}</b><br>Bekleyen: %{x}<extra></extra>'
+    ))
+    fig3.add_trace(go.Bar(
+        name='Düzeltme Okuyan', y=rap_df7['Raportör'], x=rap_df7['Düzeltme Okuyan'],
+        orientation='h', marker_color='#C8502A', marker_opacity=0.6,
+        marker_pattern_shape='/',
+        text=rap_df7['Düzeltme Okuyan'], textposition='inside',
+        textfont={'color':'white','size':9},
+        hovertemplate='<b>%{y}</b><br>Düzeltme Okuyan (DÜZELTME R): %{x}<extra></extra>'
+    ))
+    fig3.update_layout(
+        barmode='stack',
+        title={
+            'text': 'Raportör Bazında Dosya Dağılımı<br><sup style="color:#8C8880">Her raportörün atanan dosya sayısı ve karar dağılımı</sup>',
+            'font': {'size': 13, 'color': '#1A1814'}, 'x': 0.5
+        },
+        legend={'orientation':'h','y':-0.08,'font':{'size':11}},
+        margin={'t':80,'b':80,'l':20,'r':80},
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)', height=460,
+        xaxis={'gridcolor':'#F0EDE8','title':'Dosya Sayısı'},
+        yaxis={'gridcolor':'#F0EDE8'},
+        annotations=[
+            dict(x=row['Toplam']+0.5, y=row['Raportör'],
+                 text=f"<b>{row['Toplam']}</b>",
+                 showarrow=False, xanchor='left',
+                 font={'size':10,'color':'#1A1814','family':'IBM Plex Mono'})
+            for _, row in rap_df7.iterrows()
+        ]
+    )
     st.plotly_chart(fig3, use_container_width=True)
 
-    # ── 4. Kurul Bazında Başvuru + KK1→KK2 Akış — yan yana ──────────────────
+    # ── GRAFİK 4 + 5: Kurul + Akış ───────────────────────────────────────────
     col_c, col_d = st.columns(2)
 
     with col_c:
+        st.markdown("""<div style="padding:0 0 4px 0">
+          <div style="font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8880">KURUL BAZINDA BAŞVURU</div>
+          <div style="font-size:.72rem;color:#B0BEC5;font-family:'IBM Plex Mono',monospace">Her toplantıda gelen başvuru ve karar sayıları</div>
+        </div>""", unsafe_allow_html=True)
         d7['_TAR7'] = pd.to_datetime(d7['KURUL TARİHİ'], errors='coerce')
         g7 = d7[d7['_TAR7'].notna()].groupby('_TAR7').agg(
             Başvuru=('SBA NUMARASI','count'),
             Onay=('KURUL KARARI 1', lambda x:(x=='ONAY').sum()),
             Düzeltme=('KURUL KARARI 1', lambda x:(x=='DÜZELTME').sum()),
+            Bekleyen=('KURUL KARARI 1', lambda x:(x=='').sum()),
         ).reset_index().sort_values('_TAR7')
         g7['Tarih'] = g7['_TAR7'].dt.strftime('%d/%m')
+        g7['Onay%'] = (g7['Onay']/g7['Başvuru']*100).round(1).astype(str) + '%'
+
         fig4 = go.Figure()
-        fig4.add_trace(go.Bar(name='Başvuru', x=g7['Tarih'], y=g7['Başvuru'],
-                              marker_color='#2D4A5A',
-                              text=g7['Başvuru'], textposition='outside',
-                              textfont={'size':10,'color':'#1A1814'}))
-        fig4.add_trace(go.Bar(name='Onay', x=g7['Tarih'], y=g7['Onay'],
-                              marker_color='#2E7D32',
-                              text=g7['Onay'], textposition='inside',
-                              textfont={'size':9,'color':'white'}))
-        fig4.add_trace(go.Bar(name='Düzeltme', x=g7['Tarih'], y=g7['Düzeltme'],
-                              marker_color='#E65100',
-                              text=g7['Düzeltme'], textposition='inside',
-                              textfont={'size':9,'color':'white'}))
-        fig4.update_layout(barmode='group',
-                           title={'text':'Kurul Bazında Başvuru','font':{'size':13},'x':0.5},
-                           legend={'orientation':'h','y':-0.2},
-                           margin={'t':50,'b':60,'l':10,'r':10},
-                           paper_bgcolor='rgba(0,0,0,0)',
-                           plot_bgcolor='rgba(0,0,0,0)', height=340,
-                           yaxis={'gridcolor':'#F0EDE8'})
+        fig4.add_trace(go.Bar(
+            name='Onay', x=g7['Tarih'], y=g7['Onay'],
+            marker_color='#2E7D32',
+            text=g7.apply(lambda r: f"{r['Onay']}<br>({r['Onay%']})", axis=1),
+            textposition='inside', textfont={'size':9,'color':'white'},
+            hovertemplate='%{x}<br>Onay: %{y}<extra></extra>'
+        ))
+        fig4.add_trace(go.Bar(
+            name='Düzeltme', x=g7['Tarih'], y=g7['Düzeltme'],
+            marker_color='#E65100',
+            text=g7['Düzeltme'], textposition='inside',
+            textfont={'size':9,'color':'white'},
+            hovertemplate='%{x}<br>Düzeltme: %{y}<extra></extra>'
+        ))
+        fig4.add_trace(go.Bar(
+            name='Bekleyen', x=g7['Tarih'], y=g7['Bekleyen'],
+            marker_color='#B0BEC5',
+            text=g7['Bekleyen'], textposition='inside',
+            textfont={'size':9,'color':'white'},
+            hovertemplate='%{x}<br>Bekleyen: %{y}<extra></extra>'
+        ))
+        fig4.update_layout(
+            barmode='stack',
+            legend={'orientation':'h','y':-0.18,'font':{'size':10}},
+            margin={'t':20,'b':80,'l':10,'r':10},
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)', height=340,
+            xaxis={'title':'Kurul Tarihi'},
+            yaxis={'gridcolor':'#F0EDE8','title':'Dosya Sayısı'},
+            annotations=[
+                dict(x=row['Tarih'], y=row['Başvuru']+1,
+                     text=f"<b>{row['Başvuru']}</b>",
+                     showarrow=False,
+                     font={'size':10,'color':'#1A2A34','family':'IBM Plex Mono'})
+                for _, row in g7.iterrows()
+            ]
+        )
         st.plotly_chart(fig4, use_container_width=True)
 
     with col_d:
+        st.markdown("""<div style="padding:0 0 4px 0">
+          <div style="font-size:.75rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#8C8880">KK1 → KK2 AKIŞ ORANI</div>
+          <div style="font-size:.72rem;color:#B0BEC5;font-family:'IBM Plex Mono',monospace">Düzeltme alan dosyaların 2. turda hangi kararla çıktığı</div>
+        </div>""", unsafe_allow_html=True)
         kk2_v7 = d7[d7['KURUL KARARI 2'].ne('')]
-        akis_data = []
+        akis_data7 = []
         for kar7 in ['DÜZELTME','GÖRÜŞ','KAEK','RET']:
             sub7 = kk2_v7[kk2_v7['KURUL KARARI 1']==kar7]
             if sub7.empty: continue
             tot7 = len(sub7)
             ona7 = int((sub7['KURUL KARARI 2']=='ONAY').sum())
-            akis_data.append({
-                'KK1':kar7,'ONAY':ona7,'Diğer':tot7-ona7,'Toplam':tot7,
-                'Oran':f"%{round(ona7/tot7*100,1)}"
+            duz7 = int((sub7['KURUL KARARI 2']=='DÜZELTME').sum())
+            dig7 = tot7 - ona7 - duz7
+            akis_data7.append({
+                'KK1': kar7, 'ONAY': ona7, 'DÜZELTME': duz7, 'Diğer': dig7,
+                'Toplam': tot7,
+                'ONAY%': round(ona7/tot7*100,1)
             })
-        akis_df = pd.DataFrame(akis_data)
+        akis_df7 = pd.DataFrame(akis_data7)
         fig5 = go.Figure()
-        fig5.add_trace(go.Bar(name='ONAY çıktı', x=akis_df['KK1'], y=akis_df['ONAY'],
-                              marker_color='#2E7D32',
-                              text=akis_df.apply(
-                                  lambda r: str(r['ONAY']) + ' (' + str(round(r['ONAY']/r['Toplam']*100,1)) + '%)',
-                                  axis=1),
-                              textposition='inside', textfont={'color':'white','size':10}))
-        fig5.add_trace(go.Bar(name='Diğer', x=akis_df['KK1'], y=akis_df['Diğer'],
-                              marker_color='#B0BEC5',
-                              text=akis_df['Diğer'], textposition='inside',
-                              textfont={'color':'white','size':10}))
-        fig5.update_layout(barmode='stack',
-                           title={'text':'KK1→KK2 Akış Oranı','font':{'size':13},'x':0.5},
-                           legend={'orientation':'h','y':-0.2},
-                           margin={'t':50,'b':60,'l':10,'r':10},
-                           paper_bgcolor='rgba(0,0,0,0)',
-                           plot_bgcolor='rgba(0,0,0,0)', height=340,
-                           yaxis={'gridcolor':'#F0EDE8'})
+        fig5.add_trace(go.Bar(
+            name='2.turda ONAY', x=akis_df7['KK1'], y=akis_df7['ONAY'],
+            marker_color='#2E7D32',
+            text=akis_df7.apply(
+                lambda r: f"{r['ONAY']}<br>%{r['ONAY%']}", axis=1),
+            textposition='inside', textfont={'color':'white','size':10},
+            hovertemplate='<b>%{x}</b> → ONAY<br>Sayı: %{y}<extra></extra>'
+        ))
+        fig5.add_trace(go.Bar(
+            name='2.turda DÜZELTME', x=akis_df7['KK1'], y=akis_df7['DÜZELTME'],
+            marker_color='#E65100',
+            text=akis_df7['DÜZELTME'], textposition='inside',
+            textfont={'color':'white','size':10},
+            hovertemplate='<b>%{x}</b> → DÜZELTME<br>Sayı: %{y}<extra></extra>'
+        ))
+        fig5.add_trace(go.Bar(
+            name='Diğer', x=akis_df7['KK1'], y=akis_df7['Diğer'],
+            marker_color='#B0BEC5',
+            text=akis_df7['Diğer'], textposition='inside',
+            textfont={'color':'white','size':10},
+            hovertemplate='<b>%{x}</b> → Diğer<br>Sayı: %{y}<extra></extra>'
+        ))
+        fig5.update_layout(
+            barmode='stack',
+            legend={'orientation':'h','y':-0.18,'font':{'size':10}},
+            margin={'t':20,'b':80,'l':10,'r':10},
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)', height=340,
+            xaxis={'title':'1. Tur Kararı (KK1)'},
+            yaxis={'gridcolor':'#F0EDE8','title':'Dosya Sayısı'},
+            annotations=[
+                dict(x=row['KK1'], y=row['Toplam']+0.5,
+                     text=f"<b>{row['Toplam']} dosya</b>",
+                     showarrow=False,
+                     font={'size':9,'color':'#1A2A34','family':'IBM Plex Mono'})
+                for _, row in akis_df7.iterrows()
+            ]
+        )
         st.plotly_chart(fig5, use_container_width=True)
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
