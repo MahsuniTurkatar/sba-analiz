@@ -40,6 +40,9 @@ def load():
         df[c] = df[c].apply(lambda x:
             str(x).strip() if pd.notna(x) and str(x).strip() not in
             ('nan','None','0.0') else '')
+    # DÜZELTME R sütunu yoksa boş ekle
+    if "DÜZELTME R" not in df.columns:
+        df["DÜZELTME R"] = ""
     return df
 
 df = load()
@@ -356,11 +359,19 @@ with tab2:
     nit_hdrs2 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
     tot_hdr   = f'<th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>'
 
+    # DÜZELTME R hesapla (kartlar için)
+    duz_r_say_kart = int((df["DÜZELTME R"] == sec).sum())
+    r3_say_kart = int(
+        ((df["DÜZELTME R"] == sec) &
+         (df["RAPORTÖR 1"] != sec) &
+         (df["RAPORTÖR 2"] != sec)).sum()
+    )
     st.markdown(f"""
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:24px 32px 0">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:24px 32px 0">
       <div class="card primary"><div class="card-num">{dosya}</div><div class="card-label">Atanan Dosya</div></div>
       <div class="card"><div class="card-num">{genel}</div><div class="card-label">Karar Verilen</div><div class="card-sub">{pct(genel,dosya,False)}</div></div>
       <div class="card"><div class="card-num">{bek}</div><div class="card-label">Bekleyen</div><div class="card-sub">{pct(bek,dosya,False)}</div></div>
+      <div class="card" style="border-left:3px solid #C8502A"><div class="card-num" style="color:#C8502A">{duz_r_say_kart}</div><div class="card-label">Düzeltme Okuyan</div><div class="card-sub">{"R3: " + str(r3_say_kart) if r3_say_kart else "Hepsi R1/R2"}</div></div>
       <div class="card"><div class="card-num">{tam}%</div><div class="card-label">Tamamlanma</div></div>
     </div>
     <div class="panel" style="margin:16px 32px 8px">
@@ -384,6 +395,74 @@ with tab2:
         <span>{sec}</span>
       </div>
     </div>""", unsafe_allow_html=True)
+
+    # ── DÜZELTME OKUYAN (DÜZELTME R) PANELİ ──────────────────────────────────
+    duz_r_df = df[df["DÜZELTME R"] == sec].copy()
+    duz_r_say = len(duz_r_df)
+
+    # R3: bu raportör R1/R2 değil ama DÜZELTME R olarak atanmış
+    r3_df = duz_r_df[
+        (duz_r_df["RAPORTÖR 1"] != sec) &
+        (duz_r_df["RAPORTÖR 2"] != sec)
+    ]
+    r3_say = len(r3_df)
+
+    if duz_r_say > 0:
+        duz_r_rows = ""
+        for i_r, (_, sr) in enumerate(duz_r_df.iterrows(), 1):
+            is_r3 = (sr.get("RAPORTÖR 1","") != sec and sr.get("RAPORTÖR 2","") != sec)
+            bg_r = "#FFF3E0" if not is_r3 else "#EDE7F6"
+            r3_badge = '<span style="background:#4527A0;color:#fff;padding:1px 6px;border-radius:4px;font-size:.72rem;font-weight:600;margin-left:6px">R3</span>' if is_r3 else ""
+            kk1_v = sr.get("KURUL KARARI 1","")
+            kk2_v = sr.get("KURUL KARARI 2","")
+            kb,kc = G_CLR.get(kk1_v,("#F5F5F5","#616161"))
+            kb2,kc2 = G_CLR.get(kk2_v,("#F5F5F5","#616161"))
+            duz_r_rows += (
+                f'<tr style="background:{bg_r}">'
+                f'<td class="c-idx">{i_r}</td>'
+                f'<td class="c-num" style="font-weight:600">{sr.get("SBA NUMARASI","")}</td>'
+                f'<td style="font-size:.85rem;max-width:240px;white-space:normal">{sr.get("ADI","")[:60]}</td>'
+                f'<td style="font-size:.82rem">{sr.get("SORUMLUSU","")}</td>'
+                f'<td class="c-num" style="font-size:.8rem">{sr.get("RAPORTÖR 1","").split()[-1] if sr.get("RAPORTÖR 1","") else ""} / {sr.get("RAPORTÖR 2","").split()[-1] if sr.get("RAPORTÖR 2","") else ""}</td>'
+                f'<td class="c-num"><span style="background:{kb};color:{kc};padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">{kk1_v or "—"}</span></td>'
+                f'<td class="c-num"><span style="background:{kb2};color:{kc2};padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">{kk2_v or "—"}</span></td>'
+                f'<td class="c-num">{sr.get("KURUL TARİHİ","")}</td>'
+                f'<td class="c-num">{r3_badge if is_r3 else "R1/R2"}</td>'
+                '</tr>'
+            )
+
+        r3_uyari = f'''<div style="background:#EDE7F6;border-left:3px solid #4527A0;padding:10px 16px;margin:0 32px 8px;border-radius:6px;font-size:.82rem;color:#4527A0">
+          <b>⚠ {r3_say} adet R3 dosyası var</b> — Bu raportör, asıl R1/R2 raportör değil, 3. raportör olarak atanmıştır.
+        </div>''' if r3_say > 0 else ""
+
+        st.markdown(f"""
+        {r3_uyari}
+        <div class="panel" style="margin:0 32px 16px">
+          <div class="panel-head">
+            <span class="panel-title">📋 Düzeltme Okuyan — {duz_r_say} dosya</span>
+            <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+              DÜZELTME R sütunu · Bu raportörün adının geçtiği düzeltme dosyaları
+              {f" &nbsp;·&nbsp; <b style='color:#4527A0'>{r3_say} R3</b>" if r3_say else ""}
+            </span>
+          </div>
+          <div class="wide-wrap">
+          <table class="styled-table"><thead><tr>
+            <th class="c-idx">#</th>
+            <th class="c-num">SBA No</th>
+            <th>Araştırma Adı</th>
+            <th>Sorumlusu</th>
+            <th class="c-num">R1 / R2</th>
+            <th class="c-num">KK1</th>
+            <th class="c-num">KK2</th>
+            <th class="c-num">Kurul Tarihi</th>
+            <th class="c-num">Rol</th>
+          </tr></thead><tbody>{duz_r_rows}</tbody></table>
+          </div>
+          <div class="panel-footer">
+            <span>R3 = R1/R2 raportörlerden bağımsız, 3. raportör olarak atanmış</span>
+            <span>{sec}</span>
+          </div>
+        </div>""", unsafe_allow_html=True)
 
     # ── DOSYA LİSTESİ — karara göre gruplandı ────────────────────────────────
     G_SIRA = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','']
