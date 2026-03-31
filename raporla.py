@@ -552,49 +552,174 @@ with tab2:
 
 # ══ TAB 3: GÜNDEM SAYILARI ════════════════════════════════════════════════════
 with tab3:
+    # Başvuru sayfasından karar detayları
     gundem = df[df["KURUL TARİHİ"].ne("")].groupby("KURUL TARİHİ").agg(
-        Başvuru   =("SBA NUMARASI","count"),
-        Onay      =("KURUL KARARI 1", lambda x:(x=="ONAY").sum()),
-        Düzeltme  =("KURUL KARARI 1", lambda x:(x=="DÜZELTME").sum()),
-        Görüş     =("KURUL KARARI 1", lambda x:(x=="GÖRÜŞ").sum()),
-        Bekleyen  =("KURUL KARARI 1", lambda x:(x=="").sum()),
+        Başvuru  =("SBA NUMARASI","count"),
+        Onay     =("KURUL KARARI 1", lambda x:(x=="ONAY").sum()),
+        Düzeltme =("KURUL KARARI 1", lambda x:(x=="DÜZELTME").sum()),
+        Görüş    =("KURUL KARARI 1", lambda x:(x=="GÖRÜŞ").sum()),
+        KAEK     =("KURUL KARARI 1", lambda x:(x=="KAEK").sum()),
+        Ret      =("KURUL KARARI 1", lambda x:(x=="RET").sum()),
+        Bekleyen =("KURUL KARARI 1", lambda x:(x=="").sum()),
     ).reset_index()
     try:
-        gundem["_s"] = pd.to_datetime(gundem["KURUL TARİHİ"],dayfirst=True,errors='coerce')
+        gundem["_s"] = pd.to_datetime(gundem["KURUL TARİHİ"], dayfirst=True, errors="coerce")
         gundem = gundem.sort_values("_s").drop(columns="_s")
     except: pass
 
+    # Sayılar sayfasından Dilekçe verisi
+    try:
+        sg = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=2)
+        sg.columns = ["S.NO","Gündem Tarihleri","Başvuru","Düzeltme","Dilekçe","Toplam"]
+        sg = sg[sg["Gündem Tarihleri"].notna()].copy()
+        sg["_s"] = pd.to_datetime(sg["Gündem Tarihleri"], errors="coerce")
+        sg["Tarih_fmt"] = sg["_s"].dt.strftime("%d/%m/%Y")
+        dilek_map = dict(zip(sg["Tarih_fmt"],
+                             pd.to_numeric(sg["Dilekçe"], errors="coerce").fillna(0).astype(int)))
+    except:
+        dilek_map = {}
+
+    # Özet istatistikler
+    top_bas = int(gundem["Başvuru"].sum())
+    top_ona = int(gundem["Onay"].sum())
+    top_duz = int(gundem["Düzeltme"].sum())
+    top_gor = int(gundem["Görüş"].sum())
+    top_kaek= int(gundem["KAEK"].sum())
+    top_ret = int(gundem["Ret"].sum())
+    top_bek = int(gundem["Bekleyen"].sum())
+    top_dil = sum(dilek_map.values())
+    kararli = top_bas - top_bek
+
+    # Özet kartlar
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:20px 32px 0">
+      <div class="card primary">
+        <div class="card-num">{top_bas}</div>
+        <div class="card-label">Toplam Başvuru</div>
+        <div class="card-sub">{kurul_sayisi} toplantı · 2026</div>
+      </div>
+      <div class="card" style="border-top:3px solid #2E7D32">
+        <div class="card-num" style="color:#2E7D32">{top_ona}</div>
+        <div class="card-label">Onay</div>
+        <div class="card-sub">%{round(top_ona/kararli*100,1) if kararli else 0} kararlı içinde</div>
+      </div>
+      <div class="card" style="border-top:3px solid #E65100">
+        <div class="card-num" style="color:#E65100">{top_duz}</div>
+        <div class="card-label">Düzeltme</div>
+        <div class="card-sub">%{round(top_duz/kararli*100,1) if kararli else 0} kararlı içinde</div>
+      </div>
+      <div class="card" style="border-top:3px solid #C8502A">
+        <div class="card-num" style="color:#C8502A">{top_bek}</div>
+        <div class="card-label">Bekleyen</div>
+        <div class="card-sub">%{round(top_bek/top_bas*100,1) if top_bas else 0} toplam içinde</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;padding:8px 32px 16px;flex-wrap:wrap">
+      <span style="font-size:.8rem;font-family:'IBM Plex Mono',monospace;color:#8C8880">
+        Görüş: <b style="color:#1565C0">{top_gor}</b>
+      </span>
+      <span style="color:#D0CBC0">·</span>
+      <span style="font-size:.8rem;font-family:'IBM Plex Mono',monospace;color:#8C8880">
+        KAEK: <b style="color:#4527A0">{top_kaek}</b>
+      </span>
+      <span style="color:#D0CBC0">·</span>
+      <span style="font-size:.8rem;font-family:'IBM Plex Mono',monospace;color:#8C8880">
+        Ret: <b style="color:#C62828">{top_ret}</b>
+      </span>
+      <span style="color:#D0CBC0">·</span>
+      <span style="font-size:.8rem;font-family:'IBM Plex Mono',monospace;color:#8C8880">
+        Dilekçe (tekrar değ.): <b style="color:#1A1814">{top_dil}</b>
+      </span>
+    </div>""", unsafe_allow_html=True)
+
+    # Ana tablo
     rows3 = ""
-    for si3,(_, row) in enumerate(gundem.iterrows(),1):
-        rows3 += f"""<tr>
-          <td class="c-num">{si3}</td>
-          <td class="c-num">{row['KURUL TARİHİ']}</td>
-          <td class="c-num">{int(row['Başvuru'])}</td>
-          <td class="c-num" style="color:#2E7D32">{int(row['Onay']) or ''}</td>
-          <td class="c-num" style="color:#E65100">{int(row['Düzeltme']) or ''}</td>
-          <td class="c-num" style="color:#1565C0">{int(row['Görüş']) or ''}</td>
-          <td class="c-num" style="color:#C8502A">{int(row['Bekleyen']) or ''}</td>
-          <td class="c-num" style="font-weight:500">{int(row['Başvuru'])}</td>
+    for si3, (_, row) in enumerate(gundem.iterrows(), 1):
+        bas = int(row["Başvuru"])
+        ona = int(row["Onay"])
+        duz = int(row["Düzeltme"])
+        gor = int(row["Görüş"])
+        kaek= int(row["KAEK"])
+        ret = int(row["Ret"])
+        bek = int(row["Bekleyen"])
+        dil = dilek_map.get(row["KURUL TARİHİ"], 0)
+        kar = bas - bek  # kararlanmış
+        ona_pct = f"%{round(ona/kar*100,1)}" if kar else "—"
+        duz_pct = f"%{round(duz/kar*100,1)}" if kar else "—"
+
+        # Renk: bekleyen varsa satır açık sarı
+        bg_row = "background:#FFFBF0" if bek else ""
+
+        rows3 += f"""<tr style="{bg_row}">
+          <td class="c-num" style="color:#8C8880">{si3}</td>
+          <td class="c-num" style="font-weight:500">{row['KURUL TARİHİ']}</td>
+          <td class="c-num" style="font-weight:600">{bas}</td>
+          <td class="c-num" style="color:#2E7D32;font-weight:{'600' if ona else '400'}">{ona or '—'}</td>
+          <td class="c-num" style="color:#8C8880;font-size:.78rem">{ona_pct}</td>
+          <td class="c-num" style="color:#E65100;font-weight:{'600' if duz else '400'}">{duz or '—'}</td>
+          <td class="c-num" style="color:#8C8880;font-size:.78rem">{duz_pct}</td>
+          <td class="c-num" style="color:#1565C0">{gor or ''}</td>
+          <td class="c-num" style="color:#4527A0">{kaek or ''}</td>
+          <td class="c-num" style="color:#C62828">{ret or ''}</td>
+          <td class="c-num" style="color:#795548">{dil or ''}</td>
+          <td class="c-num" style="color:#C8502A;font-weight:{'600' if bek else '400'}">{bek or '—'}</td>
         </tr>"""
+
     rows3 += f"""<tr class="tot">
       <td colspan="2">TOPLAM</td>
-      <td class="c-num">{int(gundem['Başvuru'].sum())}</td>
-      <td class="c-num">{int(gundem['Onay'].sum())}</td>
-      <td class="c-num">{int(gundem['Düzeltme'].sum())}</td>
-      <td class="c-num">{int(gundem['Görüş'].sum())}</td>
-      <td class="c-num">{int(gundem['Bekleyen'].sum())}</td>
-      <td class="c-num" style="font-weight:600">{int(gundem['Başvuru'].sum())}</td>
+      <td class="c-num">{top_bas}</td>
+      <td class="c-num" style="color:#2E7D32">{top_ona}</td>
+      <td class="c-num" style="color:#8C8880;font-size:.78rem">%{round(top_ona/kararli*100,1) if kararli else 0}</td>
+      <td class="c-num" style="color:#E65100">{top_duz}</td>
+      <td class="c-num" style="color:#8C8880;font-size:.78rem">%{round(top_duz/kararli*100,1) if kararli else 0}</td>
+      <td class="c-num" style="color:#1565C0">{top_gor}</td>
+      <td class="c-num" style="color:#4527A0">{top_kaek}</td>
+      <td class="c-num" style="color:#C62828">{top_ret}</td>
+      <td class="c-num" style="color:#795548">{top_dil}</td>
+      <td class="c-num" style="color:#C8502A">{top_bek}</td>
     </tr>"""
 
     st.markdown(f"""
-    <div class="panel" style="max-width:600px;margin:24px 32px">
-      <div class="panel-head"><span class="panel-title">2026 Gündem Sayıları</span></div>
-      <table class="styled-table"><thead><tr>
-        <th class="c-num">S.NO</th><th class="c-num">Gündem Tarihi</th>
-        <th class="c-num">Başvuru</th><th class="c-num">Onay</th>
-        <th class="c-num">Düzeltme</th><th class="c-num">Görüş</th>
-        <th class="c-num">Bekleyen</th><th class="c-num">Toplam</th>
-      </tr></thead><tbody>{rows3}</tbody></table>
+    <div class="panel" style="margin:0 32px 24px">
+      <div class="panel-head">
+        <span class="panel-title">2026 Gündem Sayıları — Kurul Bazlı</span>
+        <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+          Başvuru sayfasından canlı · Dilekçe Sayılar sayfasından
+        </span>
+      </div>
+      <div class="wide-wrap">
+      <table class="styled-table"><thead>
+        <tr>
+          <th class="c-num">#</th>
+          <th class="c-num">Gündem Tarihi</th>
+          <th class="c-num">Başvuru</th>
+          <th class="c-num" colspan="2" style="color:#2E7D32">✅ Onay</th>
+          <th class="c-num" colspan="2" style="color:#E65100">📝 Düzeltme</th>
+          <th class="c-num" style="color:#1565C0">💬 Görüş</th>
+          <th class="c-num" style="color:#4527A0">🏛 KAEK</th>
+          <th class="c-num" style="color:#C62828">❌ Ret</th>
+          <th class="c-num">📬 Dilekçe</th>
+          <th class="c-num" style="color:#C8502A">⏳ Bekleyen</th>
+        </tr>
+        <tr style="background:#F7F5F2">
+          <th class="c-num" colspan="2" style="font-size:.7rem;color:#B0BEC5"></th>
+          <th class="c-num" style="font-size:.7rem;color:#B0BEC5">toplam</th>
+          <th class="c-num" style="font-size:.7rem;color:#2E7D32">sayı</th>
+          <th class="c-num" style="font-size:.7rem;color:#8C8880">%*</th>
+          <th class="c-num" style="font-size:.7rem;color:#E65100">sayı</th>
+          <th class="c-num" style="font-size:.7rem;color:#8C8880">%*</th>
+          <th class="c-num" style="font-size:.7rem;color:#B0BEC5">sayı</th>
+          <th class="c-num" style="font-size:.7rem;color:#B0BEC5">sayı</th>
+          <th class="c-num" style="font-size:.7rem;color:#B0BEC5">sayı</th>
+          <th class="c-num" style="font-size:.7rem;color:#B0BEC5">tekrar değ.</th>
+          <th class="c-num" style="font-size:.7rem;color:#B0BEC5">karar yok</th>
+        </tr>
+      </thead><tbody>{rows3}</tbody></table>
+      </div>
+      <div class="panel-footer">
+        <span>* Yüzde = karara bağlanan dosyalar içindeki oran (bekleyenler hariç) · 🟡 Bekleyen olan toplantılar</span>
+        <span>Son güncelleme: {son_tarih}</span>
+      </div>
     </div>""", unsafe_allow_html=True)
 
 # ══ TAB 4: BİRİM ANALİZİ ═════════════════════════════════════════════════════
