@@ -22,6 +22,16 @@ KAR_RENK  = {'ONAY':'#2E7D32','DÜZELTME':'#E65100','GÖRÜŞ':'#1565C0',
 KAR_EMO   = {'ONAY':'✅','DÜZELTME':'📝','GÖRÜŞ':'💬',
               'KAEK':'🏛','RET':'❌','KAPSAM DIŞI':'🚫'}
 
+# Global renk haritası — tüm sekmelerde kullanılır
+G_CLR = {'ONAY':    ('#E8F5E9','#2E7D32'),
+         'DÜZELTME':('#FFF8E1','#E65100'),
+         'GÖRÜŞ':   ('#E3F2FD','#1565C0'),
+         'KAEK':    ('#EDE7F6','#4527A0'),
+         'RET':     ('#FFEBEE','#C62828'),
+         'KAPSAM DIŞI':('#F5F5F5','#616161'),
+         'GERİ ÇEKİLDİ':('#FFF9C4','#795548'),
+         '':('#FFF3E0','#C8502A')}
+
 # ── VERİ ──────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load():
@@ -469,10 +479,7 @@ with tab2:
     G_LBL  = {'ONAY':'✅ ONAY','DÜZELTME':'📝 DÜZELTME','GÖRÜŞ':'💬 GÖRÜŞ',
                'KAEK':'🏛 KAEK','RET':'❌ RET','KAPSAM DIŞI':'🚫 KAPSAM DIŞI',
                '':'⏳ BEKLİYOR'}
-    G_CLR  = {'ONAY':('#E8F5E9','#2E7D32'),'DÜZELTME':('#FFF8E1','#E65100'),
-               'GÖRÜŞ':('#E3F2FD','#1565C0'),'KAEK':('#EDE7F6','#4527A0'),
-               'RET':('#FFEBEE','#C62828'),'KAPSAM DIŞI':('#F5F5F5','#616161'),
-               '':('#FFF3E0','#C8502A')}
+    # G_CLR global olarak tanımlı
 
     satirlar = []
     for grup in G_SIRA:
