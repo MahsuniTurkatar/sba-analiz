@@ -376,12 +376,13 @@ with tab2:
          (df["RAPORTÖR 1"] != sec) &
          (df["RAPORTÖR 2"] != sec)).sum()
     )
+    r3_kart_etiket = "R3: " + str(r3_say_kart) if r3_say_kart else "Hepsi R1/R2"
     st.markdown(f"""
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:24px 32px 0">
       <div class="card primary"><div class="card-num">{dosya}</div><div class="card-label">Atanan Dosya</div></div>
       <div class="card"><div class="card-num">{genel}</div><div class="card-label">Karar Verilen</div><div class="card-sub">{pct(genel,dosya,False)}</div></div>
       <div class="card"><div class="card-num">{bek}</div><div class="card-label">Bekleyen</div><div class="card-sub">{pct(bek,dosya,False)}</div></div>
-      <div class="card" style="border-left:3px solid #C8502A"><div class="card-num" style="color:#C8502A">{duz_r_say_kart}</div><div class="card-label">Düzeltme Okuyan</div><div class="card-sub">{"R3: " + str(r3_say_kart) if r3_say_kart else "Hepsi R1/R2"}</div></div>
+      <div class="card" style="border-left:3px solid #C8502A"><div class="card-num" style="color:#C8502A">{duz_r_say_kart}</div><div class="card-label">Düzeltme Okuyan</div><div class="card-sub">{r3_kart_etiket}</div></div>
       <div class="card"><div class="card-num">{tam}%</div><div class="card-label">Tamamlanma</div></div>
     </div>
     <div class="panel" style="margin:16px 32px 8px">
@@ -445,6 +446,7 @@ with tab2:
           <b>⚠ {r3_say} adet R3 dosyası var</b> — Bu raportör, asıl R1/R2 raportör değil, 3. raportör olarak atanmıştır.
         </div>''' if r3_say > 0 else ""
 
+        r3_etiket = f" &nbsp;·&nbsp; <b style=\"color:#4527A0\">{r3_say} R3</b>" if r3_say else ""
         st.markdown(f"""
         {r3_uyari}
         <div class="panel" style="margin:0 32px 16px">
@@ -452,7 +454,7 @@ with tab2:
             <span class="panel-title">📋 Düzeltme Okuyan — {duz_r_say} dosya</span>
             <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
               DÜZELTME R sütunu · Bu raportörün adının geçtiği düzeltme dosyaları
-              {f" &nbsp;·&nbsp; <b style='color:#4527A0'>{r3_say} R3</b>" if r3_say else ""}
+              {r3_etiket}
             </span>
           </div>
           <div class="wide-wrap">
