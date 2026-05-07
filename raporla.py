@@ -421,24 +421,36 @@ with tab2:
     if duz_r_say > 0:
         duz_r_rows = ""
         for i_r, (_, sr) in enumerate(duz_r_df.iterrows(), 1):
-            is_r3 = (sr.get("RAPORTÖR 1","") != sec and sr.get("RAPORTÖR 2","") != sec)
-            bg_r = "#FFF3E0" if not is_r3 else "#EDE7F6"
-            r3_badge = '<span style="background:#4527A0;color:#fff;padding:1px 6px;border-radius:4px;font-size:.72rem;font-weight:600;margin-left:6px">R3</span>' if is_r3 else ""
-            kk1_v = sr.get("KURUL KARARI 1","")
-            kk2_v = sr.get("KURUL KARARI 2","")
-            kb,kc = G_CLR.get(kk1_v,("#F5F5F5","#616161"))
-            kb2,kc2 = G_CLR.get(kk2_v,("#F5F5F5","#616161"))
+            r1_v   = str(sr.get("RAPORTÖR 1","") or "")
+            r2_v   = str(sr.get("RAPORTÖR 2","") or "")
+            is_r3  = (r1_v != sec and r2_v != sec)
+            bg_r   = "#EDE7F6" if is_r3 else "#FFF3E0"
+            r1_k   = r1_v.split()[-1] if r1_v else ""
+            r2_k   = r2_v.split()[-1] if r2_v else ""
+            rol_str = "R3" if is_r3 else "R1/R2"
+            r3_bg  = "background:#4527A0;color:#fff" if is_r3 else "background:#E8F5E9;color:#2E7D32"
+            kk1_v  = str(sr.get("KURUL KARARI 1","") or "")
+            kk2_v  = str(sr.get("KURUL KARARI 2","") or "")
+            kb, kc  = G_CLR.get(kk1_v, ("#F5F5F5","#616161"))
+            kb2,kc2 = G_CLR.get(kk2_v, ("#F5F5F5","#616161"))
+            sba_no  = str(sr.get("SBA NUMARASI","") or "")
+            ad_v    = str(sr.get("ADI","") or "")[:60]
+            sor_v   = str(sr.get("SORUMLUSU","") or "")
+            tar_v   = str(sr.get("KURUL TARİHİ","") or "")
+            kk1_lbl = kk1_v if kk1_v else "—"
+            kk2_lbl = kk2_v if kk2_v else "—"
+
             duz_r_rows += (
-                f'<tr style="background:{bg_r}">'
-                f'<td class="c-idx">{i_r}</td>'
-                f'<td class="c-num" style="font-weight:600">{sr.get("SBA NUMARASI","")}</td>'
-                f'<td style="font-size:.85rem;max-width:240px;white-space:normal">{sr.get("ADI","")[:60]}</td>'
-                f'<td style="font-size:.82rem">{sr.get("SORUMLUSU","")}</td>'
-                f'<td class="c-num" style="font-size:.8rem">{sr.get("RAPORTÖR 1","").split()[-1] if sr.get("RAPORTÖR 1","") else ""} / {sr.get("RAPORTÖR 2","").split()[-1] if sr.get("RAPORTÖR 2","") else ""}</td>'
-                f'<td class="c-num"><span style="background:{kb};color:{kc};padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">{kk1_v or "—"}</span></td>'
-                f'<td class="c-num"><span style="background:{kb2};color:{kc2};padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">{kk2_v or "—"}</span></td>'
-                f'<td class="c-num">{sr.get("KURUL TARİHİ","")}</td>'
-                f'<td class="c-num">{r3_badge if is_r3 else "R1/R2"}</td>'
+                '<tr style="background:' + bg_r + '">'
+                '<td class="c-idx">' + str(i_r) + '</td>'
+                '<td class="c-num" style="font-weight:600">' + sba_no + '</td>'
+                '<td style="font-size:.85rem;max-width:240px;white-space:normal">' + ad_v + '</td>'
+                '<td style="font-size:.82rem">' + sor_v + '</td>'
+                '<td class="c-num" style="font-size:.8rem">' + r1_k + ' / ' + r2_k + '</td>'
+                '<td class="c-num"><span style="background:' + kb + ';color:' + kc + ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' + kk1_lbl + '</span></td>'
+                '<td class="c-num"><span style="background:' + kb2 + ';color:' + kc2 + ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' + kk2_lbl + '</span></td>'
+                '<td class="c-num">' + tar_v + '</td>'
+                '<td class="c-num"><span style="' + r3_bg + ';padding:2px 8px;border-radius:4px;font-size:.75rem;font-weight:600">' + rol_str + '</span></td>'
                 '</tr>'
             )
 
