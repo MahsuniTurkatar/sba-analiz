@@ -454,39 +454,54 @@ with tab2:
                 '</tr>'
             )
 
-        r3_uyari = f'''<div style="background:#EDE7F6;border-left:3px solid #4527A0;padding:10px 16px;margin:0 32px 8px;border-radius:6px;font-size:.82rem;color:#4527A0">
-          <b>⚠ {r3_say} adet R3 dosyası var</b> — Bu raportör, asıl R1/R2 raportör değil, 3. raportör olarak atanmıştır.
-        </div>''' if r3_say > 0 else ""
+        r3_uyari_html = ""
+        if r3_say > 0:
+            r3_uyari_html = (
+                '<div style="background:#EDE7F6;border-left:3px solid #4527A0;'
+                'padding:10px 16px;margin:0 32px 8px;border-radius:6px;'
+                'font-size:.82rem;color:#4527A0">'
+                '<b>&#9888; ' + str(r3_say) + ' adet R3 dosyas&#305; var</b>'
+                ' &#8212; Bu raport&#246;r, as&#305;l R1/R2 raport&#246;r de&#287;il, '
+                '3. raport&#246;r olarak atanm&#305;&#351;t&#305;r.</div>'
+            )
 
-        r3_etiket = f" &nbsp;·&nbsp; <b style=\"color:#4527A0\">{r3_say} R3</b>" if r3_say else ""
-        st.markdown(f"""
-        {r3_uyari}
-        <div class="panel" style="margin:0 32px 16px">
-          <div class="panel-head">
-            <span class="panel-title">📋 Düzeltme Okuyan — {duz_r_say} dosya</span>
-            <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
-              DÜZELTME R sütunu · Bu raportörün adının geçtiği düzeltme dosyaları
-              {r3_etiket}
-            </span>
-          </div>
-          <div class="wide-wrap">
-          <table class="styled-table"><thead><tr>
-            <th class="c-idx">#</th>
-            <th class="c-num">SBA No</th>
-            <th>Araştırma Adı</th>
-            <th>Sorumlusu</th>
-            <th class="c-num">R1 / R2</th>
-            <th class="c-num">KK1</th>
-            <th class="c-num">KK2</th>
-            <th class="c-num">Kurul Tarihi</th>
-            <th class="c-num">Rol</th>
-          </tr></thead><tbody>{duz_r_rows}</tbody></table>
-          </div>
-          <div class="panel-footer">
-            <span>R3 = R1/R2 raportörlerden bağımsız, 3. raportör olarak atanmış</span>
-            <span>{sec}</span>
-          </div>
-        </div>""", unsafe_allow_html=True)
+        r3_etiket_html = ""
+        if r3_say:
+            r3_etiket_html = (
+                ' &nbsp;&middot;&nbsp; <b style="color:#4527A0">'
+                + str(r3_say) + ' R3</b>'
+            )
+
+        panel_html = (
+            r3_uyari_html
+            + '<div class="panel" style="margin:0 32px 16px">'
+            + '<div class="panel-head">'
+            + '<span class="panel-title">&#128203; D&uuml;zeltme Okuyan &mdash; '
+            + str(duz_r_say) + ' dosya</span>'
+            + '<span style="font-size:.72rem;color:#8C8880">'
+            + 'D&Uuml;ZELTME R s&uuml;tunu &middot; Bu raport&ouml;r&uuml;n ad&#305;n&#305;n ge&ccedil;ti&#287;i d&uuml;zeltme dosyalar&#305;'
+            + r3_etiket_html
+            + '</span></div>'
+            + '<div class="wide-wrap">'
+            + '<table class="styled-table"><thead><tr>'
+            + '<th class="c-idx">#</th>'
+            + '<th class="c-num">SBA No</th>'
+            + '<th>Ara&#351;t&#305;rma Ad&#305;</th>'
+            + '<th>Sorumlusu</th>'
+            + '<th class="c-num">R1 / R2</th>'
+            + '<th class="c-num">KK1</th>'
+            + '<th class="c-num">KK2</th>'
+            + '<th class="c-num">Kurul Tarihi</th>'
+            + '<th class="c-num">Rol</th>'
+            + '</tr></thead><tbody>'
+            + duz_r_rows
+            + '</tbody></table></div>'
+            + '<div class="panel-footer">'
+            + '<span>R3 = R1/R2 raport&ouml;rlerden ba&#287;&#305;ms&#305;z, 3. raport&ouml;r olarak atanm&#305;&#351;</span>'
+            + '<span>' + sec + '</span>'
+            + '</div></div>'
+        )
+        st.markdown(panel_html, unsafe_allow_html=True)
 
     # ── DOSYA LİSTESİ — karara göre gruplandı ────────────────────────────────
     G_SIRA = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','']
