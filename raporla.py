@@ -776,37 +776,50 @@ with tab4:
     for n in NIT_KEYS:
         if n not in bn.columns: bn[n] = 0
     bn = bn[NIT_KEYS]; bn["Toplam"] = bn.sum(axis=1)
-    bn = bn.sort_values("Toplam",ascending=False).reset_index()
+    bn = bn.sort_values("Toplam", ascending=False).reset_index()
 
     rows4 = ""
-    for i,row in bn.iterrows():
-        rows4 += f"""<tr>
-          <td class="c-idx">{i+1:02d}</td><td>{row['BİRİMİ']}</td>
-          {"".join(f'<td class="c-num">{int(row[n]) or ""}</td>' for n in NIT_KEYS)}
-          <td class="c-num" style="font-weight:500">{int(row['Toplam'])}</td>
-        </tr>"""
-    rows4 += f"""<tr class="tot"><td colspan="2">TOPLAM</td>
-      {"".join(f'<td class="c-num">{int(bn[n].sum())}</td>' for n in NIT_KEYS)}
-      <td class="c-num" style="font-weight:600">{int(bn['Toplam'].sum())}</td>
-    </tr>"""
-    nit_h4 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
-    st.markdown(f"""
-    <div class="panel" style="margin:24px 32px">
-      <div class="panel-head"><span class="panel-title">Birim Analizi — {len(bn)} birim</span></div>
-      <table class="styled-table"><thead><tr>
-        <th class="c-idx">#</th><th>Birim Adı</th>{nit_h4}
-        <th class="c-num">Toplam</th>
-      </tr></thead><tbody>{rows4}</tbody></table>
-    </div>""", unsafe_allow_html=True)
+    for i, row in bn.iterrows():
+        bg4 = "#F7FAFB" if i%2==0 else "#FFFFFF"
+        rows4 += (
+            '<tr style="background:' + bg4 + '">'
+            '<td class="c-idx">' + f'{i+1:02d}' + '</td>'
+            '<td style="font-size:.88rem">' + str(row['BİRİMİ']) + '</td>'
+            + ''.join('<td class="c-num">' + (str(int(row[n])) if int(row[n]) else '') + '</td>' for n in NIT_KEYS)
+            + '<td class="c-num" style="font-weight:600;border-left:2px solid #E0DCD4">' + str(int(row['Toplam'])) + '</td>'
+            '</tr>'
+        )
+    rows4 += (
+        '<tr class="tot"><td colspan="2">TOPLAM</td>'
+        + ''.join('<td class="c-num">' + str(int(bn[n].sum())) + '</td>' for n in NIT_KEYS)
+        + '<td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">' + str(int(bn['Toplam'].sum())) + '</td>'
+        '</tr>'
+    )
+    nit_h4 = ''.join('<th class="c-num">' + k + '</th>' for k in NIT_KISA)
+
+    st.markdown(
+        '<div class="panel" style="margin:24px 32px">'
+        '<div class="panel-head">'
+        '<span class="panel-title">Birim Analizi &mdash; ' + str(len(bn)) + ' birim</span>'
+        '<span style="font-size:.72rem;color:#8C8880">B&uuml;y&uuml;kten k&uuml;&ccedil;&uuml;&#287;e s&iacute;ral&iacute;</span>'
+        '</div>'
+        '<div style="max-height:600px;overflow-y:auto">'
+        '<table class="styled-table" style="width:100%">'
+        '<thead style="position:sticky;top:0;z-index:10">'
+        '<tr><th class="c-idx">#</th><th>Birim Ad&#305;</th>' + nit_h4
+        + '<th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>'
+        '</tr></thead>'
+        '<tbody>' + rows4 + '</tbody>'
+        '</table></div></div>',
+        unsafe_allow_html=True
+    )
 
 # ══ TAB 5: ARAŞTIRMACI ANALİZİ ═══════════════════════════════════════════════
 with tab5:
-    # Nitelik pivot
     nit_p = df.groupby("SORUMLUSU")["NİTELİĞİ"].value_counts().unstack(fill_value=0)
     for n in NIT_KEYS:
         if n not in nit_p.columns: nit_p[n] = 0
 
-    # Karar pivot — bekleyen = KK1 boş
     bek_p = df[df["KURUL KARARI 1"].eq("")].groupby("SORUMLUSU").size().rename("BEKLEYEN")
     ona_p = df[df["KURUL KARARI 1"].eq("ONAY")].groupby("SORUMLUSU").size().rename("ONAY_S")
     duz_p = df[df["KURUL KARARI 1"].eq("DÜZELTME")].groupby("SORUMLUSU").size().rename("DÜZELTME_S")
@@ -826,36 +839,48 @@ with tab5:
         ona5 = int(row.get("ONAY_S", 0))
         duz5 = int(row.get("DÜZELTME_S", 0))
         bek5 = int(row.get("BEKLEYEN", 0))
-        rows5 += f"""<tr>
-          <td class="c-idx">{i+1:02d}</td><td>{row['SORUMLUSU']}</td>
-          {"".join(f'<td class="c-num">{int(row[n]) or ""}</td>' for n in NIT_KEYS)}
-          <td class="c-num" style="border-left:2px solid #E0DCD4;color:#2E7D32">{ona5 or ''}</td>
-          <td class="c-num" style="color:#E65100">{duz5 or ''}</td>
-          <td class="c-num" style="color:#C8502A">{bek5 or ''}</td>
-          <td class="c-num" style="font-weight:500;border-left:2px solid #E0DCD4">{int(row['TOPLAM'])}</td>
-        </tr>"""
-    rows5 += f"""<tr class="tot"><td colspan="2">TOPLAM</td>
-      {"".join(f'<td class="c-num">{int(sor[n].sum())}</td>' for n in NIT_KEYS)}
-      <td class="c-num" style="border-left:2px solid #D0CBC0">{int(sor["ONAY_S"].sum())}</td>
-      <td class="c-num">{int(sor["DÜZELTME_S"].sum())}</td>
-      <td class="c-num">{int(sor["BEKLEYEN"].sum())}</td>
-      <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{int(sor["TOPLAM"].sum())}</td>
-    </tr>"""
-    nit_h5 = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
-    st.markdown(f"""
-    <div class="panel" style="margin:24px 32px">
-      <div class="panel-head">
-        <span class="panel-title">Sorumlu Araştırmacı Analizi — {len(sor)} araştırmacı</span>
-      </div>
-      <div class="wide-wrap">
-      <table class="styled-table"><thead><tr>
-        <th class="c-idx">#</th><th>Sorumlu Araştırmacı</th>{nit_h5}
-        <th class="c-num" style="border-left:2px solid #E0DCD4">Onay</th>
-        <th class="c-num">Düzeltme</th><th class="c-num">Bekleyen</th>
-        <th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>
-      </tr></thead><tbody>{rows5}</tbody></table>
-      </div>
-    </div>""", unsafe_allow_html=True)
+        bg5  = "#F7FAFB" if i%2==0 else "#FFFFFF"
+        rows5 += (
+            '<tr style="background:' + bg5 + '">'
+            '<td class="c-idx">' + f'{i+1:02d}' + '</td>'
+            '<td style="font-size:.85rem">' + str(row['SORUMLUSU']) + '</td>'
+            + ''.join('<td class="c-num">' + (str(int(row[n])) if int(row[n]) else '') + '</td>' for n in NIT_KEYS)
+            + '<td class="c-num" style="border-left:2px solid #E0DCD4;color:#2E7D32">' + (str(ona5) if ona5 else '') + '</td>'
+            + '<td class="c-num" style="color:#E65100">' + (str(duz5) if duz5 else '') + '</td>'
+            + '<td class="c-num" style="color:#C8502A">' + (str(bek5) if bek5 else '') + '</td>'
+            + '<td class="c-num" style="font-weight:600;border-left:2px solid #E0DCD4">' + str(int(row['TOPLAM'])) + '</td>'
+            '</tr>'
+        )
+    rows5 += (
+        '<tr class="tot"><td colspan="2">TOPLAM</td>'
+        + ''.join('<td class="c-num">' + str(int(sor[n].sum())) + '</td>' for n in NIT_KEYS)
+        + '<td class="c-num" style="border-left:2px solid #D0CBC0">' + str(int(sor["ONAY_S"].sum())) + '</td>'
+        + '<td class="c-num">' + str(int(sor["DÜZELTME_S"].sum())) + '</td>'
+        + '<td class="c-num">' + str(int(sor["BEKLEYEN"].sum())) + '</td>'
+        + '<td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">' + str(int(sor["TOPLAM"].sum())) + '</td>'
+        '</tr>'
+    )
+    nit_h5 = ''.join('<th class="c-num">' + k + '</th>' for k in NIT_KISA)
+
+    st.markdown(
+        '<div class="panel" style="margin:24px 32px">'
+        '<div class="panel-head">'
+        '<span class="panel-title">Sorumlu Ara&#351;t&#305;rmac&#305; Analizi &mdash; ' + str(len(sor)) + ' ara&#351;t&#305;rmac&#305;</span>'
+        '<span style="font-size:.72rem;color:#8C8880">B&uuml;y&uuml;kten k&uuml;&ccedil;&uuml;&#287;e s&iacute;ral&iacute;</span>'
+        '</div>'
+        '<div style="max-height:600px;overflow-y:auto">'
+        '<table class="styled-table" style="width:100%">'
+        '<thead style="position:sticky;top:0;z-index:10">'
+        '<tr><th class="c-idx">#</th><th>Sorumlu Ara&#351;t&#305;rmac&#305;</th>' + nit_h5
+        + '<th class="c-num" style="border-left:2px solid #E0DCD4">Onay</th>'
+        + '<th class="c-num">D&uuml;zeltme</th>'
+        + '<th class="c-num">Bekleyen</th>'
+        + '<th class="c-num" style="border-left:2px solid #E0DCD4">Toplam</th>'
+        '</tr></thead>'
+        '<tbody>' + rows5 + '</tbody>'
+        '</table></div></div>',
+        unsafe_allow_html=True
+    )
 
 
 # ══ TAB 6: SONUÇLAR ══════════════════════════════════════════════════════════
