@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="SBA 2026 — Etik Kurul", layout="wide", page_icon="🔬")
+st.set_page_config(page_title="H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu 2026 Analiz Portalı", layout="wide", page_icon="🔬")
 
 EXCEL_FILE  = "2026_SBA.xlsx"
 RAPORTORLER = [
@@ -136,8 +136,10 @@ st.markdown("""
 .prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;width:36px;text-align:right;flex-shrink:0}
 .wide-wrap{width:100%;overflow-x:auto}
 .stTabs [data-baseweb="tab-list"]{background:#FAF8F4!important;border-bottom:1px solid #E0DCD4!important;padding:0 32px!important;gap:0!important}
-.stTabs [data-baseweb="tab"]{color:#8C8880!important;font-family:'DM Sans',sans-serif!important;font-size:.82rem!important;padding:14px 20px!important;border-bottom:2px solid transparent!important;background:transparent!important}
-.stTabs [aria-selected="true"]{color:#C8502A!important;border-bottom:2px solid #C8502A!important}
+.stTabs [data-baseweb="tab"],.stTabs button[role="tab"]{color:#5A5650!important;font-family:'DM Sans',sans-serif!important;font-size:.84rem!important;font-weight:600!important;letter-spacing:.03em!important;padding:14px 20px!important;border-bottom:2px solid transparent!important;background:transparent!important;opacity:1!important;visibility:visible!important;white-space:nowrap!important}
+.stTabs [data-baseweb="tab"] *,.stTabs button[role="tab"] *{color:#5A5650!important;opacity:1!important;visibility:visible!important;font-size:.84rem!important;font-family:'DM Sans',sans-serif!important;font-weight:600!important}
+.stTabs [aria-selected="true"],.stTabs button[role="tab"][aria-selected="true"]{color:#C8502A!important;border-bottom:2px solid #C8502A!important}
+.stTabs [aria-selected="true"] *,.stTabs button[role="tab"][aria-selected="true"] *{color:#C8502A!important}
 .stTabs [data-baseweb="tab-panel"]{padding:0!important}
 .footer{text-align:center;padding:20px;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#8C8880;margin-top:16px}
 .footer b{color:#1A1814}
@@ -147,9 +149,9 @@ st.markdown("""
 # ── TOPBAR ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="topbar">
-  <div class="topbar-brand"><div class="brand-dot"></div>SBA Etik Kurul</div>
+  <div class="topbar-brand"><div class="brand-dot"></div>H.Ü. SBA Etik Kurul</div>
   <div class="topbar-center">
-    <b>Sağlık Bilimleri Araştırma Etik Kurulu</b> &nbsp;/&nbsp; Analiz Portalı &nbsp;/&nbsp; 2026
+    <b>H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu</b> &nbsp;/&nbsp; 2026 Analiz Portalı
   </div>
   <div class="topbar-stats">
     <div class="t-stat"><span class="t-num hi">{toplam_b}</span><span class="t-label">Başvuru</span></div>
@@ -161,7 +163,7 @@ st.markdown(f"""
 # ── KARTLAR ───────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="page-head">
-  <div class="page-title">Başvuru Gösterge Paneli</div>
+  <div class="page-title">H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu 2026 Analiz Portalı</div>
   <span class="page-date">Son toplantı: {son_tarih} &nbsp;·&nbsp; {kurul_sayisi}. Toplantı</span>
 </div>
 <div class="cards">
@@ -173,22 +175,22 @@ st.markdown(f"""
   <div class="card">
     <div class="card-num">{bireysel}</div>
     <div class="card-label">Bireysel Araştırma</div>
-    <div class="card-sub">{pct(bireysel,toplam_b,False)} pay</div>
+    <div class="card-sub">{pct(bireysel,toplam_b,False)} oranı</div>
   </div>
   <div class="card">
     <div class="card-num">{uzmanlik}</div>
     <div class="card-label">Uzmanlık Tezi</div>
-    <div class="card-sub">{pct(uzmanlik,toplam_b,False)} pay</div>
+    <div class="card-sub">{pct(uzmanlik,toplam_b,False)} oranı</div>
   </div>
   <div class="card">
     <div class="card-num">{yuksek}</div>
     <div class="card-label">Y. Lisans Tezi</div>
-    <div class="card-sub">{pct(yuksek,toplam_b,False)} pay</div>
+    <div class="card-sub">{pct(yuksek,toplam_b,False)} oranı</div>
   </div>
   <div class="card">
     <div class="card-num">{doktora}</div>
     <div class="card-label">Doktora Tezi</div>
-    <div class="card-sub">{pct(doktora,toplam_b,False)} pay</div>
+    <div class="card-sub">{pct(doktora,toplam_b,False)} oranı</div>
   </div>
   <div class="card">
     <div class="card-num">{bekleyen}</div>
@@ -199,8 +201,8 @@ st.markdown(f"""
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊 Karar Çizelgesi","👥 Raportör Analizi","🗓 Gündem Sayıları",
-    "🏢 Birim Analizi","👨‍🏫 Araştırmacı Analizi","🔄 Sonuçlar","📈 Grafikler"
+    "Karar Çizelgesi", "Raportör Analizi", "Gündem Sayıları",
+    "Birim Analizi", "Araştırmacı Analizi", "Sonuçlar", "Grafikler"
 ])
 
 # ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
