@@ -136,8 +136,10 @@ st.markdown("""
 .prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;width:36px;text-align:right;flex-shrink:0}
 .wide-wrap{width:100%;overflow-x:auto}
 .stTabs [data-baseweb="tab-list"]{background:#FAF8F4!important;border-bottom:1px solid #E0DCD4!important;padding:0 32px!important;gap:0!important}
-.stTabs [data-baseweb="tab"]{color:#8C8880!important;font-family:'DM Sans',sans-serif!important;font-size:.82rem!important;padding:14px 20px!important;border-bottom:2px solid transparent!important;background:transparent!important}
+.stTabs [data-baseweb="tab"]{color:#8C8880!important;font-family:'DM Sans',sans-serif!important;font-size:.82rem!important;font-weight:500!important;padding:14px 20px!important;border-bottom:2px solid transparent!important;background:transparent!important;opacity:1!important;visibility:visible!important}
+.stTabs [data-baseweb="tab"] p,.stTabs [data-baseweb="tab"] span,.stTabs [data-baseweb="tab"] div{color:#8C8880!important;opacity:1!important;visibility:visible!important;font-size:.82rem!important;font-family:'DM Sans',sans-serif!important;font-weight:500!important}
 .stTabs [aria-selected="true"]{color:#C8502A!important;border-bottom:2px solid #C8502A!important}
+.stTabs [aria-selected="true"] p,.stTabs [aria-selected="true"] span,.stTabs [aria-selected="true"] div{color:#C8502A!important}
 .stTabs [data-baseweb="tab-panel"]{padding:0!important}
 .footer{text-align:center;padding:20px;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#8C8880;margin-top:16px}
 .footer b{color:#1A1814}
@@ -199,8 +201,8 @@ st.markdown(f"""
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊 Karar Çizelgesi","👥 Raportör Analizi","🗓 Gündem Sayıları",
-    "🏢 Birim Analizi","👨‍🏫 Araştırmacı Analizi","🔄 Sonuçlar","📈 Grafikler"
+    "Karar Çizelgesi","Raportör Analizi","Gündem Sayıları",
+    "Birim Analizi","Araştırmacı Analizi","Sonuçlar","Grafikler"
 ])
 
 # ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
