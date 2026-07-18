@@ -145,6 +145,38 @@ st.markdown("""
 .stTabs [data-baseweb="tab-panel"]{padding:0!important}
 .footer{text-align:center;padding:20px;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#8C8880;margin-top:16px}
 .footer b{color:#1A1814}
+
+/* NAVİGASYON BUTONLARI */
+div[data-testid="stColumns"] div[data-testid="stColumn"] button {
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 3px solid transparent !important;
+    background: #FAF8F4 !important;
+    color: #3A3530 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: .88rem !important;
+    font-weight: 600 !important;
+    padding: 10px 4px !important;
+    letter-spacing: .01em !important;
+    box-shadow: none !important;
+    transition: all .15s !important;
+}
+div[data-testid="stColumns"] div[data-testid="stColumn"] button:hover {
+    background: #F0EDE8 !important;
+    color: #C8502A !important;
+    border-bottom: 3px solid #C8502A !important;
+}
+div[data-testid="stColumns"] div[data-testid="stColumn"] button[kind="primary"] {
+    background: #FAF8F4 !important;
+    color: #C8502A !important;
+    border-bottom: 3px solid #C8502A !important;
+    box-shadow: none !important;
+}
+div[data-testid="stColumns"] div[data-testid="stColumn"] button p {
+    font-size: .88rem !important;
+    font-weight: 600 !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -202,13 +234,40 @@ st.markdown(f"""
 </div>""", unsafe_allow_html=True)
 
 # ── TABS ──────────────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-    "📊  Karar", "👥  Raportör", "🗓  Gündem",
-    "🏢  Birim", "👤  Araştırmacı", "🔄  Sonuçlar", "📈  Grafikler"
-])
+# ── NAVİGASYON MENÜSÜ ─────────────────────────────────────────────────────────
+MENU_ITEMS = {
+    0: ("📊", "Karar Çizelgesi"),
+    1: ("👥", "Raportör Analizi"),
+    2: ("🗓", "Gündem Sayıları"),
+    3: ("🏢", "Birim Analizi"),
+    4: ("👤", "Araştırmacı"),
+    5: ("🔄", "Sonuçlar"),
+    6: ("📈", "Grafikler"),
+}
+if "aktif_tab" not in st.session_state:
+    st.session_state.aktif_tab = 0
+
+def tab_sec(i):
+    st.session_state.aktif_tab = i
+
+# Menü HTML + Streamlit butonları
+nav_cols = st.columns(len(MENU_ITEMS))
+for idx, (ikon, yazi) in MENU_ITEMS.items():
+    with nav_cols[idx]:
+        secili = st.session_state.aktif_tab == idx
+        btn_style = "primary" if secili else "secondary"
+        if st.button(f"{ikon} {yazi}", key=f"tab_btn_{idx}",
+                     use_container_width=True, type=btn_style):
+            tab_sec(idx)
+            st.rerun()
+
+st.markdown("<div style='border-bottom:2px solid #E0DCD4;margin:0 0 8px'></div>",
+            unsafe_allow_html=True)
+
+aktif = st.session_state.aktif_tab
 
 # ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
-with tab1:
+if aktif == 0:
     rows = ""
     T = {k:0 for k in KARARLAR+['toplam','bekleyen']}
     T_nit = {n:0 for n in NIT_KEYS}
@@ -310,7 +369,7 @@ with tab1:
     </div>""", unsafe_allow_html=True)
 
 # ══ TAB 2: RAPORTÖR ANALİZİ ══════════════════════════════════════════════════
-with tab2:
+if aktif == 1:
     _, cm, _ = st.columns([2,1,2])
     with cm:
         sec = st.selectbox("Raportör Seçin:", RAPORTORLER)
@@ -584,7 +643,7 @@ with tab2:
     </div>""", unsafe_allow_html=True)
 
 # ══ TAB 3: GÜNDEM SAYILARI ════════════════════════════════════════════════════
-with tab3:
+if aktif == 2:
     # ── Sayılar sayfasından GÜNDEM GİRİŞLERİ (yeni + düzeltme + dilekçe) ─────
     try:
         sg = pd.read_excel(EXCEL_FILE, sheet_name="Sayılar", header=2)
@@ -775,7 +834,7 @@ with tab3:
     st.markdown(panel3_html, unsafe_allow_html=True)
 
 # ══ TAB 4: BİRİM ANALİZİ ═════════════════════════════════════════════════════
-with tab4:
+if aktif == 3:
     bn = df.groupby("BİRİMİ")["NİTELİĞİ"].value_counts().unstack(fill_value=0)
     for n in NIT_KEYS:
         if n not in bn.columns: bn[n] = 0
@@ -819,7 +878,7 @@ with tab4:
     )
 
 # ══ TAB 5: ARAŞTIRMACI ANALİZİ ═══════════════════════════════════════════════
-with tab5:
+if aktif == 4:
     nit_p = df.groupby("SORUMLUSU")["NİTELİĞİ"].value_counts().unstack(fill_value=0)
     for n in NIT_KEYS:
         if n not in nit_p.columns: nit_p[n] = 0
@@ -888,7 +947,7 @@ with tab5:
 
 
 # ══ TAB 6: SONUÇLAR ══════════════════════════════════════════════════════════
-with tab6:
+if aktif == 5:
     KARARLAR_TUM6 = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','GERİ ÇEKİLDİ']
     K_BG6 = {'ONAY':'#E8F5E9','DÜZELTME':'#FFF8E1','GÖRÜŞ':'#E3F2FD','KAEK':'#EDE7F6',
               'RET':'#FFEBEE','KAPSAM DIŞI':'#F5F5F5','GERİ ÇEKİLDİ':'#FFF9C4'}
@@ -995,7 +1054,7 @@ with tab6:
 
 
 # ══ TAB 7: GRAFİKLER ══════════════════════════════════════════════════════════
-with tab7:
+if aktif == 6:
     onay_s  = int(df['KURUL KARARI 1'].eq('ONAY').sum())
     duz_s   = int(df['KURUL KARARI 1'].eq('DÜZELTME').sum())
     gorus_s = int(df['KURUL KARARI 1'].eq('GÖRÜŞ').sum())
