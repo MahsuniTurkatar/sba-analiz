@@ -138,7 +138,7 @@ st.markdown("""
 .stTabs [data-baseweb="tab-list"]{background:#FAF8F4!important;border-bottom:2px solid #E0DCD4!important;padding:0 32px!important;gap:0!important;overflow-x:auto!important;flex-wrap:nowrap!important}
 .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar{height:0}
 .stTabs [data-baseweb="tab"]{border-bottom:3px solid transparent!important;background:transparent!important;padding:14px 20px!important;opacity:1!important;visibility:visible!important;flex-shrink:0!important;margin-bottom:-2px!important}
-.stTabs [data-baseweb="tab"] p{color:#3A3630!important;font-family:'DM Sans',sans-serif!important;font-size:.9rem!important;font-weight:700!important;opacity:1!important;visibility:visible!important;display:block!important;margin:0!important;letter-spacing:.02em!important}
+.stTabs [data-baseweb="tab"] p{color:#1A1814!important;font-family:'DM Sans',sans-serif!important;font-size:.88rem!important;font-weight:600!important;opacity:1!important;visibility:visible!important;display:block!important;margin:0!important;letter-spacing:.02em!important}
 .stTabs [data-baseweb="tab"][aria-selected="true"]{border-bottom:3px solid #C8502A!important}
 .stTabs [data-baseweb="tab"][aria-selected="true"] p{color:#C8502A!important}
 .stTabs [data-baseweb="tab"]:hover p{color:#1A1814!important}
@@ -1147,9 +1147,9 @@ with tab7:
         margin={'t':20,'b':70,'l':10,'r':70},
         paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=380,
         xaxis={'title':'Kurul Tarihi','tickfont':{'size':12,'family':'DM Sans'},
-               'gridcolor':'#F0EDE8','titlefont':{'size':11,'color':'#8C8880'}},
+               'gridcolor':'#F0EDE8','title_font':{'size':11,'color':'#8C8880'}},
         yaxis={'gridcolor':'#F0EDE8','title':'Dosya Sayısı',
-               'titlefont':{'size':11,'color':'#8C8880'}},
+               'title_font':{'size':11,'color':'#8C8880'}},
         annotations=[
             dict(x=row['Tarih'], y=row['Başvuru']+1.5,
                  text=f"<b>{row['Başvuru']}</b>",
@@ -1201,7 +1201,7 @@ with tab7:
             margin={'t':10,'b':50,'l':10,'r':80},
             paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=440,
             xaxis={'gridcolor':'#F0EDE8','title':'Dosya Sayısı','zeroline':False,
-                   'titlefont':{'size':11,'color':'#8C8880'}},
+                   'title_font':{'size':11,'color':'#8C8880'}},
             yaxis={'tickfont':{'size':12,'family':'DM Sans','color':'#1A1814'}},
             annotations=[
                 dict(x=row['Toplam']+0.5, y=row['Raportör'],
@@ -1252,9 +1252,9 @@ with tab7:
                 margin={'t':10,'b':60,'l':10,'r':10},
                 paper_bgcolor='rgba(0,0,0,0)', plot_bgcolor='rgba(0,0,0,0)', height=440,
                 xaxis={'title':'1. Tur Kararı (KK1)','tickfont':{'size':13,'family':'DM Sans'},
-                       'gridcolor':'#F0EDE8','titlefont':{'size':11,'color':'#8C8880'}},
+                       'gridcolor':'#F0EDE8','title_font':{'size':11,'color':'#8C8880'}},
                 yaxis={'gridcolor':'#F0EDE8','title':'Dosya Sayısı',
-                       'titlefont':{'size':11,'color':'#8C8880'}},
+                       'title_font':{'size':11,'color':'#8C8880'}},
                 annotations=[
                     dict(x=row['KK1'], y=row['Toplam']+0.5,
                          text=f"<b>{row['Toplam']}</b> dosya<br><span style='color:#2A7A4F'>%{row['ONAY%']} onay</span>",
