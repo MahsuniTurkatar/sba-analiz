@@ -3,7 +3,10 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu 2026 Analiz Portalı", layout="wide", page_icon="🔬")
+st.set_page_config(
+    page_title="H.Ü. SBA Etik Kurul 2026 Analiz Portalı",
+    layout="wide", page_icon="🔬"
+)
 
 EXCEL_FILE  = "2026_SBA.xlsx"
 RAPORTORLER = [
@@ -14,53 +17,36 @@ RAPORTORLER = [
     'Doç. Dr. Tolga ÇAKMAK', 'Doç. Dr. Burcu ERSÖZ ALAN',
     'Doç. Dr. Ekim GÜMELER', 'Dr. Öğr. Üyesi Müge DEMİR',
 ]
-NIT_KEYS  = ['Bireysel Araştırma','Uzmanlık Tezi','Yüksek Lisans Tezi','Doktora Tezi']
-NIT_KISA  = ['Bireysel','Uzm. Tezi','YL Tezi','Doktora']
-KARARLAR  = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI']
-KAR_RENK  = {'ONAY':'#2E7D32','DÜZELTME':'#E65100','GÖRÜŞ':'#1565C0',
-              'KAEK':'#4527A0','RET':'#C62828','KAPSAM DIŞI':'#616161'}
-KAR_EMO   = {'ONAY':'✅','DÜZELTME':'📝','GÖRÜŞ':'💬',
-              'KAEK':'🏛','RET':'❌','KAPSAM DIŞI':'🚫'}
+NIT_KEYS = ['Bireysel Araştırma','Uzmanlık Tezi','Yüksek Lisans Tezi','Doktora Tezi']
+NIT_KISA = ['Bireysel','Uzm. Tezi','YL Tezi','Doktora']
+KARARLAR = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI']
+KAR_RENK = {'ONAY':'#2E7D32','DÜZELTME':'#E65100','GÖRÜŞ':'#1565C0',
+             'KAEK':'#4527A0','RET':'#C62828','KAPSAM DIŞI':'#616161'}
+KAR_EMO  = {'ONAY':'✅','DÜZELTME':'📝','GÖRÜŞ':'💬',
+             'KAEK':'🏛','RET':'❌','KAPSAM DIŞI':'🚫'}
+G_CLR    = {'ONAY':('#E8F5E9','#2E7D32'),'DÜZELTME':('#FFF8E1','#E65100'),
+             'GÖRÜŞ':('#E3F2FD','#1565C0'),'KAEK':('#EDE7F6','#4527A0'),
+             'RET':('#FFEBEE','#C62828'),'KAPSAM DIŞI':('#F5F5F5','#616161'),
+             'GERİ ÇEKİLDİ':('#FFF9C4','#795548'),'':('#FFF3E0','#C8502A')}
 
-# Global renk haritası — tüm sekmelerde kullanılır
-G_CLR = {'ONAY':    ('#E8F5E9','#2E7D32'),
-         'DÜZELTME':('#FFF8E1','#E65100'),
-         'GÖRÜŞ':   ('#E3F2FD','#1565C0'),
-         'KAEK':    ('#EDE7F6','#4527A0'),
-         'RET':     ('#FFEBEE','#C62828'),
-         'KAPSAM DIŞI':('#F5F5F5','#616161'),
-         'GERİ ÇEKİLDİ':('#FFF9C4','#795548'),
-         '':('#FFF3E0','#C8502A')}
-
-# ── VERİ ──────────────────────────────────────────────────────────────────────
 @st.cache_data
 def load():
     df = pd.read_excel(EXCEL_FILE, sheet_name="Başvuru", header=0)
     df = df[df["SBA NUMARASI"].notna() &
             df["SBA NUMARASI"].astype(str).str.startswith("SBA")].copy()
-    # Sadece gerçek dolu satırlar (ADI veya KURUL TARİHİ dolu)
     df = df[df["ADI"].notna() & df["ADI"].astype(str).str.strip().ne("") &
             ~df["ADI"].astype(str).isin(["nan","None","0"])].copy()
-    # Tarih sütunlarını ÖNCE dönüştür (ham datetime iken)
-    for tc in ["KURUL TARİHİ", "BAŞVURU TARİHİ"]:
+    for tc in ["KURUL TARİHİ","BAŞVURU TARİHİ"]:
         if tc in df.columns:
             df[tc] = pd.to_datetime(df[tc], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
-    # Sonra tüm sütunları string olarak temizle
     for c in df.columns:
         df[c] = df[c].apply(lambda x:
-            str(x).strip() if pd.notna(x) and str(x).strip() not in
-            ('nan','None','0.0') else '')
-    # DÜZELTME R sütunu yoksa boş ekle
+            str(x).strip() if pd.notna(x) and str(x).strip() not in ('nan','None','0.0') else '')
     if "DÜZELTME R" not in df.columns:
         df["DÜZELTME R"] = ""
     return df
 
 df = load()
-
-# ── HESAPLAMALAR ──────────────────────────────────────────────────────────────
-def si(v):
-    try: return int(float(v)) if v not in ('','nan') else 0
-    except: return 0
 
 def pct(n, t, blk=True):
     if not t: return ""
@@ -73,25 +59,37 @@ bireysel = int(nit_say.get("Bireysel Araştırma",0))
 uzmanlik = int(nit_say.get("Uzmanlık Tezi",0))
 yuksek   = int(nit_say.get("Yüksek Lisans Tezi",0))
 doktora  = int(nit_say.get("Doktora Tezi",0))
-
 bekleyen = int((df["KURUL KARARI 1"].eq("") & df["RAPORTÖR 1"].ne("")).sum())
 
-# Kurul tarihleri
-tarihler = df["KURUL TARİHİ"].replace('',pd.NA).dropna().unique()
+tarihler   = df["KURUL TARİHİ"].replace('',pd.NA).dropna().unique()
 kurul_sayisi = len(tarihler)
-son_tarih = ""
+son_tarih  = ""
 try:
-    # Tarihler zaten DD/MM/YYYY string — datetime parse edip max al
-    son = pd.to_datetime(pd.Series(tarihler), format="%d/%m/%Y",
-                         errors='coerce').dropna().max()
+    son = pd.to_datetime(pd.Series(tarihler), format="%d/%m/%Y", errors='coerce').dropna().max()
     if pd.notna(son): son_tarih = son.strftime("%d/%m/%Y")
 except: pass
+
+# ── MENÜ DURUMU ───────────────────────────────────────────────────────────────
+MENU = [
+    ("Karar Çizelgesi", "📊"),
+    ("Raportör Analizi", "👥"),
+    ("Gündem Sayıları",  "🗓"),
+    ("Birim Analizi",    "🏢"),
+    ("Araştırmacı",      "👤"),
+    ("Sonuçlar",         "🔄"),
+    ("Grafikler",        "📈"),
+]
+if "tab" not in st.session_state:
+    st.session_state.tab = 0
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-.stApp{background:#F5F3EE!important}.block-container{padding:0!important;max-width:100%!important}
+.stApp{background:#F5F3EE!important}
+.block-container{padding:0!important;max-width:100%!important}
+
+/* Topbar */
 .topbar{background:#1A1814;padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:999}
 .topbar-brand{display:flex;align-items:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.85)}
 .brand-dot{width:8px;height:8px;border-radius:50%;background:#C8502A;animation:pulse 2.5s ease-in-out infinite}
@@ -103,9 +101,13 @@ st.markdown("""
 .t-num{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:500;color:#fff}
 .t-num.hi{color:#C8502A}
 .t-label{font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+
+/* Sayfa başlığı */
 .page-head{display:flex;align-items:baseline;justify-content:space-between;padding:28px 32px 0;margin-bottom:20px}
 .page-title{font-family:'DM Serif Display',serif;font-size:2rem;font-weight:400;color:#1A1814}
 .page-date{font-family:'IBM Plex Mono',monospace;font-size:.85rem;color:#8C8880}
+
+/* Kartlar */
 .cards{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;padding:0 32px 24px}
 .card{background:#fff;border:1px solid #E0DCD4;border-radius:12px;padding:20px 22px;position:relative;overflow:hidden}
 .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#E0DCD4}
@@ -114,13 +116,29 @@ st.markdown("""
 .card.primary .card-num{color:#C8502A}
 .card-label{font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880;margin-top:8px}
 .card-sub{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#C4BFB8;margin-top:4px}
+
+/* NAVİGASYON — tamamen özel HTML, Streamlit buton problemi yok */
+.nav-bar{background:#FAF8F4;border-bottom:2px solid #E0DCD4;padding:0 32px;display:flex;gap:0;overflow-x:auto}
+.nav-bar::-webkit-scrollbar{height:0}
+.nav-btn{display:inline-flex;align-items:center;gap:7px;padding:14px 22px;
+         border:none;border-bottom:3px solid transparent;background:transparent;
+         cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;
+         font-weight:600;color:#5A5650;letter-spacing:.01em;
+         white-space:nowrap;flex-shrink:0;margin-bottom:-2px;transition:color .15s}
+.nav-btn:hover{color:#1A1814}
+.nav-btn.active{color:#C8502A;border-bottom:3px solid #C8502A}
+.nav-icon{font-size:1rem}
+
+/* Panel */
 .panel{background:#fff;border:1px solid #E0DCD4;border-radius:12px;overflow:hidden;margin:0 32px 24px}
 .panel-head{padding:16px 22px;border-bottom:1px solid #E0DCD4;display:flex;align-items:center;justify-content:space-between;background:#FAF8F4}
 .panel-title{font-size:.82rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880}
 .panel-footer{padding:12px 22px;background:#FAF8F4;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;display:flex;justify-content:space-between}
+
+/* Tablo */
 .styled-table{border-collapse:collapse;width:100%!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
 .styled-table th{padding:12px 16px;text-align:left!important;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880!important;background:#FAF8F4!important;border-bottom:1px solid #E0DCD4!important;border-top:none!important;border-left:none!important;border-right:none!important;white-space:nowrap}
-.styled-table td{padding:11px 16px;border-bottom:1px solid #F0EDE8!important;border-top:none!important;border-left:none!important;border-right:none!important;color:#1A1814!important;background:#fff!important;white-space:nowrap;text-align:left!important}
+.styled-table td{padding:11px 16px;border-bottom:1px solid #F0EDE8!important;border-top:none!important;border-left:none!important;border-right:none!important;color:#1A1814!important;background:#fff!important;white-space:nowrap}
 .styled-table tr:last-child td{border-bottom:none!important}
 .styled-table tr:hover td{background:#FAF8F4!important}
 .styled-table tr.tot td{background:#FAF8F4!important;font-family:'IBM Plex Mono',monospace;font-weight:500;border-top:2px solid #E0DCD4!important}
@@ -135,47 +153,7 @@ st.markdown("""
 .prog-fill.green{background:#2A7A4F}
 .prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;width:36px;text-align:right;flex-shrink:0}
 .wide-wrap{width:100%;overflow-x:auto}
-.stTabs [data-baseweb="tab-list"]{background:#FAF8F4!important;border-bottom:2px solid #E0DCD4!important;padding:0 32px!important;gap:0!important;overflow-x:auto!important;flex-wrap:nowrap!important}
-.stTabs [data-baseweb="tab-list"]::-webkit-scrollbar{height:0}
-.stTabs [data-baseweb="tab"]{border-bottom:3px solid transparent!important;background:transparent!important;padding:14px 20px!important;opacity:1!important;visibility:visible!important;flex-shrink:0!important;margin-bottom:-2px!important}
-.stTabs [data-baseweb="tab"] p{color:#1A1814!important;font-family:'DM Sans',sans-serif!important;font-size:.88rem!important;font-weight:600!important;opacity:1!important;visibility:visible!important;display:block!important;margin:0!important;letter-spacing:.02em!important}
-.stTabs [data-baseweb="tab"][aria-selected="true"]{border-bottom:3px solid #C8502A!important}
-.stTabs [data-baseweb="tab"][aria-selected="true"] p{color:#C8502A!important}
-.stTabs [data-baseweb="tab"]:hover p{color:#1A1814!important}
-.stTabs [data-baseweb="tab-panel"]{padding:0!important}
 .footer{text-align:center;padding:20px;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#8C8880;margin-top:16px}
-.footer b{color:#1A1814}
-
-/* NAVİGASYON BUTONLARI */
-div[data-testid="stColumns"] div[data-testid="stColumn"] button {
-    border-radius: 0 !important;
-    border: none !important;
-    border-bottom: 3px solid transparent !important;
-    background: #FAF8F4 !important;
-    color: #3A3530 !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: .88rem !important;
-    font-weight: 600 !important;
-    padding: 10px 4px !important;
-    letter-spacing: .01em !important;
-    box-shadow: none !important;
-    transition: all .15s !important;
-}
-div[data-testid="stColumns"] div[data-testid="stColumn"] button:hover {
-    background: #F0EDE8 !important;
-    color: #C8502A !important;
-    border-bottom: 3px solid #C8502A !important;
-}
-div[data-testid="stColumns"] div[data-testid="stColumn"] button[kind="primary"] {
-    background: #FAF8F4 !important;
-    color: #C8502A !important;
-    border-bottom: 3px solid #C8502A !important;
-    box-shadow: none !important;
-}
-div[data-testid="stColumns"] div[data-testid="stColumn"] button p {
-    font-size: .88rem !important;
-    font-weight: 600 !important;
-}
 
 </style>
 """, unsafe_allow_html=True)
@@ -233,38 +211,39 @@ st.markdown(f"""
   </div>
 </div>""", unsafe_allow_html=True)
 
-# ── TABS ──────────────────────────────────────────────────────────────────────
-# ── NAVİGASYON MENÜSÜ ─────────────────────────────────────────────────────────
-MENU_ITEMS = {
-    0: ("📊", "Karar Çizelgesi"),
-    1: ("👥", "Raportör Analizi"),
-    2: ("🗓", "Gündem Sayıları"),
-    3: ("🏢", "Birim Analizi"),
-    4: ("👤", "Araştırmacı"),
-    5: ("🔄", "Sonuçlar"),
-    6: ("📈", "Grafikler"),
-}
-if "aktif_tab" not in st.session_state:
-    st.session_state.aktif_tab = 0
+# ── NAVİGASYON — tamamen HTML, JavaScript ile tab değiştirme ─────────────────
+# Streamlit'te JS ile session_state değiştiremeyiz; buton yerine radio + CSS trick kullanıyoruz
+aktif = st.session_state.tab
 
-def tab_sec(i):
-    st.session_state.aktif_tab = i
+# Menüyü HTML olarak render et; altında gizli Streamlit butonları
+nav_html = '<div class="nav-bar">'
+for i, (yazi, ikon) in enumerate(MENU):
+    cls = "nav-btn active" if i == aktif else "nav-btn"
+    nav_html += f'<button class="{cls}" onclick="void(0)"><span class="nav-icon">{ikon}</span>{yazi}</button>'
+nav_html += '</div>'
+st.markdown(nav_html, unsafe_allow_html=True)
 
-# Menü HTML + Streamlit butonları
-nav_cols = st.columns(len(MENU_ITEMS))
-for idx, (ikon, yazi) in MENU_ITEMS.items():
-    with nav_cols[idx]:
-        secili = st.session_state.aktif_tab == idx
-        btn_style = "primary" if secili else "secondary"
-        if st.button(f"{ikon} {yazi}", key=f"tab_btn_{idx}",
-                     use_container_width=True, type=btn_style):
-            tab_sec(idx)
+# Gerçek tıklama için gizli butonlar
+st.markdown('<div style="height:0;overflow:hidden;position:absolute;top:-999px">', unsafe_allow_html=True)
+cols = st.columns(len(MENU))
+for i, (yazi, ikon) in enumerate(MENU):
+    with cols[i]:
+        if st.button(f"{ikon} {yazi}", key=f"nav_{i}", use_container_width=True):
+            st.session_state.tab = i
             st.rerun()
 
-st.markdown("<div style='border-bottom:2px solid #E0DCD4;margin:0 0 8px'></div>",
-            unsafe_allow_html=True)
+# Seçili tab'ı vurgulayan JS (menü görünümünü senkronize eder)
+st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(f"""
+<script>
+(function(){{
+  var btns = document.querySelectorAll('.nav-btn');
+  btns.forEach(function(b,i){{ b.classList.toggle('active', i==={aktif}); }});
+}})();
+</script>""", unsafe_allow_html=True)
 
-aktif = st.session_state.aktif_tab
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
 
 # ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
 if aktif == 0:
@@ -282,15 +261,12 @@ if aktif == 0:
         tam   = round(genel/dosya*100) if dosya else 0
         bc    = "green" if tam>=80 else ""
 
-        # Nitelik × Karar
         nit_cells = ""
         for nit in NIT_KEYS:
-            n_df = r_df[r_df["NİTELİĞİ"]==nit]
-            n_top = len(n_df)
+            n_top = int((r_df["NİTELİĞİ"]==nit).sum())
             T_nit[nit] += n_top
             nit_cells += f'<td class="c-num">{n_top or ""}</td>'
 
-        # Karar hücreleri
         kar_cells = ""
         for kar in KARARLAR:
             v = int(kk1_v.get(kar,0))
@@ -301,8 +277,7 @@ if aktif == 0:
         T["toplam"]   += genel
         T["bekleyen"] += bek
         rows += f"""<tr>
-          <td class="c-idx">{si_r}</td>
-          <td>{raptor}</td>
+          <td class="c-idx">{si_r}</td><td>{raptor}</td>
           {nit_cells}
           <td style="border-left:2px solid #E8E4DC"></td>
           {kar_cells}
@@ -313,33 +288,21 @@ if aktif == 0:
           </div><span class="prog-pct">{tam}%</span></div></td>
         </tr>"""
 
-    # Toplam satırı
     nit_tot = "".join(f'<td class="c-num">{T_nit[n] or ""}</td>' for n in NIT_KEYS)
-    kar_tot = "".join(
-        f'<td class="c-num" style="color:{KAR_RENK.get(k,"")}">{T[k] or ""}</td>'
-        for k in KARARLAR)
-    td2 = sum(T_nit.values())
+    kar_tot = "".join(f'<td class="c-num" style="color:{KAR_RENK.get(k,"")}">{T[k] or ""}</td>' for k in KARARLAR)
     rows += f"""<tr class="tot">
-      <td colspan="2">TOPLAM</td>
-      {nit_tot}
-      <td style="border-left:2px solid #D0CBC0"></td>
-      {kar_tot}
+      <td colspan="2">TOPLAM</td>{nit_tot}
+      <td style="border-left:2px solid #D0CBC0"></td>{kar_tot}
       <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{T['toplam']}</td>
-      <td class="c-num" style="color:#C8502A">{T['bekleyen']}</td>
-      <td></td>
+      <td class="c-num" style="color:#C8502A">{T['bekleyen']}</td><td></td>
     </tr>"""
-    # /2 satırı
     nit_half = "".join(f'<td class="c-num">{T_nit[n]//2 or ""}</td>' for n in NIT_KEYS)
-    kar_half = "".join(
-        f'<td class="c-num">{T[k]//2 or ""}</td>' for k in KARARLAR)
+    kar_half = "".join(f'<td class="c-num">{T[k]//2 or ""}</td>' for k in KARARLAR)
     rows += f"""<tr class="sub">
-      <td colspan="2">DOSYA SAYISI (Toplam / 2)</td>
-      {nit_half}
-      <td style="border-left:2px solid #D0CBC0"></td>
-      {kar_half}
+      <td colspan="2">DOSYA SAYISI (Toplam / 2)</td>{nit_half}
+      <td style="border-left:2px solid #D0CBC0"></td>{kar_half}
       <td class="c-num" style="font-weight:600;border-left:2px solid #D0CBC0">{T['toplam']//2}</td>
-      <td class="c-num">{T['bekleyen']//2}</td>
-      <td></td>
+      <td class="c-num">{T['bekleyen']//2}</td><td></td>
     </tr>"""
 
     nit_hdrs = "".join(f'<th class="c-num">{k}</th>' for k in NIT_KISA)
@@ -348,18 +311,14 @@ if aktif == 0:
     <div class="panel">
       <div class="panel-head"><span class="panel-title">Raportör Karar Çizelgesi</span>
         <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
-          KK1 bazlı · Her dosyaya 2 raportör atanır · /2 = gerçek dosya sayısı
-        </span>
+          KK1 bazlı · Her dosyaya 2 raportör atanır · /2 = gerçek dosya sayısı</span>
       </div>
       <div class="wide-wrap">
       <table class="styled-table"><thead><tr>
-        <th class="c-idx">#</th><th>Adı Soyadı</th>
-        {nit_hdrs}
-        <th style="border-left:2px solid #E8E4DC"></th>
-        {kar_hdrs}
+        <th class="c-idx">#</th><th>Adı Soyadı</th>{nit_hdrs}
+        <th style="border-left:2px solid #E8E4DC"></th>{kar_hdrs}
         <th class="c-num" style="border-left:2px solid #E8E4DC">Karar<br>Verilen</th>
-        <th class="c-num">Bek.</th>
-        <th class="c-num">Tamam.</th>
+        <th class="c-num">Bek.</th><th class="c-num">Tamam.</th>
       </tr></thead><tbody>{rows}</tbody></table>
       </div>
       <div class="panel-footer">
@@ -367,6 +326,7 @@ if aktif == 0:
         <span>Son güncelleme: {son_tarih}</span>
       </div>
     </div>""", unsafe_allow_html=True)
+
 
 # ══ TAB 2: RAPORTÖR ANALİZİ ══════════════════════════════════════════════════
 if aktif == 1:
