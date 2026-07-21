@@ -53,23 +53,21 @@ def pct(n, t, blk=True):
     s = f"%{round(n/t*100,1)}"
     return f"<span class='pct'>{s}</span>" if blk else s
 
-toplam_b = len(df)
-nit_say  = df["NİTELİĞİ"].value_counts()
-bireysel = int(nit_say.get("Bireysel Araştırma",0))
-uzmanlik = int(nit_say.get("Uzmanlık Tezi",0))
-yuksek   = int(nit_say.get("Yüksek Lisans Tezi",0))
-doktora  = int(nit_say.get("Doktora Tezi",0))
-bekleyen = int((df["KURUL KARARI 1"].eq("") & df["RAPORTÖR 1"].ne("")).sum())
-
-tarihler   = df["KURUL TARİHİ"].replace('',pd.NA).dropna().unique()
+toplam_b     = len(df)
+nit_say      = df["NİTELİĞİ"].value_counts()
+bireysel     = int(nit_say.get("Bireysel Araştırma",0))
+uzmanlik     = int(nit_say.get("Uzmanlık Tezi",0))
+yuksek       = int(nit_say.get("Yüksek Lisans Tezi",0))
+doktora      = int(nit_say.get("Doktora Tezi",0))
+bekleyen     = int((df["KURUL KARARI 1"].eq("") & df["RAPORTÖR 1"].ne("")).sum())
+tarihler     = df["KURUL TARİHİ"].replace('',pd.NA).dropna().unique()
 kurul_sayisi = len(tarihler)
-son_tarih  = ""
+son_tarih    = ""
 try:
     son = pd.to_datetime(pd.Series(tarihler), format="%d/%m/%Y", errors='coerce').dropna().max()
     if pd.notna(son): son_tarih = son.strftime("%d/%m/%Y")
 except: pass
 
-# ── MENÜ DURUMU ───────────────────────────────────────────────────────────────
 MENU = [
     ("Karar Çizelgesi", "📊"),
     ("Raportör Analizi", "👥"),
@@ -81,168 +79,209 @@ MENU = [
 ]
 if "tab" not in st.session_state:
     st.session_state.tab = 0
+aktif = st.session_state.tab
 
-# ── CSS ───────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-.stApp{background:#F5F3EE!important}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* ── Reset & temel ── */
+.stApp{background:#F0EEE9!important}
 .block-container{padding:0!important;max-width:100%!important}
+*{box-sizing:border-box}
 
-/* Topbar */
-.topbar{background:#1A1814;padding:0 32px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:999}
-.topbar-brand{display:flex;align-items:center;gap:10px;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.85)}
-.brand-dot{width:8px;height:8px;border-radius:50%;background:#C8502A;animation:pulse 2.5s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.7}}
-.topbar-center{font-family:'DM Sans',sans-serif;font-size:.78rem;color:rgba(255,255,255,.45)}
-.topbar-center b{color:rgba(255,255,255,.85);font-weight:500}
-.topbar-stats{display:flex;align-items:center}
-.t-stat{display:flex;align-items:center;gap:8px;padding:0 20px;border-left:1px solid rgba(255,255,255,.1)}
-.t-num{font-family:'IBM Plex Mono',monospace;font-size:.9rem;font-weight:500;color:#fff}
-.t-num.hi{color:#C8502A}
-.t-label{font-size:.65rem;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.4)}
+/* ── Topbar ── */
+.topbar{
+  background:linear-gradient(135deg,#1A1814 0%,#2A2420 100%);
+  padding:0 40px;height:56px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:999;
+  box-shadow:0 2px 12px rgba(0,0,0,.25);
+}
+.topbar-inner{max-width:1440px;width:100%;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.tb-brand{display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.tb-dot{width:7px;height:7px;border-radius:50%;background:#C8502A;animation:pulse 2.5s ease-in-out infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.6}}
+.tb-center{font-family:'Inter',sans-serif;font-size:.78rem;color:rgba(255,255,255,.4);white-space:nowrap}
+.tb-center b{color:rgba(255,255,255,.8);font-weight:500}
+.tb-stats{display:flex;align-items:center;gap:0}
+.tb-stat{display:flex;flex-direction:column;align-items:center;padding:0 18px;border-left:1px solid rgba(255,255,255,.08)}
+.tb-num{font-family:'IBM Plex Mono',monospace;font-size:.95rem;font-weight:500;color:#fff;line-height:1.2}
+.tb-num.accent{color:#E8714A}
+.tb-lbl{font-size:.6rem;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-top:1px}
 
-/* Sayfa başlığı */
-.page-head{display:flex;align-items:baseline;justify-content:space-between;padding:28px 32px 0;margin-bottom:20px}
-.page-title{font-family:'DM Serif Display',serif;font-size:2rem;font-weight:400;color:#1A1814}
-.page-date{font-family:'IBM Plex Mono',monospace;font-size:.85rem;color:#8C8880}
+/* ── Hero (başlık+kartlar) ── */
+.hero{max-width:1440px;margin:0 auto;padding:32px 40px 0}
+.hero-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:20px}
+.hero-title{font-family:'DM Serif Display',serif;font-size:1.85rem;font-weight:400;color:#1A1814;line-height:1.2;max-width:600px}
+.hero-meta{text-align:right;flex-shrink:0}
+.hero-meta .date{font-family:'IBM Plex Mono',monospace;font-size:.82rem;color:#6B6560;line-height:1.8}
+.hero-meta .badge{display:inline-block;background:#1A1814;color:#fff;font-family:'Inter',sans-serif;font-size:.68rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-top:6px}
 
-/* Kartlar */
-.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;padding:0 32px 24px}
-.card{background:#fff;border:1px solid #E0DCD4;border-radius:12px;padding:20px 22px;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#E0DCD4}
-.card.primary::before{background:#C8502A}
-.card-num{font-family:'IBM Plex Mono',monospace;font-size:2.2rem;font-weight:500;color:#1A1814;line-height:1}
-.card.primary .card-num{color:#C8502A}
-.card-label{font-size:.78rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880;margin-top:8px}
-.card-sub{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#C4BFB8;margin-top:4px}
+/* ── Kartlar ── */
+.karts{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:0}
+.kart{background:#fff;border-radius:14px;padding:20px 20px 16px;position:relative;overflow:hidden;
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04)}
+.kart::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#E5E1DB;border-radius:3px 3px 0 0}
+.kart.k-primary::before{background:linear-gradient(90deg,#C8502A,#E8714A)}
+.kart-num{font-family:'IBM Plex Mono',monospace;font-size:2.1rem;font-weight:500;color:#1A1814;line-height:1;margin-bottom:10px}
+.kart.k-primary .kart-num{color:#C8502A}
+.kart-lbl{font-family:'Inter',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#9B9490}
+.kart-sub{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:#BCB8B2;margin-top:4px}
 
-/* NAVİGASYON — tamamen özel HTML, Streamlit buton problemi yok */
-.nav-bar{background:#FAF8F4;border-bottom:2px solid #E0DCD4;padding:0 32px;display:flex;gap:0;overflow-x:auto}
+/* ── Nav bar ── */
+.nav-wrap{max-width:1440px;margin:24px auto 0;padding:0 40px}
+.nav-bar{background:#fff;border-radius:12px;padding:6px;display:flex;gap:4px;
+         box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
+         overflow-x:auto}
 .nav-bar::-webkit-scrollbar{height:0}
-.nav-btn{display:inline-flex;align-items:center;gap:7px;padding:14px 22px;
-         border:none;border-bottom:3px solid transparent;background:transparent;
-         cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.88rem;
-         font-weight:600;color:#5A5650;letter-spacing:.01em;
-         white-space:nowrap;flex-shrink:0;margin-bottom:-2px;transition:color .15s}
-.nav-btn:hover{color:#1A1814}
-.nav-btn.active{color:#C8502A;border-bottom:3px solid #C8502A}
-.nav-icon{font-size:1rem}
+.nav-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 18px;
+         border:none;border-radius:8px;background:transparent;
+         cursor:pointer;font-family:'Inter',sans-serif;font-size:.84rem;
+         font-weight:500;color:#6B6560;letter-spacing:.01em;
+         white-space:nowrap;flex-shrink:0;transition:all .15s ease}
+.nav-btn:hover{background:#F5F3EE;color:#1A1814}
+.nav-btn.active{background:#1A1814;color:#fff;font-weight:600;
+                box-shadow:0 2px 8px rgba(26,24,20,.25)}
+.nav-btn.active .nav-ikon{filter:brightness(10)}
+.nav-ikon{font-size:.95rem;line-height:1}
 
-/* Panel */
-.panel{background:#fff;border:1px solid #E0DCD4;border-radius:12px;overflow:hidden;margin:0 32px 24px}
-.panel-head{padding:16px 22px;border-bottom:1px solid #E0DCD4;display:flex;align-items:center;justify-content:space-between;background:#FAF8F4}
-.panel-title{font-size:.82rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880}
-.panel-footer{padding:12px 22px;background:#FAF8F4;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;display:flex;justify-content:space-between}
+/* ── İçerik alanı ── */
+.content-wrap{max-width:1440px;margin:20px auto 0;padding:0 40px 40px}
 
-/* Tablo */
-.styled-table{border-collapse:collapse;width:100%!important;font-family:'DM Sans',sans-serif;font-size:.92rem}
-.styled-table th{padding:12px 16px;text-align:left!important;font-size:.75rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8C8880!important;background:#FAF8F4!important;border-bottom:1px solid #E0DCD4!important;border-top:none!important;border-left:none!important;border-right:none!important;white-space:nowrap}
-.styled-table td{padding:11px 16px;border-bottom:1px solid #F0EDE8!important;border-top:none!important;border-left:none!important;border-right:none!important;color:#1A1814!important;background:#fff!important;white-space:nowrap}
+/* ── Panel ── */
+.panel{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:20px;
+       border:1px solid rgba(0,0,0,.06);
+       box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04)}
+.panel-head{padding:16px 22px;border-bottom:1px solid #F0EDE8;display:flex;align-items:center;justify-content:space-between;background:#FAFAF8}
+.panel-title{font-family:'Inter',sans-serif;font-size:.76rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:#9B9490}
+.panel-footer{padding:11px 22px;background:#FAFAF8;border-top:1px solid #F0EDE8;font-family:'IBM Plex Mono',monospace;font-size:.75rem;color:#9B9490;display:flex;justify-content:space-between}
+
+/* ── Tablo ── */
+.styled-table{border-collapse:collapse;width:100%!important;font-family:'Inter',sans-serif;font-size:.9rem}
+.styled-table th{padding:11px 16px;text-align:left!important;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#9B9490!important;background:#FAFAF8!important;border-bottom:1px solid #F0EDE8!important;border-top:none!important;border-left:none!important;border-right:none!important;white-space:nowrap}
+.styled-table td{padding:11px 16px;border-bottom:1px solid #F5F3EE!important;border-top:none!important;border-left:none!important;border-right:none!important;color:#1A1814!important;background:#fff!important;white-space:nowrap}
 .styled-table tr:last-child td{border-bottom:none!important}
-.styled-table tr:hover td{background:#FAF8F4!important}
-.styled-table tr.tot td{background:#FAF8F4!important;font-family:'IBM Plex Mono',monospace;font-weight:500;border-top:2px solid #E0DCD4!important}
-.styled-table tr.sub td{background:#FFF0EB!important;font-family:'IBM Plex Mono',monospace;font-weight:500;color:#C8502A!important}
-.c-num{font-family:'IBM Plex Mono',monospace!important;font-size:.88rem!important;text-align:center!important;white-space:nowrap}
-.c-idx{font-family:'IBM Plex Mono',monospace!important;font-size:.78rem!important;color:#C4BFB8;text-align:center!important;width:36px}
+.styled-table tr:hover td{background:#FAFAF8!important;transition:background .1s}
+.styled-table tr.tot td{background:#F5F3EE!important;font-family:'IBM Plex Mono',monospace;font-weight:600;border-top:2px solid #E5E1DB!important;color:#1A1814!important}
+.styled-table tr.sub td{background:#FFF4F0!important;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#C8502A!important}
+.c-num{font-family:'IBM Plex Mono',monospace!important;font-size:.86rem!important;text-align:center!important;white-space:nowrap}
+.c-idx{font-family:'IBM Plex Mono',monospace!important;font-size:.75rem!important;color:#C4BFB8;text-align:center!important;width:36px}
 .styled-table td.c-num,.styled-table th.c-num{text-align:center!important}
-.pct{color:#C4BFB8;font-size:.72rem;font-family:'IBM Plex Mono',monospace;display:block;line-height:1.2}
+.pct{color:#BCB8B2;font-size:.7rem;font-family:'IBM Plex Mono',monospace;display:block;line-height:1.2}
 .prog-wrap{display:flex;align-items:center;gap:8px;min-width:130px}
-.prog-bar{flex:1;height:6px;background:#E0DCD4;border-radius:3px;overflow:hidden}
-.prog-fill{height:100%;border-radius:3px;background:#C8502A}
+.prog-bar{flex:1;height:5px;background:#E5E1DB;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;background:#C8502A;transition:width .3s ease}
 .prog-fill.green{background:#2A7A4F}
-.prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;width:36px;text-align:right;flex-shrink:0}
+.prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:#9B9490;width:36px;text-align:right;flex-shrink:0}
 .wide-wrap{width:100%;overflow-x:auto}
-.footer{text-align:center;padding:20px;border-top:1px solid #E0DCD4;font-family:'IBM Plex Mono',monospace;font-size:.72rem;color:#8C8880;margin-top:16px}
 
-</style>
-""", unsafe_allow_html=True)
+
+/* ── NAV: st.radio'yu nav görünümüne çevir ── */
+div[data-testid="stRadio"]{margin:0!important;padding:0!important}
+div[data-testid="stRadio"] > label{display:none!important}
+div[data-testid="stRadio"] > div[role="radiogroup"]{
+  display:flex!important;flex-direction:row!important;gap:4px!important;
+  flex-wrap:nowrap!important;overflow-x:auto!important;
+  background:#fff;border-radius:12px;padding:6px;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
+}
+div[data-testid="stRadio"] > div[role="radiogroup"]::-webkit-scrollbar{height:0}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label{
+  display:inline-flex!important;align-items:center!important;gap:6px!important;
+  padding:10px 18px!important;border-radius:8px!important;cursor:pointer!important;
+  font-family:'Inter',sans-serif!important;font-size:.86rem!important;
+  font-weight:500!important;color:#6B6560!important;
+  white-space:nowrap!important;flex-shrink:0!important;
+  margin:0!important;border:none!important;background:transparent!important;
+}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover{
+  background:#F5F3EE!important;color:#1A1814!important}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"]{
+  background:#1A1814!important;color:#fff!important;font-weight:600!important;
+  border-radius:8px!important;box-shadow:0 2px 8px rgba(26,24,20,.2)!important}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child{display:none!important}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:last-child{
+  color:inherit!important;font-size:.86rem!important;font-family:'Inter',sans-serif!important}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:last-child{color:#fff!important}
+
+/* ── Scrollbar göster ── */
+html,body,.stApp,.main,section.main > div{overflow-y:auto!important}
+section.main{overflow-y:auto!important}
+
+/* ── Mevcut stHorizontalBlock gizleme kuralını kaldır ── */
+
+</style>""", unsafe_allow_html=True)
 
 # ── TOPBAR ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="topbar">
-  <div class="topbar-brand"><div class="brand-dot"></div>H.Ü. SBA Etik Kurul</div>
-  <div class="topbar-center">
-    <b>H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu</b> &nbsp;/&nbsp; 2026 Analiz Portalı
-  </div>
-  <div class="topbar-stats">
-    <div class="t-stat"><span class="t-num hi">{toplam_b}</span><span class="t-label">Başvuru</span></div>
-    <div class="t-stat"><span class="t-num">{kurul_sayisi}</span><span class="t-label">Toplantı</span></div>
-    <div class="t-stat"><span class="t-num">{bekleyen}</span><span class="t-label">Bekleyen</span></div>
+  <div class="topbar-inner">
+    <div class="tb-brand"><div class="tb-dot"></div>H.Ü. SBA Etik Kurul</div>
+    <div class="tb-center"><b>H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu</b> &nbsp;/&nbsp; 2026 Analiz Portalı</div>
+    <div class="tb-stats">
+      <div class="tb-stat"><span class="tb-num accent">{toplam_b}</span><span class="tb-lbl">Başvuru</span></div>
+      <div class="tb-stat"><span class="tb-num">{kurul_sayisi}</span><span class="tb-lbl">Toplantı</span></div>
+      <div class="tb-stat"><span class="tb-num">{bekleyen}</span><span class="tb-lbl">Bekleyen</span></div>
+    </div>
   </div>
 </div>""", unsafe_allow_html=True)
 
-# ── KARTLAR ───────────────────────────────────────────────────────────────────
+# ── HERO ──────────────────────────────────────────────────────────────────────
 st.markdown(f"""
-<div class="page-head">
-  <div class="page-title">H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu 2026 Analiz Portalı</div>
-  <span class="page-date">Son toplantı: {son_tarih} &nbsp;·&nbsp; {kurul_sayisi}. Toplantı</span>
-</div>
-<div class="cards">
-  <div class="card primary">
-    <div class="card-num">{toplam_b}</div>
-    <div class="card-label">Toplam Başvuru</div>
-    <div class="card-sub">{kurul_sayisi} toplantı · 2026</div>
+<div class="hero">
+  <div class="hero-head">
+    <div class="hero-title">H.Ü. Sağlık Bilimleri Araştırma Etik Kurulu — 2026 Analiz Portalı</div>
+    <div class="hero-meta">
+      <div class="date">Son toplantı: {son_tarih}</div>
+      <div class="badge">{kurul_sayisi}. Toplantı · 2026</div>
+    </div>
   </div>
-  <div class="card">
-    <div class="card-num">{bireysel}</div>
-    <div class="card-label">Bireysel Araştırma</div>
-    <div class="card-sub">{pct(bireysel,toplam_b,False)} oranı</div>
-  </div>
-  <div class="card">
-    <div class="card-num">{uzmanlik}</div>
-    <div class="card-label">Uzmanlık Tezi</div>
-    <div class="card-sub">{pct(uzmanlik,toplam_b,False)} oranı</div>
-  </div>
-  <div class="card">
-    <div class="card-num">{yuksek}</div>
-    <div class="card-label">Y. Lisans Tezi</div>
-    <div class="card-sub">{pct(yuksek,toplam_b,False)} oranı</div>
-  </div>
-  <div class="card">
-    <div class="card-num">{doktora}</div>
-    <div class="card-label">Doktora Tezi</div>
-    <div class="card-sub">{pct(doktora,toplam_b,False)} oranı</div>
-  </div>
-  <div class="card">
-    <div class="card-num">{bekleyen}</div>
-    <div class="card-label">Bekleyen Dosya</div>
-    <div class="card-sub">{pct(bekleyen,toplam_b,False)} oranı</div>
+  <div class="karts">
+    <div class="kart k-primary">
+      <div class="kart-num">{toplam_b}</div>
+      <div class="kart-lbl">Toplam Başvuru</div>
+      <div class="kart-sub">{kurul_sayisi} toplantı · 2026</div>
+    </div>
+    <div class="kart">
+      <div class="kart-num">{bireysel}</div>
+      <div class="kart-lbl">Bireysel Araştırma</div>
+      <div class="kart-sub">{pct(bireysel,toplam_b,False)} oranı</div>
+    </div>
+    <div class="kart">
+      <div class="kart-num">{uzmanlik}</div>
+      <div class="kart-lbl">Uzmanlık Tezi</div>
+      <div class="kart-sub">{pct(uzmanlik,toplam_b,False)} oranı</div>
+    </div>
+    <div class="kart">
+      <div class="kart-num">{yuksek}</div>
+      <div class="kart-lbl">Y. Lisans Tezi</div>
+      <div class="kart-sub">{pct(yuksek,toplam_b,False)} oranı</div>
+    </div>
+    <div class="kart">
+      <div class="kart-num">{doktora}</div>
+      <div class="kart-lbl">Doktora Tezi</div>
+      <div class="kart-sub">{pct(doktora,toplam_b,False)} oranı</div>
+    </div>
+    <div class="kart">
+      <div class="kart-num">{bekleyen}</div>
+      <div class="kart-lbl">Bekleyen Dosya</div>
+      <div class="kart-sub">{pct(bekleyen,toplam_b,False)} oranı</div>
+    </div>
   </div>
 </div>""", unsafe_allow_html=True)
 
-# ── NAVİGASYON — tamamen HTML, JavaScript ile tab değiştirme ─────────────────
-# Streamlit'te JS ile session_state değiştiremeyiz; buton yerine radio + CSS trick kullanıyoruz
-aktif = st.session_state.tab
-
-# Menüyü HTML olarak render et; altında gizli Streamlit butonları
-nav_html = '<div class="nav-bar">'
-for i, (yazi, ikon) in enumerate(MENU):
-    cls = "nav-btn active" if i == aktif else "nav-btn"
-    nav_html += f'<button class="{cls}" onclick="void(0)"><span class="nav-icon">{ikon}</span>{yazi}</button>'
-nav_html += '</div>'
-st.markdown(nav_html, unsafe_allow_html=True)
-
-# Gerçek tıklama için gizli butonlar
-st.markdown('<div style="height:0;overflow:hidden;position:absolute;top:-999px">', unsafe_allow_html=True)
-cols = st.columns(len(MENU))
-for i, (yazi, ikon) in enumerate(MENU):
-    with cols[i]:
-        if st.button(f"{ikon} {yazi}", key=f"nav_{i}", use_container_width=True):
-            st.session_state.tab = i
-            st.rerun()
-
-# Seçili tab'ı vurgulayan JS (menü görünümünü senkronize eder)
+# ── NAVİGASYON — st.radio ────────────────────────────────────────────────────
+st.markdown('<div class="nav-wrap">', unsafe_allow_html=True)
+menu_labels = [f"{ikon}  {yazi}" for yazi, ikon in MENU]
+secim = st.radio("", menu_labels, index=aktif, horizontal=True,
+                 label_visibility="collapsed", key="nav_radio")
+aktif = menu_labels.index(secim)
+st.session_state.tab = aktif
 st.markdown('</div>', unsafe_allow_html=True)
-st.markdown(f"""
-<script>
-(function(){{
-  var btns = document.querySelectorAll('.nav-btn');
-  btns.forEach(function(b,i){{ b.classList.toggle('active', i==={aktif}); }});
-}})();
-</script>""", unsafe_allow_html=True)
-
-st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
 
 # ══ TAB 1: KARAR ÇİZELGESİ ═══════════════════════════════════════════════════
@@ -401,21 +440,21 @@ if aktif == 1:
     )
     r3_kart_etiket = "R3: " + str(r3_say_kart) if r3_say_kart else "Hepsi R1/R2"
     st.markdown(f"""
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;padding:24px 32px 0">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px">
       <div class="card primary"><div class="card-num">{dosya}</div><div class="card-label">Atanan Dosya</div></div>
       <div class="card"><div class="card-num">{genel}</div><div class="card-label">Karar Verilen</div><div class="card-sub">{pct(genel,dosya,False)}</div></div>
       <div class="card"><div class="card-num">{bek}</div><div class="card-label">Bekleyen</div><div class="card-sub">{pct(bek,dosya,False)}</div></div>
       <div class="card" style="border-left:3px solid #C8502A"><div class="card-num" style="color:#C8502A">{duz_r_say_kart}</div><div class="card-label">Düzeltme Okuyan</div><div class="card-sub">{r3_kart_etiket}</div></div>
       <div class="card"><div class="card-num">{tam}%</div><div class="card-label">Tamamlanma</div></div>
     </div>
-    <div class="panel" style="margin:16px 32px 8px">
+    <div class="panel" style="margin:0 0 20px">
       <div class="panel-head"><span class="panel-title">KK1 × Nitelik Matrisi</span></div>
       <table class="styled-table"><thead><tr>
         <th>Karar</th>{nit_hdrs2}{tot_hdr}
       </tr></thead><tbody>{mrows}</tbody></table>
       <div class="panel-footer"><span>{sec}</span><span>Son güncelleme: {son_tarih}</span></div>
     </div>
-    <div class="panel" style="margin:0 32px 24px">
+    <div class="panel" style="margin:0 0 20px">
       <div class="panel-head"><span class="panel-title">Düzeltme/Görüş Takibi</span>
         <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
           KK1=DÜZELTME/GÖRÜŞ → KK2 durumu
@@ -481,7 +520,7 @@ if aktif == 1:
         if r3_say > 0:
             r3_uyari_html = (
                 '<div style="background:#EDE7F6;border-left:3px solid #4527A0;'
-                'padding:10px 16px;margin:0 32px 8px;border-radius:6px;'
+                'padding:10px 16px;margin:0 0 20px;border-radius:6px;'
                 'font-size:.82rem;color:#4527A0">'
                 '<b>&#9888; ' + str(r3_say) + ' adet R3 dosyas&#305; var</b>'
                 ' &#8212; Bu raport&#246;r, as&#305;l R1/R2 raport&#246;r de&#287;il, '
@@ -497,7 +536,7 @@ if aktif == 1:
 
         panel_html = (
             r3_uyari_html
-            + '<div class="panel" style="margin:0 32px 16px">'
+            + '<div class="panel" style="margin:0 0 20px">'
             + '<div class="panel-head">'
             + '<span class="panel-title">&#128203; D&uuml;zeltme Okuyan &mdash; '
             + str(duz_r_say) + ' dosya</span>'
@@ -576,7 +615,7 @@ if aktif == 1:
 
     liste_html2 = "\n".join(satirlar)
     st.markdown(f"""
-    <div class="panel" style="margin:0 32px 24px">
+    <div class="panel" style="margin:0 0 20px">
       <div class="panel-head">
         <span class="panel-title">Dosya Listesi — {dosya} dosya</span>
         <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
@@ -649,7 +688,7 @@ if aktif == 2:
 
     # ── ÖZET KARTLAR ─────────────────────────────────────────────────────────
     kart_html = (
-        '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:20px 32px 8px">'
+        '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px">'
         '<div class="card primary">'
         '<div class="card-num">' + str(top_toplam) + '</div>'
         '<div class="card-label">Toplam Gündem</div>'
@@ -745,7 +784,7 @@ if aktif == 2:
     )
 
     panel3_html = (
-        '<div class="panel" style="margin:0 32px 24px">'
+        '<div class="panel" style="margin:0 0 20px">'
         '<div class="panel-head">'
         '<span class="panel-title">2026 G&#252;ndem Say&#305;lar&#305; &#8212; Kurul Bazl&#305;</span>'
         '<span style="font-size:.72rem;color:#8C8880">'
@@ -821,7 +860,7 @@ if aktif == 3:
     nit_h4 = ''.join('<th class="c-num">' + k + '</th>' for k in NIT_KISA)
 
     st.markdown(
-        '<div class="panel" style="margin:24px 32px">'
+        '<div class="panel" style="margin:0 0 20px">'
         '<div class="panel-head">'
         '<span class="panel-title">Birim Analizi &mdash; ' + str(len(bn)) + ' birim</span>'
         '<span style="font-size:.72rem;color:#8C8880">B&uuml;y&uuml;kten k&uuml;&ccedil;&uuml;&#287;e s&iacute;ral&iacute;</span>'
@@ -886,7 +925,7 @@ if aktif == 4:
     nit_h5 = ''.join('<th class="c-num">' + k + '</th>' for k in NIT_KISA)
 
     st.markdown(
-        '<div class="panel" style="margin:24px 32px">'
+        '<div class="panel" style="margin:0 0 20px">'
         '<div class="panel-head">'
         '<span class="panel-title">Sorumlu Ara&#351;t&#305;rmac&#305; Analizi &mdash; ' + str(len(sor)) + ' ara&#351;t&#305;rmac&#305;</span>'
         '<span style="font-size:.72rem;color:#8C8880">B&uuml;y&uuml;kten k&uuml;&ccedil;&uuml;&#287;e s&iacute;ral&iacute;</span>'
@@ -946,7 +985,7 @@ if aktif == 5:
     k2_hdrs6 = ''.join('<th class="c-num" style="font-size:.7rem">' + k + '</th>' for k in KARARLAR_TUM6)
 
     st.markdown(
-        '''<div class="panel" style="margin:8px 32px 20px">
+        '''<div class="panel" style="margin:0 0 20px">
       <div class="panel-head">
         <span class="panel-title">KK1 → KK2 Geçiş Matrisi</span>
         <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">''' +
@@ -989,7 +1028,7 @@ if aktif == 5:
         )
 
     st.markdown(
-        '''<div class="panel" style="margin:0 32px 24px">
+        '''<div class="panel" style="margin:0 0 20px">
       <div class="panel-head">
         <span class="panel-title">Dosya Tur Geçmişi — ''' + str(len(cok_tur6)) + ''' dosya</span>
         <span style="font-size:.72rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
@@ -1561,3 +1600,5 @@ st.markdown(f"""
   <b>Mahsuni TÜRKATAR</b> &nbsp;·&nbsp; Hacettepe Üniversitesi &nbsp;·&nbsp;
   Sağlık Bilimleri Araştırma Etik Kurulu &nbsp;·&nbsp; {son_tarih}
 </div>""", unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
