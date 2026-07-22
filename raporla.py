@@ -178,41 +178,40 @@ st.markdown("""
 .prog-pct{font-family:'IBM Plex Mono',monospace;font-size:.76rem;color:#9B9490;width:36px;text-align:right;flex-shrink:0}
 .wide-wrap{width:100%;overflow-x:auto}
 
+/* nav: st.radio kullanılıyor, gizleme gereksiz */
 
-/* ── NAV: st.radio'yu nav görünümüne çevir ── */
+/* ── Nav: st.radio → nav görünümü ── */
 div[data-testid="stRadio"]{margin:0!important;padding:0!important}
 div[data-testid="stRadio"] > label{display:none!important}
 div[data-testid="stRadio"] > div[role="radiogroup"]{
   display:flex!important;flex-direction:row!important;gap:4px!important;
-  flex-wrap:nowrap!important;overflow-x:auto!important;
-  background:#fff;border-radius:12px;padding:6px;
-  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
-}
-div[data-testid="stRadio"] > div[role="radiogroup"]::-webkit-scrollbar{height:0}
+  flex-wrap:nowrap!important;background:#fff!important;
+  border-radius:12px!important;padding:6px!important;
+  box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04)!important;}
 div[data-testid="stRadio"] > div[role="radiogroup"] > label{
   display:inline-flex!important;align-items:center!important;gap:6px!important;
-  padding:10px 18px!important;border-radius:8px!important;cursor:pointer!important;
-  font-family:'Inter',sans-serif!important;font-size:.86rem!important;
+  padding:10px 20px!important;border-radius:8px!important;cursor:pointer!important;
+  font-family:'Inter',sans-serif!important;font-size:.88rem!important;
   font-weight:500!important;color:#6B6560!important;
   white-space:nowrap!important;flex-shrink:0!important;
-  margin:0!important;border:none!important;background:transparent!important;
-}
+  margin:0!important;border:none!important;background:transparent!important;}
 div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover{
   background:#F5F3EE!important;color:#1A1814!important}
 div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"]{
   background:#1A1814!important;color:#fff!important;font-weight:600!important;
   border-radius:8px!important;box-shadow:0 2px 8px rgba(26,24,20,.2)!important}
+div[data-testid="stRadio"] input[type="radio"]{display:none!important}
 div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child{display:none!important}
 div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:last-child{
-  color:inherit!important;font-size:.86rem!important;font-family:'Inter',sans-serif!important}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:last-child{color:#fff!important}
+  color:inherit!important;font-size:.88rem!important;font-family:'Inter',sans-serif!important}
+div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:last-child{
+  color:#fff!important}
 
-/* ── Scrollbar göster ── */
-html,body,.stApp,.main,section.main > div{overflow-y:auto!important}
-section.main{overflow-y:auto!important}
-
-/* ── Mevcut stHorizontalBlock gizleme kuralını kaldır ── */
-
+::-webkit-scrollbar{width:8px!important}
+::-webkit-scrollbar-track{background:#F0EEE9!important}
+::-webkit-scrollbar-thumb{background:#C4BFB8!important;border-radius:4px!important}
+::-webkit-scrollbar-thumb:hover{background:#9B9490!important}
+html,body{overflow-y:scroll!important}
 </style>""", unsafe_allow_html=True)
 
 # ── TOPBAR ────────────────────────────────────────────────────────────────────
@@ -273,8 +272,8 @@ st.markdown(f"""
   </div>
 </div>""", unsafe_allow_html=True)
 
-# ── NAVİGASYON — st.radio ────────────────────────────────────────────────────
-st.markdown('<div class="nav-wrap">', unsafe_allow_html=True)
+# ── NAVİGASYON — st.radio (tıklama garantili) ──────────────────────────────
+st.markdown('<div style="display:flex;justify-content:center;padding:20px 40px 0">', unsafe_allow_html=True)
 menu_labels = [f"{ikon}  {yazi}" for yazi, ikon in MENU]
 secim = st.radio("", menu_labels, index=aktif, horizontal=True,
                  label_visibility="collapsed", key="nav_radio")
