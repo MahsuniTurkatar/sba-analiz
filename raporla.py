@@ -131,6 +131,22 @@ st.markdown("""
 .kart-lbl{font-family:'Inter',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#9B9490}
 .kart-sub{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:#BCB8B2;margin-top:4px}
 
+/* ── "card" takma adı ──────────────────────────────────────────────────────
+   NOT: Raportör Analizi ve Gündem Sayıları sekmeleri kartları .kart yerine
+   İngilizce .card sınıf adlarıyla üretiyordu; bu sınıflar hiçbir yerde
+   tanımlı değildi, dolayısıyla o iki sekmede kartlar tamamen stilsiz
+   (rengi/fontu/arka planı olmadan) görünüyordu. Aşağıdaki kurallar .kart
+   ile birebir aynı görünümü .card için de sağlar. */
+.card{background:#fff;border-radius:14px;padding:20px 20px 16px;position:relative;overflow:hidden;
+      border:1px solid rgba(0,0,0,.06);
+      box-shadow:0 1px 3px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.04)}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#E5E1DB;border-radius:3px 3px 0 0}
+.card.primary::before{background:linear-gradient(90deg,#C8502A,#E8714A)}
+.card-num{font-family:'IBM Plex Mono',monospace;font-size:2.1rem;font-weight:500;color:#1A1814;line-height:1;margin-bottom:10px}
+.card.primary .card-num{color:#C8502A}
+.card-label{font-family:'Inter',sans-serif;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#9B9490}
+.card-sub{font-family:'IBM Plex Mono',monospace;font-size:.74rem;color:#BCB8B2;margin-top:4px}
+
 /* ── Nav bar ── */
 .nav-wrap{max-width:1440px;margin:24px auto 0;padding:0 40px}
 .nav-bar{background:#fff;border-radius:12px;padding:6px;display:flex;gap:4px;
@@ -943,6 +959,90 @@ if aktif == 4:
         '</table></div></div>',
         unsafe_allow_html=True
     )
+
+    # ── ARAŞTIRMACI DETAYI — bir kişi seç, tüm başvurularını gör ─────────────
+    st.markdown("""
+    <div style="padding:4px 0 10px">
+      <span style="font-family:'DM Serif Display',serif;font-size:1.3rem;color:#1A1814">Araştırmacı Detayı</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:.78rem;color:#8C8880;margin-left:12px">
+        Aşağıdan bir araştırmacı seçin — tüm başvuruları listelenir
+      </span>
+    </div>""", unsafe_allow_html=True)
+
+    tum_arastirmacilar = sorted(df.loc[df["SORUMLUSU"].ne(""), "SORUMLUSU"].unique().tolist())
+    _, cm5, _ = st.columns([1, 2, 1])
+    with cm5:
+        sec5 = st.selectbox(
+            "Araştırmacı Seçin:", ["— Seçiniz —"] + tum_arastirmacilar, key="arastirmaci_sec"
+        )
+
+    if sec5 != "— Seçiniz —":
+        a_df   = df[df["SORUMLUSU"] == sec5].copy()
+        a_top  = len(a_df)
+        a_ona  = int((a_df["KURUL KARARI 1"] == "ONAY").sum())
+        a_duz  = int((a_df["KURUL KARARI 1"] == "DÜZELTME").sum())
+        a_bek  = int((a_df["KURUL KARARI 1"] == "").sum())
+
+        st.markdown(f"""
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 18px">
+          <div class="card primary"><div class="card-num">{a_top}</div><div class="card-label">Toplam Başvuru</div></div>
+          <div class="card" style="border-top:3px solid #2E7D32"><div class="card-num" style="color:#2E7D32">{a_ona}</div><div class="card-label">Onay</div><div class="card-sub">{pct(a_ona,a_top,False)}</div></div>
+          <div class="card" style="border-top:3px solid #E65100"><div class="card-num" style="color:#E65100">{a_duz}</div><div class="card-label">Düzeltme</div><div class="card-sub">{pct(a_duz,a_top,False)}</div></div>
+          <div class="card" style="border-top:3px solid #C8502A"><div class="card-num" style="color:#C8502A">{a_bek}</div><div class="card-label">Bekleyen</div><div class="card-sub">{pct(a_bek,a_top,False)}</div></div>
+        </div>""", unsafe_allow_html=True)
+
+        a_rows = ""
+        for i5, (_, sr5) in enumerate(a_df.sort_values("SBA NUMARASI").iterrows(), 1):
+            sba5  = sr5.get("SBA NUMARASI","")
+            ad5   = sr5.get("ADI","")
+            bir5  = sr5.get("BİRİMİ","")
+            nit5  = sr5.get("NİTELİĞİ","")
+            tar5  = sr5.get("KURUL TARİHİ","")
+            r15   = sr5.get("RAPORTÖR 1","")
+            r25   = sr5.get("RAPORTÖR 2","")
+            kk1_5 = sr5.get("KURUL KARARI 1","")
+            gd_5  = sr5.get("GÜNCEL DURUM","") or kk1_5
+            kb5, kc5 = G_CLR.get(gd_5, ('#F5F5F5','#616161'))
+            a_rows += (
+                '<tr>'
+                '<td class="c-idx">' + str(i5) + '</td>'
+                '<td class="c-num" style="font-weight:500">' + str(sba5) + '</td>'
+                '<td style="max-width:280px;white-space:normal;line-height:1.4;font-size:.85rem">' + str(ad5) + '</td>'
+                '<td style="font-size:.82rem;color:#5A7A8A">' + str(bir5) + '</td>'
+                '<td class="c-num" style="font-size:.82rem">' + str(nit5) + '</td>'
+                '<td class="c-num" style="font-size:.8rem">' + str(r15).split()[-1] +
+                (' / ' + str(r25).split()[-1] if r25 else '') + '</td>'
+                '<td class="c-num" style="font-size:.82rem;color:#8C8880">' + str(tar5) + '</td>'
+                '<td class="c-num"><span style="background:' + kb5 + ';color:' + kc5 +
+                ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' +
+                (str(gd_5) if gd_5 else '—') + '</span></td>'
+                '</tr>'
+            )
+
+        st.markdown(
+            '<div class="panel" style="margin:0 0 20px">'
+            '<div class="panel-head">'
+            '<span class="panel-title">' + sec5 + ' &mdash; ' + str(a_top) + ' ba&#351;vuru</span>'
+            '<span style="font-size:.72rem;color:#8C8880">SBA numaras&#305;na g&ouml;re s&#305;ral&#305;</span>'
+            '</div>'
+            '<div class="wide-wrap">'
+            '<table class="styled-table"><thead><tr>'
+            '<th class="c-idx">#</th>'
+            '<th class="c-num">SBA No</th>'
+            '<th>Ara&#351;t&#305;rma Ad&#305;</th>'
+            '<th>Birimi</th>'
+            '<th class="c-num">Niteli&#287;i</th>'
+            '<th class="c-num">R1 / R2</th>'
+            '<th class="c-num">Kurul Tarihi</th>'
+            '<th class="c-num">G&uuml;ncel Durum</th>'
+            '</tr></thead><tbody>' + a_rows + '</tbody></table>'
+            '</div>'
+            '<div class="panel-footer">'
+            '<span>Yeni bir ba&#351;vuru eklendi&#287;inde bu liste otomatik g&uuml;ncellenir</span>'
+            '<span>Son g&uuml;ncelleme: ' + son_tarih + '</span>'
+            '</div></div>',
+            unsafe_allow_html=True
+        )
 
 
 # ══ TAB 6: SONUÇLAR ══════════════════════════════════════════════════════════
