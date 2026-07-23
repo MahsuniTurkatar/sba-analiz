@@ -41,7 +41,7 @@ def load():
             df[tc] = pd.to_datetime(df[tc], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
     for c in df.columns:
         df[c] = df[c].apply(lambda x:
-            str(x).strip() if pd.notna(x) and str(x).strip() not in ('nan','None','0.0') else '')
+            str(x).strip() if pd.notna(x) and str(x).strip() not in ('nan','None','0.0','0') else '')
     if "DÜZELTME R" not in df.columns:
         df["DÜZELTME R"] = ""
     return df
@@ -1001,8 +1001,10 @@ if aktif == 4:
             r15   = sr5.get("RAPORTÖR 1","")
             r25   = sr5.get("RAPORTÖR 2","")
             kk1_5 = sr5.get("KURUL KARARI 1","")
-            gd_5  = sr5.get("GÜNCEL DURUM","") or kk1_5
-            kb5, kc5 = G_CLR.get(gd_5, ('#F5F5F5','#616161'))
+            gd_5  = sr5.get("GÜNCEL DURUM","") or kk1_5 or "BEKLİYOR"
+            kb5, kc5 = G_CLR.get(gd_5 if gd_5 != "BEKLİYOR" else "", ('#F5F5F5','#616161'))
+            r1_k5 = str(r15).split()[-1] if str(r15).strip() else "—"
+            r2_k5 = str(r25).split()[-1] if str(r25).strip() else ""
             a_rows += (
                 '<tr>'
                 '<td class="c-idx">' + str(i5) + '</td>'
@@ -1010,12 +1012,12 @@ if aktif == 4:
                 '<td style="max-width:280px;white-space:normal;line-height:1.4;font-size:.85rem">' + str(ad5) + '</td>'
                 '<td style="font-size:.82rem;color:#5A7A8A">' + str(bir5) + '</td>'
                 '<td class="c-num" style="font-size:.82rem">' + str(nit5) + '</td>'
-                '<td class="c-num" style="font-size:.8rem">' + str(r15).split()[-1] +
-                (' / ' + str(r25).split()[-1] if r25 else '') + '</td>'
+                '<td class="c-num" style="font-size:.8rem">' + r1_k5 +
+                (' / ' + r2_k5 if r2_k5 else '') + '</td>'
                 '<td class="c-num" style="font-size:.82rem;color:#8C8880">' + str(tar5) + '</td>'
                 '<td class="c-num"><span style="background:' + kb5 + ';color:' + kc5 +
                 ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' +
-                (str(gd_5) if gd_5 else '—') + '</span></td>'
+                gd_5 + '</span></td>'
                 '</tr>'
             )
 
