@@ -74,6 +74,7 @@ MENU = [
     ("Gündem Sayıları",  "🗓"),
     ("Birim Analizi",    "🏢"),
     ("Araştırmacı",      "👤"),
+    ("Araştırmacı Detayı","🔍"),
     ("Sonuçlar",         "🔄"),
     ("Grafikler",        "📈"),
 ]
@@ -960,6 +961,10 @@ if aktif == 4:
         unsafe_allow_html=True
     )
 
+
+# ══ TAB 6: ARAŞTIRMACI DETAYI ═════════════════════════════════════════════════
+if aktif == 5:
+    df5 = df
     # ── ARAŞTIRMACI DETAYI — bir kişi seç, tüm başvurularını gör ─────────────
     st.markdown("""
     <div style="padding:4px 0 10px">
@@ -969,7 +974,7 @@ if aktif == 4:
       </span>
     </div>""", unsafe_allow_html=True)
 
-    tum_arastirmacilar = sorted(df.loc[df["SORUMLUSU"].ne(""), "SORUMLUSU"].unique().tolist())
+    tum_arastirmacilar = sorted(df5.loc[df5["SORUMLUSU"].ne(""), "SORUMLUSU"].unique().tolist())
     _, cm5, _ = st.columns([1, 2, 1])
     with cm5:
         sec5 = st.selectbox(
@@ -977,7 +982,7 @@ if aktif == 4:
         )
 
     if sec5 != "— Seçiniz —":
-        a_df   = df[df["SORUMLUSU"] == sec5].copy()
+        a_df   = df5[df5["SORUMLUSU"] == sec5].copy()
         a_top  = len(a_df)
         a_ona  = int((a_df["KURUL KARARI 1"] == "ONAY").sum())
         a_duz  = int((a_df["KURUL KARARI 1"] == "DÜZELTME").sum())
@@ -1047,8 +1052,8 @@ if aktif == 4:
         )
 
 
-# ══ TAB 6: SONUÇLAR ══════════════════════════════════════════════════════════
-if aktif == 5:
+# ══ TAB 7: SONUÇLAR ═══════════════════════════════════════════════════════════
+if aktif == 6:
     KARARLAR_TUM6 = ['ONAY','DÜZELTME','GÖRÜŞ','KAEK','RET','KAPSAM DIŞI','GERİ ÇEKİLDİ']
     K_BG6 = {'ONAY':'#E8F5E9','DÜZELTME':'#FFF8E1','GÖRÜŞ':'#E3F2FD','KAEK':'#EDE7F6',
               'RET':'#FFEBEE','KAPSAM DIŞI':'#F5F5F5','GERİ ÇEKİLDİ':'#FFF9C4'}
@@ -1154,8 +1159,8 @@ if aktif == 5:
         unsafe_allow_html=True)
 
 
-# ══ TAB 7: GRAFİKLER ══════════════════════════════════════════════════════════
-if aktif == 6:
+# ══ TAB 8: GRAFİKLER ══════════════════════════════════════════════════════════
+if aktif == 7:
     onay_s  = int(df['KURUL KARARI 1'].eq('ONAY').sum())
     duz_s   = int(df['KURUL KARARI 1'].eq('DÜZELTME').sum())
     gorus_s = int(df['KURUL KARARI 1'].eq('GÖRÜŞ').sum())
