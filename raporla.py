@@ -36,10 +36,38 @@ def load():
             df["SBA NUMARASI"].astype(str).str.startswith("SBA")].copy()
     df = df[df["ADI"].notna() & df["ADI"].astype(str).str.strip().ne("") &
             ~df["ADI"].astype(str).isin(["nan","None","0"])].copy()
+    # ── İnceleme izni (retrospektif inceleme süresi) süre takibi ─────────────
+    # Başvuru sayfasının en sonundaki İNCELEME İZNİ BAŞLANGIÇ/BİTİŞ (ER/ES)
+    # sütunlarından — Excel'deki ET/EU formülleriyle ve SBA Panel uygulamasıyla
+    # birebir aynı 3 durumlu mantık (🔴/🟢/⏳), tarihler string'e çevrilmeden
+    # önce burada hesaplanıyor.
+    izin_bas_raw = pd.to_datetime(df.get("İNCELEME İZNİ BAŞLANGIÇ"), errors="coerce") \
+        if "İNCELEME İZNİ BAŞLANGIÇ" in df.columns else pd.Series(pd.NaT, index=df.index)
+    izin_bit_raw = pd.to_datetime(df.get("İNCELEME İZNİ BİTİŞ"), errors="coerce") \
+        if "İNCELEME İZNİ BİTİŞ" in df.columns else pd.Series(pd.NaT, index=df.index)
+    _bugun = pd.Timestamp.now().normalize()
+    _kalan = (izin_bit_raw - _bugun).dt.days
+
+    def _sure_durumu(b, bi, k):
+        if pd.isna(bi):
+            return ""
+        if pd.notna(b) and _bugun < b:
+            return "⏳ BAŞLAMADI"
+        if pd.notna(k) and k < 0:
+            return "🔴 SÜRESİ DOLDU"
+        return "🟢 DEVAM EDİYOR"
+
+    df["SÜRE DURUMU"] = [_sure_durumu(b, bi, k) for b, bi, k in zip(izin_bas_raw, izin_bit_raw, _kalan)]
+    df["KALAN GÜN"]   = _kalan
+    df["İZİN BAŞLANGIÇ_FMT"] = izin_bas_raw.dt.strftime("%d/%m/%Y").fillna("")
+    df["İZİN BİTİŞ_FMT"]     = izin_bit_raw.dt.strftime("%d/%m/%Y").fillna("")
+
     for tc in ["KURUL TARİHİ","BAŞVURU TARİHİ"]:
         if tc in df.columns:
             df[tc] = pd.to_datetime(df[tc], errors="coerce").dt.strftime("%d/%m/%Y").fillna("")
     for c in df.columns:
+        if c in ("SÜRE DURUMU","KALAN GÜN","İZİN BAŞLANGIÇ_FMT","İZİN BİTİŞ_FMT"):
+            continue
         df[c] = df[c].apply(lambda x:
             str(x).strip() if pd.notna(x) and str(x).strip() not in ('nan','None','0.0','0') else '')
     if "DÜZELTME R" not in df.columns:
@@ -77,6 +105,7 @@ MENU = [
     ("Araştırmacı Detayı","🔍"),
     ("Sonuçlar",         "🔄"),
     ("Grafikler",        "📈"),
+    ("Süre Takip",       "⏳"),
 ]
 if "tab" not in st.session_state:
     st.session_state.tab = 0
@@ -196,33 +225,48 @@ st.markdown("""
 .wide-wrap{width:100%;overflow-x:auto}
 
 
-/* ── NAV: st.radio'yu nav görünümüne çevir ── */
-div[data-testid="stRadio"]{margin:0!important;padding:0!important}
-div[data-testid="stRadio"] > label{display:none!important}
-div[data-testid="stRadio"] > div[role="radiogroup"]{
+/* ── NAV: st.button satırını nav görünümüne çevir ──────────────────────────
+   NOT: Daha önce burada st.radio'nun iç DOM'unu (div[data-testid="stRadio"],
+   [role="radiogroup"], [data-baseweb="radio"] vb.) hedefleyen bir CSS hilesi
+   vardı. Streamlit'in radio bileşeni bir sürüm güncellemesinde iç yapısını
+   tamamen değiştirdi (React-Aria tabanlı yeni sürüm: data-testid="stRadioGroup",
+   data-baseweb kalktı, metin ve işaretçi artık aynı div içinde) — bu yüzden
+   menü metinleri görünmez oldu, sadece boş radyo daireleri kaldı. Bunun yerine
+   artık st.button kullanılıyor: button[kind="primary"/"secondary"] Streamlit'in
+   en kararlı, en köklü HTML sözleşmelerinden biri (yıllardır değişmedi), bu
+   yüzden bir sonraki Streamlit sürümünde tekrar bozulma riski çok daha düşük. */
+.st-key-nav_bar{margin:0!important;padding:0!important}
+.st-key-nav_bar > div{
   display:flex!important;flex-direction:row!important;gap:4px!important;
-  flex-wrap:nowrap!important;overflow-x:auto!important;
   background:#fff;border-radius:12px;padding:6px;
   box-shadow:0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.04);
 }
-div[data-testid="stRadio"] > div[role="radiogroup"]::-webkit-scrollbar{height:0}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label{
-  display:inline-flex!important;align-items:center!important;gap:6px!important;
-  padding:10px 18px!important;border-radius:8px!important;cursor:pointer!important;
-  font-family:'Inter',sans-serif!important;font-size:.86rem!important;
-  font-weight:500!important;color:#6B6560!important;
-  white-space:nowrap!important;flex-shrink:0!important;
-  margin:0!important;border:none!important;background:transparent!important;
+.st-key-nav_bar div[data-testid="stHorizontalBlock"]{gap:4px!important}
+.st-key-nav_bar div[data-testid="stButton"]{width:100%}
+.st-key-nav_bar div[data-testid="stButton"] button{
+  width:100%!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  gap:6px!important;padding:10px 14px!important;border-radius:8px!important;
+  cursor:pointer!important;font-family:'Inter',sans-serif!important;font-size:.86rem!important;
+  font-weight:500!important;white-space:nowrap!important;
+  border:none!important;transition:all .15s ease;
 }
-div[data-testid="stRadio"] > div[role="radiogroup"] > label:hover{
-  background:#F5F3EE!important;color:#1A1814!important}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"]{
+.st-key-nav_bar div[data-testid="stButton"] button[kind="secondary"]{
+  background:transparent!important;color:#6B6560!important;
+}
+.st-key-nav_bar div[data-testid="stButton"] button[kind="secondary"]:hover{
+  background:#F5F3EE!important;color:#1A1814!important;border-color:transparent!important;
+}
+.st-key-nav_bar div[data-testid="stButton"] button[kind="primary"]{
   background:#1A1814!important;color:#fff!important;font-weight:600!important;
-  border-radius:8px!important;box-shadow:0 2px 8px rgba(26,24,20,.2)!important}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:first-child{display:none!important}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label > div:last-child{
-  color:inherit!important;font-size:.86rem!important;font-family:'Inter',sans-serif!important}
-div[data-testid="stRadio"] > div[role="radiogroup"] > label[data-baseweb="radio"] > div:last-child{color:#fff!important}
+  box-shadow:0 2px 8px rgba(26,24,20,.2)!important;
+}
+.st-key-nav_bar div[data-testid="stButton"] button[kind="primary"]:hover{
+  background:#2A2420!important;color:#fff!important;
+}
+.st-key-nav_bar div[data-testid="stButton"] button p{
+  font-size:.86rem!important;font-family:'Inter',sans-serif!important;margin:0!important;
+}
 
 /* ── Scrollbar göster ── */
 html,body,.stApp,.main,section.main > div{overflow-y:auto!important}
@@ -290,13 +334,18 @@ st.markdown(f"""
   </div>
 </div>""", unsafe_allow_html=True)
 
-# ── NAVİGASYON — st.radio ────────────────────────────────────────────────────
+# ── NAVİGASYON — st.button satırı (st.radio'nun kırılgan iç-DOM hilesi yerine) ─
 st.markdown('<div class="nav-wrap">', unsafe_allow_html=True)
-menu_labels = [f"{ikon}  {yazi}" for yazi, ikon in MENU]
-secim = st.radio("", menu_labels, index=aktif, horizontal=True,
-                 label_visibility="collapsed", key="nav_radio")
-aktif = menu_labels.index(secim)
-st.session_state.tab = aktif
+with st.container(key="nav_bar"):
+    nav_cols = st.columns(len(MENU))
+    for i, (yazi, ikon) in enumerate(MENU):
+        with nav_cols[i]:
+            if st.button(f"{ikon}  {yazi}", key=f"nav_btn_{i}",
+                        type=("primary" if aktif == i else "secondary"),
+                        use_container_width=True):
+                st.session_state.tab = i
+                st.rerun()
+aktif = st.session_state.tab
 st.markdown('</div>', unsafe_allow_html=True)
 st.markdown('<div class="content-wrap">', unsafe_allow_html=True)
 
@@ -1700,6 +1749,112 @@ if aktif == 7:
             ]
         )
         st.plotly_chart(fig5, use_container_width=True)
+
+# ══ TAB 9: SÜRE TAKİP (İnceleme İzni) ═══════════════════════════════════════
+if aktif == 8:
+    SURE_CLR = {
+        "🔴 SÜRESİ DOLDU":  ("#FBE5E7", "#B91C1C"),
+        "🟢 DEVAM EDİYOR":  ("#E3F6E8", "#146C2E"),
+        "⏳ BAŞLAMADI":     ("#FFF4DA", "#92660A"),
+    }
+
+    d9 = df[df["SÜRE DURUMU"].ne("")].copy()
+    dolmus9   = int((d9["SÜRE DURUMU"] == "🔴 SÜRESİ DOLDU").sum())
+    devam9    = int((d9["SÜRE DURUMU"] == "🟢 DEVAM EDİYOR").sum())
+    baslamadi9= int((d9["SÜRE DURUMU"] == "⏳ BAŞLAMADI").sum())
+    girilmemis9 = toplam_b - len(d9)
+    # Öneri: yakında dolacak olanları (30 gün içinde, hâlâ devam eden) ayrıca
+    # işaretliyoruz — kalıcı bir 4. durum değil, sadece bu panoda görünürlük için.
+    yakinda9 = int(((d9["SÜRE DURUMU"] == "🟢 DEVAM EDİYOR") & (d9["KALAN GÜN"] <= 30)).sum())
+
+    st.markdown(f"""<div style="padding:20px 32px 4px">
+      <div style="font-family:'DM Serif Display',serif;font-size:1.5rem;color:#1A1814;margin-bottom:4px">
+        İnceleme İzni Süre Takibi</div>
+      <div style="font-size:.82rem;color:#8C8880;font-family:'IBM Plex Mono',monospace">
+        Kurul kararındaki retrospektif inceleme izni penceresi &nbsp;·&nbsp;
+        Excel (İNCELEME İZNİ BAŞLANGIÇ/BİTİŞ) ve SBA Panel uygulamasıyla aynı mantık
+      </div></div>""", unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:14px 32px 20px">
+      <div class="card primary"><div class="card-num">{len(d9)}</div><div class="card-label">İzin Tarihi Girilmiş</div><div class="card-sub">{pct(len(d9),toplam_b,False)} oranı</div></div>
+      <div class="card" style="border-top:3px solid #C62828"><div class="card-num" style="color:#C62828">{dolmus9}</div><div class="card-label">Süresi Dolmuş</div></div>
+      <div class="card" style="border-top:3px solid #2E7D32"><div class="card-num" style="color:#2E7D32">{devam9}</div><div class="card-label">Devam Ediyor</div>{f'<div class="card-sub" style="color:#C8502A">⚠ {yakinda9} tanesi 30 gün içinde doluyor</div>' if yakinda9 else ''}</div>
+      <div class="card" style="border-top:3px solid #92660A"><div class="card-num" style="color:#92660A">{baslamadi9}</div><div class="card-label">Henüz Başlamadı</div></div>
+      <div class="card" style="border-top:3px solid #9B9490"><div class="card-num" style="color:#9B9490">{girilmemis9}</div><div class="card-label">İzin Tarihi Girilmemiş</div><div class="card-sub">{pct(girilmemis9,toplam_b,False)} oranı</div></div>
+    </div>""", unsafe_allow_html=True)
+
+    if d9.empty:
+        st.markdown("""
+        <div class="panel" style="margin:0 32px 20px">
+          <div style="padding:40px 24px;text-align:center;color:#8C8880;font-family:'Inter',sans-serif">
+            Henüz hiçbir başvuruya inceleme izni başlangıç/bitiş tarihi girilmemiş.<br>
+            <span style="font-size:.85rem">Bu tarihler Başvuru sayfasının sonundaki
+            <b>İNCELEME İZNİ BAŞLANGIÇ</b> / <b>İNCELEME İZNİ BİTİŞ</b> sütunlarına
+            girildikçe burada otomatik görünecek.</span>
+          </div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        # Devam edenleri kalan güne göre (en acil üstte), dolmuşları en çok
+        # geciken üstte olacak şekilde sırala; başlamayanları başlangıca göre.
+        sira9 = {"🔴 SÜRESİ DOLDU": 0, "🟢 DEVAM EDİYOR": 1, "⏳ BAŞLAMADI": 2}
+        d9["_sira"] = d9["SÜRE DURUMU"].map(sira9)
+        d9 = d9.sort_values(["_sira", "KALAN GÜN"], ascending=[True, True])
+
+        rows9 = ""
+        for i9, (_, s9) in enumerate(d9.iterrows(), 1):
+            durum9 = s9["SÜRE DURUMU"]
+            bg9, fg9 = SURE_CLR.get(durum9, ("#F5F5F5", "#616161"))
+            kalan9  = s9["KALAN GÜN"]
+            kalan_v = int(kalan9) if pd.notna(kalan9) else None
+            if durum9 == "🔴 SÜRESİ DOLDU":
+                kalan_lbl = f"{abs(kalan_v)} gün önce doldu"
+            elif durum9 == "🟢 DEVAM EDİYOR":
+                yakin_rozet = ' <span style="color:#C8502A;font-weight:700">⚠</span>' if kalan_v is not None and kalan_v <= 30 else ''
+                kalan_lbl = f"{kalan_v} gün kaldı{yakin_rozet}"
+            else:
+                kalan_lbl = f"{kalan_v} gün sonra başlıyor" if kalan_v is not None else ""
+            rows9 += (
+                '<tr>'
+                '<td class="c-idx">' + str(i9) + '</td>'
+                '<td class="c-num" style="font-weight:500">' + str(s9.get("SBA NUMARASI","")) + '</td>'
+                '<td style="max-width:260px;white-space:normal;line-height:1.4;font-size:.85rem">' + str(s9.get("ADI","")) + '</td>'
+                '<td style="font-size:.85rem">' + str(s9.get("SORUMLUSU","")) + '</td>'
+                '<td style="font-size:.82rem;color:#5A7A8A">' + str(s9.get("BİRİMİ","")) + '</td>'
+                '<td class="c-num" style="font-size:.82rem">' + str(s9.get("İZİN BAŞLANGIÇ_FMT","")) + '</td>'
+                '<td class="c-num" style="font-size:.82rem">' + str(s9.get("İZİN BİTİŞ_FMT","")) + '</td>'
+                '<td class="c-num"><span style="background:' + bg9 + ';color:' + fg9 +
+                ';padding:2px 8px;border-radius:4px;font-size:.78rem;font-weight:600">' + durum9 + '</span></td>'
+                '<td style="font-size:.8rem;color:#6B6560">' + kalan_lbl + '</td>'
+                '</tr>'
+            )
+
+        st.markdown(
+            '<div class="panel" style="margin:0 32px 20px">'
+            '<div class="panel-head">'
+            '<span class="panel-title">İnceleme İzni Olan Başvurular — ' + str(len(d9)) + ' dosya</span>'
+            '<span style="font-size:.72rem;color:#8C8880;font-family:\'IBM Plex Mono\',monospace">'
+            'Süresi dolmuş → devam eden (en acil üstte) → henüz başlamamış</span>'
+            '</div>'
+            '<div class="wide-wrap">'
+            '<table class="styled-table"><thead><tr>'
+            '<th class="c-idx">#</th>'
+            '<th class="c-num">SBA No</th>'
+            '<th>Araştırma Adı</th>'
+            '<th>Sorumlusu</th>'
+            '<th>Birimi</th>'
+            '<th class="c-num">İzin Başlangıç</th>'
+            '<th class="c-num">İzin Bitiş</th>'
+            '<th class="c-num">Durum</th>'
+            '<th>Kalan/Geçen</th>'
+            '</tr></thead><tbody>' + rows9 + '</tbody></table>'
+            '</div>'
+            '<div class="panel-footer">'
+            '<span>⚠ işareti: devam eden ama 30 gün içinde süresi dolacak dosyalar</span>'
+            '<span>Son güncelleme: ' + son_tarih + '</span>'
+            '</div></div>',
+            unsafe_allow_html=True
+        )
 
 # ── FOOTER ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
